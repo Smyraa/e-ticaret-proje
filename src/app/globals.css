@@ -10,7 +10,16 @@
   --color-muted: #6f6459;
   --color-espresso: #201a16;
   --color-primary: #705833;
+  /* Form kutularının kenarlığı: zemine karşı en az 3:1 kontrast (line rengi yalnızca süs çizgileri için) */
+  --color-field: #8f8170;
 
   --font-display: var(--font-eb-garamond), Georgia, serif;
   --font-body: var(--font-manrope), system-ui, sans-serif;
+}
+
+@layer base {
+  /* Klavyeyle gezinirken odaktaki öğe belirgin görünsün. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
 }

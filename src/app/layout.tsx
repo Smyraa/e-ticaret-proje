@@ -34,13 +34,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper font-body text-ink">
+        {/* Klavye kullanıcıları için: Tab ile ilk gelen bağlantı, menüyü atlayıp içeriğe götürür. */}
+        <a
+          href="#icerik"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-paper focus:px-4 focus:py-3 focus:text-xs focus:font-semibold focus:tracking-widest focus:text-ink focus:uppercase focus:shadow-md"
+        >
+          Ana içeriğe geç
+        </a>
+
         <div className="bg-espresso px-4 py-2 text-center text-xs tracking-widest text-paper uppercase">
           Demo sürümü · Ürünler ve fiyatlar örnek içeriktir
         </div>
 
         <SiteHeader />
 
-        <main className="flex-1">{children}</main>
+        <main id="icerik" tabIndex={-1} className="flex-1 focus:outline-none">
+          {children}
+        </main>
 
         <SiteFooter />
       </body>
