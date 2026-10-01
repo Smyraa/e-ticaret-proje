@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useFavorites } from "@/lib/favorites";
+import { HeartIcon } from "./heart-icon";
 
-// Favori ve sepet simgeleri kendi adımlarında eklenecek; "Atölye" ve "İletişim" sabit sayfalar hazır olunca.
+// Sepet simgesi kendi adımında eklenecek; "Atölye" ve "İletişim" sabit sayfalar hazır olunca.
 const links = [
   { href: "/koleksiyon", label: "Koleksiyon" },
   { href: "/koleksiyon#q", label: "Ara" }, // koleksiyon sayfasındaki arama kutusuna götürür
@@ -17,6 +19,7 @@ export function SiteHeader() {
   // Mobil menünün açık/kapalı durumu tarayıcıda tutulur.
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const favoriteCount = useFavorites().length;
 
   return (
     <header className="border-b border-line">
@@ -72,8 +75,30 @@ export function SiteHeader() {
           </p>
         </Link>
 
-        {/* Sağ taraf: favori ve sepet simgeleri sonraki adımlarda */}
-        <div />
+        {/* Sağ taraf: favoriler (sepet simgesi sonraki adımda buraya eklenecek) */}
+        <div className="flex items-center justify-end">
+          <Link
+            href="/favoriler"
+            aria-label={
+              favoriteCount > 0 ? `Favorilerim, ${favoriteCount} ürün` : "Favorilerim"
+            }
+            aria-current={pathname === "/favoriler" ? "page" : undefined}
+            onClick={() => setOpen(false)}
+            className={`relative -mr-2.5 flex h-11 w-11 items-center justify-center transition hover:text-primary ${
+              pathname === "/favoriler" ? "text-primary" : "text-ink"
+            }`}
+          >
+            <HeartIcon filled={pathname === "/favoriler"} />
+            {favoriteCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-0.5 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-paper"
+              >
+                {favoriteCount}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
 
       {open && (
