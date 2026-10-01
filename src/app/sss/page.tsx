@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 import { shippingInfo } from "@/lib/shipping";
 
-export const metadata: Metadata = {
-  title: "Sıkça sorulan sorular · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata(
+  "Sıkça sorulan sorular",
+  "Kargo, iade, hediye paketi ve sipariş hakkında sıkça sorulan sorular (örnek içerik).",
+);
 
 // Yalnızca bilinen bilgiler yazılır; belli olmayanlar "henüz belirlenmedi" olarak kalır.
 const questions: { question: string; answer: ReactNode }[] = [

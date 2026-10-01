@@ -1,10 +1,8 @@
-import type { Metadata } from "next";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 import { shippingInfo } from "@/lib/shipping";
 
-export const metadata: Metadata = {
-  title: "Kargo ve iade · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata("Kargo ve iade", "Kargo ve iade bilgileri (örnek içerik).");
 
 // Yalnızca bilinen bilgiler yazılır (kargo şimdilik ücretsiz, iade kabul edilir); koşullar belirlenince güncellenir.
 export default function ShippingAndReturnsPage() {

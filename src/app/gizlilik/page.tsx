@@ -1,9 +1,7 @@
-import type { Metadata } from "next";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Gizlilik ve KVKK · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata("Gizlilik ve KVKK", "Gizlilik ve KVKK metni (yer tutucu).");
 
 // Hukuki metin yazılmaz: yalnızca yer tutucu bırakılır, metni yetkin biri hazırlayıp ekleyecek.
 export default function PrivacyPage() {

@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Mesafeli satış sözleşmesi · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata(
+  "Mesafeli satış sözleşmesi",
+  "Mesafeli satış sözleşmesi (yer tutucu).",
+);
 
 // Hukuki metin yazılmaz: yalnızca yer tutucu bırakılır, metni yetkin biri hazırlayıp ekleyecek.
 export default function DistanceSalesPage() {

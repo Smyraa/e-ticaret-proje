@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
+import { pageMetadata } from "@/lib/metadata";
 import {
   filterProducts,
   getProducts,
@@ -10,9 +10,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Koleksiyon · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata(
+  "Koleksiyon",
+  "Tesbih koleksiyonunu arayın, malzemeye göre süzün ve fiyata göre sıralayın. Demo sürümü: ürünler örnek içeriktir.",
+);
 
 const field =
   "w-full rounded-md border border-line bg-paper px-4 py-3 text-sm outline-none transition focus:border-primary";

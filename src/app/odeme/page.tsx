@@ -1,13 +1,16 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckoutView } from "@/components/checkout-view";
+import { pageMetadata } from "@/lib/metadata";
 import { getProducts, type Product } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Ödeme · TAURA Tesbihçilik",
-};
+// Kişiye özel sayfa: canlıda da arama motorlarına kapalı kalır.
+export const metadata = pageMetadata(
+  "Ödeme",
+  "Demo ödeme sayfası: bilgiler kaydedilmez, ödeme alınmaz.",
+  { noindex: true },
+);
 
 export default async function CheckoutPage() {
   let products: Product[] = [];

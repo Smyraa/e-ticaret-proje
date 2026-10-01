@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Atölye · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata(
+  "Atölye",
+  "TAURA Tesbihçilik’in hikâyesi ve atölyesi (örnek içerik).",
+);
 
 export default function WorkshopPage() {
   return (

@@ -1,12 +1,15 @@
-import type { Metadata } from "next";
 import { FavoritesList } from "@/components/favorites-list";
+import { pageMetadata } from "@/lib/metadata";
 import { getProducts, type Product } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Favorilerim · TAURA Tesbihçilik",
-};
+// Kişiye özel sayfa: canlıda da arama motorlarına kapalı kalır.
+export const metadata = pageMetadata(
+  "Favorilerim",
+  "Beğendiğiniz ürünler bu tarayıcıda saklanır.",
+  { noindex: true },
+);
 
 export default async function FavoritesPage() {
   let products: Product[] = [];

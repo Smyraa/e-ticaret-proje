@@ -1,12 +1,15 @@
-import type { Metadata } from "next";
 import { CartView } from "@/components/cart-view";
+import { pageMetadata } from "@/lib/metadata";
 import { getProducts, type Product } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Sepetim · TAURA Tesbihçilik",
-};
+// Kişiye özel sayfa: canlıda da arama motorlarına kapalı kalır.
+export const metadata = pageMetadata(
+  "Sepetim",
+  "Sepetinizdeki ürünler, hediye paketi ve not seçeneği.",
+  { noindex: true },
+);
 
 export default async function CartPage() {
   let products: Product[] = [];

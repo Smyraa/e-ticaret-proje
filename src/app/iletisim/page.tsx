@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import { ChatIcon } from "@/components/chat-icon";
 import { StaticPage } from "@/components/static-page";
+import { pageMetadata } from "@/lib/metadata";
 import { placeholderNumberNote, usesPlaceholderNumber, whatsappLink } from "@/lib/whatsapp";
 
-export const metadata: Metadata = {
-  title: "İletişim · TAURA Tesbihçilik",
-};
+export const metadata = pageMetadata(
+  "İletişim",
+  "TAURA Tesbihçilik ile iletişim yolları (örnek içerik).",
+);
 
 const details = [
   ["E-posta", "Henüz belirlenmedi"],

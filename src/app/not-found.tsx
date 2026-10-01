@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { pageMetadata } from "@/lib/metadata";
+
+// 404 sayfasına Next.js zaten kendi noindex etiketini ekler.
+export const metadata = pageMetadata("Sayfa bulunamadı", "Aradığınız sayfa bulunamadı.");
 
 export default function NotFound() {
   return (
