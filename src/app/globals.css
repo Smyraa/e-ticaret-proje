@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Renkler ve yazı tipleri tasarım taslağından alındı. */
+@theme inline {
+  --color-paper: #fffcf8;
+  --color-soft: #f3ece3;
+  --color-sand: #e0d3c3;
+  --color-line: #cdbeaa;
+  --color-ink: #2d261f;
+  --color-muted: #6f6459;
+  --color-espresso: #201a16;
+  --color-primary: #705833;
+
+  --font-display: var(--font-eb-garamond), Georgia, serif;
+  --font-body: var(--font-manrope), system-ui, sans-serif;
+}
