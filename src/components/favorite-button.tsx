@@ -18,7 +18,7 @@ export function FavoriteButton({ slug, name, variant = "icon", className = "" }:
       <button
         type="button"
         onClick={() => toggleFavorite(slug)}
-        className={`inline-flex items-center gap-2 border px-5 py-3 text-xs font-semibold tracking-widest uppercase transition ${
+        className={`inline-flex min-h-11 items-center gap-2 border px-5 text-xs font-semibold tracking-widest uppercase transition ${
           favorite
             ? "border-primary text-primary"
             : "border-line hover:border-primary hover:text-primary"

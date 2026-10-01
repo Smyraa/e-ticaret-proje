@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FavoriteButton } from "@/components/favorite-button";
+import { ProductActions } from "@/components/product-actions";
 import { ProductImage } from "@/components/product-image";
 import { formatPrice, stockText } from "@/lib/format";
 import { getProductBySlug, type Product } from "@/lib/products";
@@ -68,9 +68,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           <p className="mt-4 font-display text-3xl">{formatPrice(product.price)}</p>
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
 
-          <div className="mt-6">
-            <FavoriteButton slug={product.slug} name={product.name} variant="full" />
-          </div>
+          <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
 
           <p className="mt-6 leading-relaxed text-muted">{product.story}</p>
 
