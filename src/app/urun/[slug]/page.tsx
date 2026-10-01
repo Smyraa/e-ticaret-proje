@@ -56,7 +56,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           product={product}
           sizes="(min-width: 768px) 50vw, 100vw"
           className="rounded-xl"
-          priority
+          preload
         />
 
         <div>

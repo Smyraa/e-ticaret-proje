@@ -6,11 +6,12 @@ type Props = {
   product: Product;
   sizes: string; // tarayıcıya, görselin ekranda ne kadar yer kaplayacağını söyler
   className?: string;
-  priority?: boolean;
+  preload?: boolean; // sayfanın en önemli (LCP) görseli için: önceden yüklenir
+  eager?: boolean; // ekranın üstündeki görseller için: tembel yüklenmez
 };
 
 // Ürünün ana görseli (4:5). Görsel yoksa yer tutucu gösterilir; örnek ürünlerde "Örnek" etiketi çıkar.
-export function ProductImage({ product, sizes, className = "", priority }: Props) {
+export function ProductImage({ product, sizes, className = "", preload, eager }: Props) {
   const file = product.images?.[0];
 
   return (
@@ -23,7 +24,8 @@ export function ProductImage({ product, sizes, className = "", priority }: Props
           alt={product.name}
           fill
           sizes={sizes}
-          priority={priority}
+          preload={preload}
+          loading={eager ? "eager" : undefined}
           className="object-cover"
         />
       ) : (
