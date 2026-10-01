@@ -14,6 +14,10 @@ const products = [
   { slug: "ornek-sikma-kehribar", name: "Örnek Sıkma Kehribar Tesbih", material: "Sıkma kehribar", size: "8 mm tane · 33 tane", weight: "44 g", craft, story, price: 4850, stock: 3, sample: true },
   { slug: "ornek-kuka", name: "Örnek Kuka Tesbih", material: "Kuka", size: "8 mm tane · 33 tane", weight: "38 g", craft, story, price: 3400, stock: 1, sample: true },
   { slug: "ornek-narcil", name: "Örnek Narçıl Tesbih", material: "Narçıl", size: "7 mm tane · 33 tane", weight: "30 g", craft, story, price: 2650, stock: 4, sample: true },
+  { slug: "ornek-damla-kehribar-acik", name: "Örnek Damla Kehribar Tesbih (Açık Ton)", material: "Damla kehribar", size: "10 mm tane · 33 tane", weight: "56 g", craft, story, price: 12400, stock: 1, sample: true },
+  { slug: "ornek-oltu-tasi", name: "Örnek Oltu Taşı Tesbih", material: "Oltu taşı", size: "8 mm tane · 33 tane", weight: "36 g", craft, story, price: 3900, stock: 3, sample: true },
+  { slug: "ornek-abanoz", name: "Örnek Abanoz Tesbih", material: "Abanoz", size: "8 mm tane · 33 tane", weight: "40 g", craft, story, price: 3100, stock: 5, sample: true },
+  { slug: "ornek-narcil-koyu", name: "Örnek Narçıl Tesbih (Koyu Ton)", material: "Narçıl", size: "7 mm tane · 33 tane", weight: "31 g", craft, story, price: 2950, stock: 0, sample: true },
 ];
 
 // Çizim örnek görselleri media/ klasörüne yazılır; veritabanında yalnızca dosya adı tutulur.

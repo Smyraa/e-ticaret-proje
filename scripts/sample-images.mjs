@@ -43,6 +43,38 @@ const looks = {
     rx: 334,
     ry: 396,
   },
+  "ornek-damla-kehribar-acik": {
+    bead: ["#FFF3CC", "#FAD680", "#EEB847", "#A9701C"],
+    metal: ["#F6E3AE", "#BC8D31"],
+    thread: "#C98A2B",
+    glow: true,
+    rx: 337,
+    ry: 392,
+  },
+  "ornek-oltu-tasi": {
+    bead: ["#74747C", "#33333A", "#16161B", "#050507"],
+    metal: ["#E9E9ED", "#8A8A92"],
+    thread: "#1A1A1F",
+    glow: false,
+    rx: 326,
+    ry: 404,
+  },
+  "ornek-abanoz": {
+    bead: ["#86645A", "#43291F", "#22130E", "#090403"],
+    metal: ["#E6CF98", "#A5802F"],
+    thread: "#2A1A12",
+    glow: false,
+    rx: 331,
+    ry: 399,
+  },
+  "ornek-narcil-koyu": {
+    bead: ["#F2DFC0", "#CDAA7A", "#9C7646", "#5B4020"],
+    metal: ["#EAD7A6", "#9E7E3C"],
+    thread: "#A98B5A",
+    glow: false,
+    rx: 329,
+    ry: 401,
+  },
 };
 
 // Aynı girdi her zaman aynı sayıyı verir; böylece görseller (ve dosya adları) tekrar üretilince değişmez.
@@ -178,8 +210,10 @@ export async function createSampleImages(dir) {
     const buffer = await sharp(Buffer.from(buildSvg(look))).jpeg({ quality: 90 }).toBuffer();
     const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 8);
     const file = `${slug}-${hash}.jpg`;
+    // Yalnızca bu ürünün eski görselleri silinir: ad-<8 haneli iz>.jpg
+    const own = new RegExp(`^${slug}-[0-9a-f]{8}\\.jpg$`);
     for (const old of await readdir(dir)) {
-      if (old.startsWith(`${slug}-`) && old !== file) await rm(path.join(dir, old));
+      if (own.test(old) && old !== file) await rm(path.join(dir, old));
     }
     await writeFile(path.join(dir, file), buffer);
     result[slug] = file;
