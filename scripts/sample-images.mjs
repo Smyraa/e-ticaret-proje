@@ -1,4 +1,4 @@
-// Örnek ürünler için çizim (vektör) tesbih görselleri üretir ve media/ klasörüne yazar.
+// Örnek ürünler ve ana sayfa için çizim (vektör) tesbih görselleri üretir ve media/ klasörüne yazar.
 // Bunlar fotoğraf değildir; yalnızca yerleşimi ve oranları görmek için yer tutucudur.
 import { createHash } from "node:crypto";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
@@ -6,7 +6,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 const W = 1200;
-const H = 1500; // 4:5, ürün kartlarındaki oranla aynı
+const H = 1500; // 4:5, ürün kartlarındaki ve ana sayfadaki görsel oranıyla aynı
 const COUNT = 34; // 33 tane + imame
 
 // Her ürün için renk ve biçim: bead = [parlak, açık, ana, kenar]
@@ -111,7 +111,9 @@ function loopPoints(cx, cy, rx, ry, count) {
 
 const n = (value) => value.toFixed(1);
 
-function buildSvg(look) {
+// Tek bir tesbihi çizen parçalar (tuval 1200×1500, tesbihin merkezi 600,600).
+// prefix: aynı görselde iki tesbih olunca renk geçişi adları çakışmasın diye.
+function tesbihParts(look, prefix = "") {
   const cx = W / 2;
   const cy = 600;
   const { points, spacing } = loopPoints(cx, cy, look.rx, look.ry, COUNT);
@@ -134,6 +136,14 @@ function buildSvg(look) {
   const strandPath = (dx) =>
     `M ${cx} ${n(tasselTop)} C ${cx} ${n(tasselTop + 70)}, ${n(cx + dx * 0.45)} ${n(tasselTop + 140)}, ${n(cx + dx)} ${n(tasselTop + 215)}`;
 
+  // Renk geçişleri (her tesbihin kendi renkleri)
+  const defs = `<radialGradient id="${prefix}bead" cx="0.36" cy="0.30" r="0.82">
+    <stop offset="0" stop-color="${light}"/><stop offset="0.3" stop-color="${mid}"/><stop offset="0.65" stop-color="${base}"/><stop offset="1" stop-color="${edge}"/>
+  </radialGradient>
+  <radialGradient id="${prefix}glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${light}" stop-opacity="0.55"/><stop offset="1" stop-color="${light}" stop-opacity="0"/></radialGradient>
+  <radialGradient id="${prefix}spec" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="${prefix}metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${metalLight}"/><stop offset="0.5" stop-color="${metalDark}"/><stop offset="1" stop-color="${metalLight}"/></linearGradient>`;
+
   // Gölgeler (tek blur ile)
   const shadows = [
     `<ellipse cx="${cx}" cy="${cy}" rx="${look.rx}" ry="${look.ry}" fill="none" stroke="#2B1B0E" stroke-width="10"/>`,
@@ -150,10 +160,10 @@ function buildSvg(look) {
       const ex = x - r * 0.34;
       const ey = y - r * 0.4;
       return [
-        `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="url(#bead)"/>`,
+        `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="url(#${prefix}bead)"/>`,
         `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="#000" fill-opacity="${tone.toFixed(3)}"/>`,
-        look.glow ? `<circle cx="${n(x + r * 0.16)}" cy="${n(y + r * 0.2)}" r="${n(r * 0.55)}" fill="url(#glow)"/>` : "",
-        `<ellipse cx="${n(ex)}" cy="${n(ey)}" rx="${n(r * 0.3)}" ry="${n(r * 0.18)}" fill="url(#spec)" transform="rotate(-35 ${n(ex)} ${n(ey)})"/>`,
+        look.glow ? `<circle cx="${n(x + r * 0.16)}" cy="${n(y + r * 0.2)}" r="${n(r * 0.55)}" fill="url(#${prefix}glow)"/>` : "",
+        `<ellipse cx="${n(ex)}" cy="${n(ey)}" rx="${n(r * 0.3)}" ry="${n(r * 0.18)}" fill="url(#${prefix}spec)" transform="rotate(-35 ${n(ex)} ${n(ey)})"/>`,
       ].join("");
     })
     .join("");
@@ -168,37 +178,92 @@ function buildSvg(look) {
     .join("");
 
   const spacers = spacerYs
-    .map((y) => `<circle cx="${cx}" cy="${n(y)}" r="${n(spacerR)}" fill="url(#metal)" stroke="#00000033" stroke-width="1"/>`)
+    .map((y) => `<circle cx="${cx}" cy="${n(y)}" r="${n(spacerR)}" fill="url(#${prefix}metal)" stroke="#00000033" stroke-width="1"/>`)
     .join("");
 
+  const body = `<ellipse cx="${cx}" cy="${cy}" rx="${look.rx}" ry="${look.ry}" fill="none" stroke="#24160D" stroke-width="5"/>
+${beads}
+${strands}
+<rect x="${cx - 38}" y="${n(bandY - 8)}" width="76" height="16" rx="8" fill="url(#${prefix}metal)" stroke="#00000033" stroke-width="1"/>
+<ellipse cx="${cx}" cy="${n(capCy)}" rx="${n(capRx)}" ry="${n(capRy)}" fill="url(#${prefix}metal)" stroke="#00000033" stroke-width="1"/>
+${spacers}
+<ellipse cx="${cx}" cy="${n(imameCy)}" rx="${n(imameRx)}" ry="${n(imameRy)}" fill="url(#${prefix}bead)"/>
+<ellipse cx="${cx}" cy="${n(imameCy)}" rx="${n(imameRx)}" ry="${n(imameRy)}" fill="#000" fill-opacity="0.06"/>
+${look.glow ? `<ellipse cx="${n(cx + imameRx * 0.15)}" cy="${n(imameCy + imameRy * 0.2)}" rx="${n(imameRx * 0.55)}" ry="${n(imameRy * 0.55)}" fill="url(#${prefix}glow)"/>` : ""}
+<ellipse cx="${n(cx - imameRx * 0.36)}" cy="${n(imameCy - imameRy * 0.46)}" rx="${n(imameRx * 0.26)}" ry="${n(imameRy * 0.2)}" fill="url(#${prefix}spec)"/>`;
+
+  return { defs, shadows, body };
+}
+
+// Arka plan, ışık, kenar karartması ve gölge bulanıklığı: tüm görsellerde ortak.
+const sceneDefs = `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F1E7D8"/><stop offset="1" stop-color="#D8C7AE"/></linearGradient>
+  <radialGradient id="light" cx="0.45" cy="0.32" r="0.7"><stop offset="0" stop-color="#FFF9EE" stop-opacity="0.85"/><stop offset="1" stop-color="#FFF9EE" stop-opacity="0"/></radialGradient>
+  <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75"><stop offset="0.6" stop-color="#3A2A18" stop-opacity="0"/><stop offset="1" stop-color="#3A2A18" stop-opacity="0.3"/></radialGradient>`;
+const blurDef = `<filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>`;
+
+// Ürün görseli: tek tesbih, ortada.
+function buildSvg(look) {
+  const t = tesbihParts(look);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
 <defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F1E7D8"/><stop offset="1" stop-color="#D8C7AE"/></linearGradient>
-  <radialGradient id="light" cx="0.45" cy="0.32" r="0.7"><stop offset="0" stop-color="#FFF9EE" stop-opacity="0.85"/><stop offset="1" stop-color="#FFF9EE" stop-opacity="0"/></radialGradient>
-  <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75"><stop offset="0.6" stop-color="#3A2A18" stop-opacity="0"/><stop offset="1" stop-color="#3A2A18" stop-opacity="0.3"/></radialGradient>
-  <radialGradient id="bead" cx="0.36" cy="0.30" r="0.82">
-    <stop offset="0" stop-color="${light}"/><stop offset="0.3" stop-color="${mid}"/><stop offset="0.65" stop-color="${base}"/><stop offset="1" stop-color="${edge}"/>
-  </radialGradient>
-  <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${light}" stop-opacity="0.55"/><stop offset="1" stop-color="${light}" stop-opacity="0"/></radialGradient>
-  <radialGradient id="spec" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-  <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${metalLight}"/><stop offset="0.5" stop-color="${metalDark}"/><stop offset="1" stop-color="${metalLight}"/></linearGradient>
-  <filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+  ${sceneDefs}
+  ${t.defs}
+  ${blurDef}
 </defs>
 <rect width="${W}" height="${H}" fill="url(#bg)"/>
 <rect width="${W}" height="${H}" fill="url(#light)"/>
-<g filter="url(#blur)" opacity="0.32" transform="translate(14 22)">${shadows}</g>
-<ellipse cx="${cx}" cy="${cy}" rx="${look.rx}" ry="${look.ry}" fill="none" stroke="#24160D" stroke-width="5"/>
-${beads}
-${strands}
-<rect x="${cx - 38}" y="${n(bandY - 8)}" width="76" height="16" rx="8" fill="url(#metal)" stroke="#00000033" stroke-width="1"/>
-<ellipse cx="${cx}" cy="${n(capCy)}" rx="${n(capRx)}" ry="${n(capRy)}" fill="url(#metal)" stroke="#00000033" stroke-width="1"/>
-${spacers}
-<ellipse cx="${cx}" cy="${n(imameCy)}" rx="${n(imameRx)}" ry="${n(imameRy)}" fill="url(#bead)"/>
-<ellipse cx="${cx}" cy="${n(imameCy)}" rx="${n(imameRx)}" ry="${n(imameRy)}" fill="#000" fill-opacity="0.06"/>
-${look.glow ? `<ellipse cx="${n(cx + imameRx * 0.15)}" cy="${n(imameCy + imameRy * 0.2)}" rx="${n(imameRx * 0.55)}" ry="${n(imameRy * 0.55)}" fill="url(#glow)"/>` : ""}
-<ellipse cx="${n(cx - imameRx * 0.36)}" cy="${n(imameCy - imameRy * 0.46)}" rx="${n(imameRx * 0.26)}" ry="${n(imameRy * 0.2)}" fill="url(#spec)"/>
+<g filter="url(#blur)" opacity="0.32" transform="translate(14 22)">${t.shadows}</g>
+${t.body}
 <rect width="${W}" height="${H}" fill="url(#vignette)"/>
 </svg>`;
+}
+
+// Ana sayfa görseli: iki tesbih, hafif döndürülmüş ve üst üste.
+// Her biri kendi merkezi (600,600) etrafında döndürülüp ölçeklenir, sonra tuvale yerleştirilir.
+const place = ({ x, y, angle, scale }) =>
+  `translate(${x} ${y}) translate(600 600) rotate(${angle}) scale(${scale}) translate(-600 -600)`;
+
+const heroLayout = {
+  back: { look: "ornek-abanoz", at: { x: -140, y: -50, angle: 34, scale: 0.8 } },
+  front: { look: "ornek-damla-kehribar", at: { x: 50, y: 60, angle: -9, scale: 0.98 } },
+};
+
+function buildHeroSvg() {
+  const back = tesbihParts(looks[heroLayout.back.look], "a-");
+  const front = tesbihParts(looks[heroLayout.front.look], "b-");
+  const backAt = place(heroLayout.back.at);
+  const frontAt = place(heroLayout.front.at);
+  const shadow = (parts, at) =>
+    `<g filter="url(#blur)" opacity="0.32" transform="translate(14 22)"><g transform="${at}">${parts.shadows}</g></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<defs>
+  ${sceneDefs}
+  ${back.defs}
+  ${front.defs}
+  ${blurDef}
+</defs>
+<rect width="${W}" height="${H}" fill="url(#bg)"/>
+<rect width="${W}" height="${H}" fill="url(#light)"/>
+${shadow(back, backAt)}
+<g transform="${backAt}">${back.body}</g>
+${shadow(front, frontAt)}
+<g transform="${frontAt}">${front.body}</g>
+<rect width="${W}" height="${H}" fill="url(#vignette)"/>
+</svg>`;
+}
+
+// SVG'yi JPEG'e çevirir; dosya adına içerik izi (hash) ekler, aynı adlı eski sürümleri siler, dosyayı yazar.
+async function writeImage(dir, name, svg) {
+  const buffer = await sharp(Buffer.from(svg)).jpeg({ quality: 90 }).toBuffer();
+  const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 8);
+  const file = `${name}-${hash}.jpg`;
+  // Yalnızca bu görselin eski sürümleri silinir: ad-<8 haneli iz>.jpg
+  const own = new RegExp(`^${name}-[0-9a-f]{8}\\.jpg$`);
+  for (const old of await readdir(dir)) {
+    if (own.test(old) && old !== file) await rm(path.join(dir, old));
+  }
+  await writeFile(path.join(dir, file), buffer);
+  return file;
 }
 
 // media/ klasörüne her ürün için bir JPEG yazar; dosya adlarına içerik izi (hash) eklenir.
@@ -207,16 +272,13 @@ export async function createSampleImages(dir) {
   await mkdir(dir, { recursive: true });
   const result = {};
   for (const [slug, look] of Object.entries(looks)) {
-    const buffer = await sharp(Buffer.from(buildSvg(look))).jpeg({ quality: 90 }).toBuffer();
-    const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 8);
-    const file = `${slug}-${hash}.jpg`;
-    // Yalnızca bu ürünün eski görselleri silinir: ad-<8 haneli iz>.jpg
-    const own = new RegExp(`^${slug}-[0-9a-f]{8}\\.jpg$`);
-    for (const old of await readdir(dir)) {
-      if (own.test(old) && old !== file) await rm(path.join(dir, old));
-    }
-    await writeFile(path.join(dir, file), buffer);
-    result[slug] = file;
+    result[slug] = await writeImage(dir, slug, buildSvg(look));
   }
   return result;
+}
+
+// media/ klasörüne ana sayfa görselini yazar. Döndürür: dosya adı.
+export async function createHeroImage(dir) {
+  await mkdir(dir, { recursive: true });
+  return writeImage(dir, "hero", buildHeroSvg());
 }
