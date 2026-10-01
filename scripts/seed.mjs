@@ -1,5 +1,7 @@
-// Örnek (temsili) ürünleri yerel MongoDB'ye yazar. Tekrar çalıştırılabilir.
+// Örnek (temsili) ürünleri ve örnek görselleri hazırlar. Tekrar çalıştırılabilir.
+import path from "node:path";
 import { MongoClient } from "mongodb";
+import { createSampleImages } from "./sample-images.mjs";
 
 const uri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/taura";
 
@@ -14,13 +16,19 @@ const products = [
   { slug: "ornek-narcil", name: "Örnek Narçıl Tesbih", material: "Narçıl", size: "7 mm tane · 33 tane", weight: "30 g", craft, story, price: 2650, stock: 4, sample: true },
 ];
 
+// Çizim örnek görselleri media/ klasörüne yazılır; veritabanında yalnızca dosya adı tutulur.
+const files = await createSampleImages(path.join(process.cwd(), "media"));
+for (const product of products) {
+  product.images = [files[product.slug]];
+}
+
 const client = new MongoClient(uri, { serverSelectionTimeoutMS: 3000 });
 try {
   await client.connect();
   const collection = client.db().collection("products");
   await collection.deleteMany({ sample: true });
   await collection.insertMany(products);
-  console.log(`${products.length} örnek ürün yazıldı.`);
+  console.log(`${products.length} örnek ürün ve ${products.length} örnek görsel yazıldı.`);
 } finally {
   await client.close();
 }
