@@ -10,3 +10,9 @@ export const shippingLabel: string = SHIPPING_FEE === 0 ? "Ücretsiz" : formatPr
 // Sepet özetinde görünen kargo notu.
 export const shippingNote: string =
   SHIPPING_FEE === 0 ? "Kargo ücretsiz." : "Kargo ücreti ödeme adımında eklenir.";
+
+// Sıkça sorulan sorular ve kargo ve iade sayfasında görünen kargo bilgisi.
+export const shippingInfo: string =
+  SHIPPING_FEE === 0
+    ? "Şimdilik kargo ücretsizdir. Koşullar ileride değişebilir."
+    : `Kargo ücreti ${formatPrice(SHIPPING_FEE)}; ödeme adımında eklenir.`;
