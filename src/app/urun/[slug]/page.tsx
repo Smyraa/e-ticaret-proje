@@ -45,7 +45,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
-        href="/#koleksiyon"
+        href="/koleksiyon"
         className="text-xs tracking-widest text-muted uppercase transition hover:text-primary"
       >
         ← Koleksiyona dön
