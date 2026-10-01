@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductActions } from "@/components/product-actions";
 import { ProductImage } from "@/components/product-image";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import { formatPrice, stockText } from "@/lib/format";
 import { getProductBySlug, type Product } from "@/lib/products";
 
@@ -69,6 +70,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
 
           <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
+          <WhatsAppButton slug={product.slug} name={product.name} />
 
           <p className="mt-6 leading-relaxed text-muted">{product.story}</p>
 
