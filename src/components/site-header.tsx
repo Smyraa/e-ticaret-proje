@@ -8,7 +8,7 @@ import { useFavorites } from "@/lib/favorites";
 import { BagIcon } from "./bag-icon";
 import { HeartIcon } from "./heart-icon";
 
-// "Atölye" ve "İletişim" bağlantıları sabit sayfalar hazır olunca eklenecek.
+// Atölye, iletişim ve bilgi sayfalarının bağlantıları alt bilgide durur (kullanıcı kararı); üst menüde yalnızca alışveriş bağlantıları var.
 const links = [
   { href: "/koleksiyon", label: "Koleksiyon" },
   { href: "/koleksiyon#q", label: "Ara" }, // koleksiyon sayfasındaki arama kutusuna götürür
