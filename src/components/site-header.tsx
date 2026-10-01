@@ -17,6 +17,10 @@ const links = [
 const linkClass =
   "text-xs tracking-widest uppercase transition hover:text-primary";
 
+// Favoriler ya da sepet doluyken simgenin sağ üstünde görünen nokta (sayı yok).
+const dotClass =
+  "absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-paper";
+
 export function SiteHeader() {
   // Mobil menünün açık/kapalı durumu tarayıcıda tutulur.
   const [open, setOpen] = useState(false);
@@ -79,7 +83,7 @@ export function SiteHeader() {
           </p>
         </Link>
 
-        {/* Sağ taraf: favoriler (sayı rozeti) ve sepet (sepet doluyken nokta) */}
+        {/* Sağ taraf: favoriler ve sepet; doluyken simgenin üstünde nokta görünür */}
         <div className="-mr-2.5 flex items-center justify-end">
           <Link
             href="/favoriler"
@@ -93,14 +97,7 @@ export function SiteHeader() {
             }`}
           >
             <HeartIcon filled={pathname === "/favoriler"} />
-            {favoriteCount > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute top-0.5 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-paper"
-              >
-                {favoriteCount}
-              </span>
-            )}
+            {favoriteCount > 0 && <span aria-hidden="true" className={dotClass} />}
           </Link>
 
           <Link
@@ -113,12 +110,7 @@ export function SiteHeader() {
             }`}
           >
             <BagIcon />
-            {cart.items.length > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-paper"
-              />
-            )}
+            {cart.items.length > 0 && <span aria-hidden="true" className={dotClass} />}
           </Link>
         </div>
       </div>
