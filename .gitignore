@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# uploaded / generated media (kept locally in development)
+/media
+
 # production
 /build
 
