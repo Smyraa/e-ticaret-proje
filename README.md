@@ -8,7 +8,7 @@ Gerekenler: Node.js 24 ve yerelde çalışan bir MongoDB.
 
 ```bash
 npm install
-npm run seed   # örnek ürünleri MongoDB'ye, örnek görselleri media/ klasörüne yazar
+npm run seed   # örnek ürünleri ve ana sayfa görselinin adını MongoDB'ye, örnek görselleri media/ klasörüne yazar
 npm run dev    # http://localhost:3000
 ```
 

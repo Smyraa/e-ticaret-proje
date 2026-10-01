@@ -1,7 +1,7 @@
-// Örnek (temsili) ürünleri ve örnek görselleri hazırlar. Tekrar çalıştırılabilir.
+// Örnek (temsili) ürünleri ve örnek görselleri (ürün görselleri + ana sayfa görseli) hazırlar. Tekrar çalıştırılabilir.
 import path from "node:path";
 import { MongoClient } from "mongodb";
-import { createSampleImages } from "./sample-images.mjs";
+import { createHeroImage, createSampleImages } from "./sample-images.mjs";
 
 const uri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/taura";
 
@@ -21,7 +21,9 @@ const products = [
 ];
 
 // Çizim örnek görselleri media/ klasörüne yazılır; veritabanında yalnızca dosya adı tutulur.
-const files = await createSampleImages(path.join(process.cwd(), "media"));
+const mediaDir = path.join(process.cwd(), "media");
+const files = await createSampleImages(mediaDir);
+const heroImage = await createHeroImage(mediaDir);
 for (const product of products) {
   product.images = [files[product.slug]];
 }
@@ -32,7 +34,9 @@ try {
   const collection = client.db().collection("products");
   await collection.deleteMany({ sample: true });
   await collection.insertMany(products);
-  console.log(`${products.length} örnek ürün ve ${products.length} örnek görsel yazıldı.`);
+  // Ana sayfa görselinin adı ayarlarda tutulur; diğer ayarlara dokunulmaz.
+  await client.db().collection("settings").updateOne({ _id: "site" }, { $set: { heroImage } }, { upsert: true });
+  console.log(`${products.length} örnek ürün, ${products.length} örnek görsel ve ana sayfa görseli yazıldı.`);
 } finally {
   await client.close();
 }
