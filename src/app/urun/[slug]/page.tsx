@@ -56,7 +56,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
       <ProductJsonLd product={product} />
       <Link
         href="/koleksiyon"
-        className="text-xs tracking-widest text-muted uppercase transition hover:text-primary"
+        className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
       >
         ← Koleksiyona dön
       </Link>

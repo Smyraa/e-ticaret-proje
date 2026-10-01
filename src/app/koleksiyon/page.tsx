@@ -16,7 +16,7 @@ export const metadata = pageMetadata(
 );
 
 const field =
-  "w-full rounded-md border border-line bg-paper px-4 py-3 text-sm outline-none transition focus:border-primary";
+  "w-full rounded-md border border-field bg-paper px-4 py-3 text-sm transition focus:border-primary";
 
 // İlk satırdaki kartlar ekranın üstünde olduğundan görselleri tembel yüklenmez.
 const FIRST_ROW = 4;
@@ -90,7 +90,7 @@ export default async function CollectionPage({
 
         <button
           type="submit"
-          className="bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+          className="min-h-11 bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
         >
           Uygula
         </button>

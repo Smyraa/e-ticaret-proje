@@ -10,7 +10,7 @@ import type { Product } from "@/lib/products";
 import { SHIPPING_FEE, shippingLabel } from "@/lib/shipping";
 import { useReady } from "@/lib/use-ready";
 
-const inputClass = "mt-2 w-full rounded-md border border-line bg-paper p-3 text-sm";
+const inputClass = "mt-2 w-full rounded-md border border-field bg-paper p-3 text-sm";
 
 type FieldProps = {
   label: string;
@@ -57,7 +57,7 @@ export function CheckoutView({ products }: { products: Product[] }) {
         <p>Sepetinizde siparişe uygun ürün yok. Ödeme için stokta olan bir ürün eklemelisiniz.</p>
         <Link
           href="/koleksiyon"
-          className="mt-4 inline-block bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+          className="mt-4 inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
         >
           Koleksiyona git
         </Link>
@@ -158,7 +158,7 @@ export function CheckoutView({ products }: { products: Product[] }) {
           <h2 className="font-display text-2xl">Sipariş özeti</h2>
           <Link
             href="/sepet"
-            className="text-xs tracking-widest text-muted uppercase underline transition hover:text-primary"
+            className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase underline transition hover:text-primary"
           >
             Sepeti düzenle
           </Link>

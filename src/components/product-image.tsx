@@ -30,7 +30,7 @@ export function ProductImage({ product, sizes, className = "", preload, eager, b
           className="object-cover"
         />
       ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-xs text-muted">
+        <span className="absolute inset-0 flex items-center justify-center text-xs text-ink">
           Fotoğraf yakında
         </span>
       )}

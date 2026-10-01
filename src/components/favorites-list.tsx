@@ -27,7 +27,7 @@ export function FavoritesList({ products }: { products: Product[] }) {
         <p>Henüz favoriniz yok. Beğendiğiniz ürünlerin kalp simgesine basarak buraya ekleyebilirsiniz.</p>
         <Link
           href="/koleksiyon"
-          className="mt-4 inline-block bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+          className="mt-4 inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
         >
           Koleksiyona git
         </Link>

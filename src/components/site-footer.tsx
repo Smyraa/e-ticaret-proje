@@ -29,8 +29,8 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-line">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-          <div>
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+          <div className="col-span-2 sm:col-span-1">
             <p className="font-display text-2xl tracking-[0.16em]">TAURA</p>
             <p className="text-[11px] tracking-[0.3em] text-muted uppercase">Tesbihçilik</p>
           </div>
@@ -43,7 +43,7 @@ export function SiteFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="inline-block py-1 text-sm transition hover:text-primary"
+                      className="inline-flex min-h-11 min-w-11 items-center text-sm transition hover:text-primary"
                     >
                       {link.label}
                     </Link>

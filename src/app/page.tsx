@@ -45,7 +45,7 @@ export default async function Home() {
           <p className="max-w-md text-muted">Tesbih koleksiyonumuzu keşfedin.</p>
           <Link
             href="/koleksiyon"
-            className="inline-block bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+            className="inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
           >
             Koleksiyonu gör
           </Link>
@@ -62,7 +62,7 @@ export default async function Home() {
               className="object-cover"
             />
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center text-sm text-muted">
+            <span className="absolute inset-0 flex items-center justify-center text-sm text-ink">
               Fotoğraf yakında
             </span>
           )}
@@ -75,7 +75,7 @@ export default async function Home() {
             <h2 className="font-display text-3xl">Koleksiyon</h2>
             <Link
               href="/koleksiyon"
-              className="text-xs tracking-widest text-muted uppercase transition hover:text-primary"
+              className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
             >
               Tümünü gör →
             </Link>

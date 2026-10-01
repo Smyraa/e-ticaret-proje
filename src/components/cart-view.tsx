@@ -29,7 +29,7 @@ export function CartView({ products }: { products: Product[] }) {
         <p>Sepetiniz boş. Beğendiğiniz ürünleri ürün sayfasından sepete ekleyebilirsiniz.</p>
         <Link
           href="/koleksiyon"
-          className="mt-4 inline-block bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+          className="mt-4 inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
         >
           Koleksiyona git
         </Link>
@@ -97,7 +97,7 @@ export function CartView({ products }: { products: Product[] }) {
                 <button
                   type="button"
                   onClick={() => removeFromCart(product.slug)}
-                  className="-ml-2 px-2 py-2 text-xs tracking-widest text-muted uppercase underline transition hover:text-primary"
+                  className="-ml-2 inline-flex min-h-11 items-center px-2 text-xs tracking-widest text-muted uppercase underline transition hover:text-primary"
                   aria-label={`Sepetten kaldır: ${product.name}`}
                 >
                   Kaldır
@@ -151,7 +151,7 @@ export function CartView({ products }: { products: Product[] }) {
                 maxLength={NOTE_MAX}
                 value={cart.note}
                 onChange={(event) => setNote(event.target.value)}
-                className="mt-2 w-full resize-y rounded-md border border-line bg-paper p-3 text-sm"
+                className="mt-2 w-full resize-y rounded-md border border-field bg-paper p-3 text-sm"
               />
               <p className="mt-1 text-right text-xs text-muted">
                 {cart.note.length}/{NOTE_MAX}

@@ -26,7 +26,7 @@ export default async function CheckoutPage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <Link
         href="/sepet"
-        className="text-xs tracking-widest text-muted uppercase transition hover:text-primary"
+        className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
       >
         ← Sepete dön
       </Link>

@@ -11,7 +11,7 @@ export default function NotFound() {
       <p className="mt-4 text-muted">Aradığınız sayfa yok ya da taşınmış olabilir.</p>
       <Link
         href="/"
-        className="mt-8 inline-block bg-espresso px-8 py-3 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+        className="mt-8 inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
       >
         Ana sayfaya dön
       </Link>

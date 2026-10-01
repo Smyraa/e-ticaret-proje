@@ -49,11 +49,11 @@ export default function FaqPage() {
     <StaticPage title="Sıkça sorulan sorular">
       <div className="divide-y divide-line border-y border-line">
         {questions.map(({ question, answer }) => (
-          <details key={question} className="py-4">
-            <summary className="cursor-pointer font-semibold text-ink marker:text-primary">
+          <details key={question}>
+            <summary className="cursor-pointer py-4 font-semibold text-ink marker:text-primary">
               {question}
             </summary>
-            <p className="mt-2">{answer}</p>
+            <p className="-mt-2 pb-4">{answer}</p>
           </details>
         ))}
       </div>
