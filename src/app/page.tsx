@@ -1,14 +1,9 @@
+import Link from "next/link";
+import { formatPrice, stockText } from "@/lib/format";
 import { getProducts, type Product } from "@/lib/products";
 
 // Ürünler her istekte MongoDB'den okunur.
 export const dynamic = "force-dynamic";
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("tr-TR", {
-    style: "currency",
-    currency: "TRY",
-    maximumFractionDigits: 0,
-  }).format(price);
 
 async function loadProducts(): Promise<{ products: Product[]; failed: boolean }> {
   try {
@@ -59,25 +54,28 @@ export default async function Home() {
           ) : (
             <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {products.map((product) => (
-                <li key={product.slug} className="flex flex-col rounded-lg bg-paper p-4 shadow-sm">
-                  <div className="relative mb-4 flex aspect-[4/5] items-center justify-center rounded-md bg-gradient-to-br from-sand to-soft text-xs text-muted">
-                    Fotoğraf yakında
-                    {product.sample && (
-                      <span className="absolute top-3 left-3 rounded-sm bg-espresso px-2 py-1 text-[10px] tracking-wider text-paper uppercase">
-                        Örnek
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] tracking-widest text-muted uppercase">
-                    {product.material}
-                  </p>
-                  <h3 className="mt-1 text-lg font-semibold">{product.name}</h3>
-                  <p className="mt-auto pt-4 font-display text-2xl">
-                    {formatPrice(product.price)}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {product.stock > 0 ? `Stokta ${product.stock} adet` : "Tükendi"}
-                  </p>
+                <li key={product.slug}>
+                  <Link
+                    href={`/urun/${product.slug}`}
+                    className="flex h-full flex-col rounded-lg bg-paper p-4 shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="relative mb-4 flex aspect-[4/5] items-center justify-center rounded-md bg-gradient-to-br from-sand to-soft text-xs text-muted">
+                      Fotoğraf yakında
+                      {product.sample && (
+                        <span className="absolute top-3 left-3 rounded-sm bg-espresso px-2 py-1 text-[10px] tracking-wider text-paper uppercase">
+                          Örnek
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] tracking-widest text-muted uppercase">
+                      {product.material}
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold">{product.name}</h3>
+                    <p className="mt-auto pt-4 font-display text-2xl">
+                      {formatPrice(product.price)}
+                    </p>
+                    <p className="text-xs text-muted">{stockText(product.stock)}</p>
+                  </Link>
                 </li>
               ))}
             </ul>
