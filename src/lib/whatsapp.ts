@@ -14,6 +14,10 @@ export const whatsappNumber = configured || PLACEHOLDER_NUMBER;
 // Numara henüz tanımlanmadıysa true: arayüzde demo uyarısı gösterilir.
 export const usesPlaceholderNumber = whatsappNumber === PLACEHOLDER_NUMBER;
 
+// Yer tutucu numara kullanılırken WhatsApp düğmelerinin altında gösterilen demo uyarısı.
+export const placeholderNumberNote =
+  "Demo sürümünde WhatsApp numarası henüz tanımlı değil; WhatsApp numaranın geçersiz olduğunu söyleyebilir.";
+
 // wa.me: WhatsApp'ın herkese açık kısayol adresi. Tıklayınca WhatsApp açılır, mesaj kutusu hazır yazılı gelir.
 // Mesajdaki boşluk ve Türkçe harfler adreste kodlanır (encodeURIComponent).
 export function whatsappLink(message: string): string {
