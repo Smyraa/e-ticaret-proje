@@ -1,6 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
+import { mediaUrl } from "@/lib/media";
 import { getProducts, type Product } from "@/lib/products";
+import { getSiteSettings, type SiteSettings } from "@/lib/settings";
 
 // Ürünler her istekte MongoDB'den okunur.
 export const dynamic = "force-dynamic";
@@ -17,8 +20,18 @@ async function loadProducts(): Promise<{ products: Product[]; failed: boolean }>
   }
 }
 
+// Ayarlar okunamazsa sayfa yine açılır; ana sayfa görseli yerine yer tutucu gösterilir.
+async function loadSettings(): Promise<SiteSettings> {
+  try {
+    return await getSiteSettings();
+  } catch (error) {
+    console.error("Site ayarları okunamadı", error);
+    return {};
+  }
+}
+
 export default async function Home() {
-  const { products, failed } = await loadProducts();
+  const [{ products, failed }, settings] = await Promise.all([loadProducts(), loadSettings()]);
 
   return (
     <>
@@ -37,8 +50,22 @@ export default async function Home() {
             Koleksiyonu gör
           </Link>
         </div>
-        <div className="flex aspect-[4/5] items-center justify-center rounded-xl bg-gradient-to-br from-sand to-soft text-sm text-muted">
-          Fotoğraf yakında
+        <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-gradient-to-br from-sand to-soft">
+          {settings.heroImage ? (
+            // Süs amaçlı çizim: ekran okuyucuya okunmaz (boş alt metin).
+            <Image
+              src={mediaUrl(settings.heroImage)}
+              alt=""
+              fill
+              preload
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-sm text-muted">
+              Fotoğraf yakında
+            </span>
+          )}
         </div>
       </section>
 
