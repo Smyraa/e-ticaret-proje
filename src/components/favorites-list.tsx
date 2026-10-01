@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useFavorites } from "@/lib/favorites";
 import type { Product } from "@/lib/products";
-
-const subscribeNone = () => () => {};
-
-// Sunucuda ve ilk çizimde false, tarayıcıda hazır olunca true.
-// Favoriler okunmadan "favoriniz yok" iletisi bir an görünmesin diye.
-const useReady = () => useSyncExternalStore(subscribeNone, () => true, () => false);
+import { useReady } from "@/lib/use-ready";
 
 // Sunucu tüm ürünleri verir (sayıları az); hangilerinin favori olduğunu tarayıcı bilir.
 export function FavoritesList({ products }: { products: Product[] }) {
