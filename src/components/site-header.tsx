@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { cartCount, useCart } from "@/lib/cart";
 import { useFavorites } from "@/lib/favorites";
+import { BagIcon } from "./bag-icon";
 import { HeartIcon } from "./heart-icon";
 
-// Sepet simgesi kendi adımında eklenecek; "Atölye" ve "İletişim" sabit sayfalar hazır olunca.
+// "Atölye" ve "İletişim" bağlantıları sabit sayfalar hazır olunca eklenecek.
 const links = [
   { href: "/koleksiyon", label: "Koleksiyon" },
   { href: "/koleksiyon#q", label: "Ara" }, // koleksiyon sayfasındaki arama kutusuna götürür
@@ -20,10 +22,12 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const favoriteCount = useFavorites().length;
+  const cart = useCart();
+  const cartQuantity = cartCount(cart);
 
   return (
     <header className="border-b border-line">
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-6 py-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 py-6">
         <div>
           <nav className="hidden items-center gap-8 md:flex" aria-label="Ana menü">
             {links.map((link) => {
@@ -69,14 +73,14 @@ export function SiteHeader() {
         </div>
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
-          <p className="font-display text-3xl tracking-[0.22em]">TAURA</p>
-          <p className="-mt-1 text-[11px] tracking-[0.38em] text-muted uppercase">
+          <p className="font-display text-3xl tracking-[0.16em] sm:tracking-[0.22em]">TAURA</p>
+          <p className="-mt-1 text-[11px] tracking-[0.3em] text-muted uppercase sm:tracking-[0.38em]">
             Tesbihçilik
           </p>
         </Link>
 
-        {/* Sağ taraf: favoriler (sepet simgesi sonraki adımda buraya eklenecek) */}
-        <div className="flex items-center justify-end">
+        {/* Sağ taraf: favoriler (sayı rozeti) ve sepet (sepet doluyken nokta) */}
+        <div className="-mr-2.5 flex items-center justify-end">
           <Link
             href="/favoriler"
             aria-label={
@@ -84,7 +88,7 @@ export function SiteHeader() {
             }
             aria-current={pathname === "/favoriler" ? "page" : undefined}
             onClick={() => setOpen(false)}
-            className={`relative -mr-2.5 flex h-11 w-11 items-center justify-center transition hover:text-primary ${
+            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
               pathname === "/favoriler" ? "text-primary" : "text-ink"
             }`}
           >
@@ -96,6 +100,24 @@ export function SiteHeader() {
               >
                 {favoriteCount}
               </span>
+            )}
+          </Link>
+
+          <Link
+            href="/sepet"
+            aria-label={cartQuantity > 0 ? `Sepetim, ${cartQuantity} ürün` : "Sepetim"}
+            aria-current={pathname === "/sepet" ? "page" : undefined}
+            onClick={() => setOpen(false)}
+            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
+              pathname === "/sepet" ? "text-primary" : "text-ink"
+            }`}
+          >
+            <BagIcon />
+            {cart.items.length > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-paper"
+              />
             )}
           </Link>
         </div>
