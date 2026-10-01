@@ -8,10 +8,11 @@ type Props = {
   className?: string;
   preload?: boolean; // sayfanın en önemli (LCP) görseli için: önceden yüklenir
   eager?: boolean; // ekranın üstündeki görseller için: tembel yüklenmez
+  badge?: boolean; // örnek ürünlerde "Örnek" etiketi (küçük önizlemelerde kapatılır)
 };
 
 // Ürünün ana görseli (4:5). Görsel yoksa yer tutucu gösterilir; örnek ürünlerde "Örnek" etiketi çıkar.
-export function ProductImage({ product, sizes, className = "", preload, eager }: Props) {
+export function ProductImage({ product, sizes, className = "", preload, eager, badge = true }: Props) {
   const file = product.images?.[0];
 
   return (
@@ -33,7 +34,7 @@ export function ProductImage({ product, sizes, className = "", preload, eager }:
           Fotoğraf yakında
         </span>
       )}
-      {product.sample && (
+      {badge && product.sample && (
         <span className="absolute top-3 left-3 rounded-sm bg-espresso px-2 py-1 text-[10px] tracking-wider text-paper uppercase">
           Örnek
         </span>
