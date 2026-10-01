@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductActions } from "@/components/product-actions";
 import { ProductImage } from "@/components/product-image";
+import { ProductJsonLd } from "@/components/product-json-ld";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { formatPrice, stockText } from "@/lib/format";
+import { pageMetadata } from "@/lib/metadata";
 import { getProductBySlug, type Product } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +17,12 @@ export async function generateMetadata({
   const { slug } = await params;
   try {
     const product = await getProductBySlug(slug);
-    return { title: product ? `${product.name} · TAURA Tesbihçilik` : "Ürün bulunamadı" };
+    if (!product) return { title: "Ürün bulunamadı" };
+    const sample = product.sample ? " Örnek ürün (demo)." : "";
+    return pageMetadata(
+      product.name,
+      `${product.name}. Malzeme: ${product.material}. Ölçü: ${product.size}. Ağırlık: ${product.weight}.${sample}`,
+    );
   } catch {
     return { title: "TAURA Tesbihçilik" };
   }
@@ -46,6 +53,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
+      <ProductJsonLd product={product} />
       <Link
         href="/koleksiyon"
         className="text-xs tracking-widest text-muted uppercase transition hover:text-primary"
