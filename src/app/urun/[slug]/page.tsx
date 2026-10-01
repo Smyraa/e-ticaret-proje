@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProductImage } from "@/components/product-image";
 import { formatPrice, stockText } from "@/lib/format";
 import { getProductBySlug, type Product } from "@/lib/products";
 
@@ -51,14 +52,12 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
       </Link>
 
       <div className="mt-8 grid gap-10 md:grid-cols-2">
-        <div className="relative flex aspect-[4/5] items-center justify-center rounded-xl bg-gradient-to-br from-sand to-soft text-sm text-muted">
-          Fotoğraf yakında
-          {product.sample && (
-            <span className="absolute top-4 left-4 rounded-sm bg-espresso px-2 py-1 text-[10px] tracking-wider text-paper uppercase">
-              Örnek
-            </span>
-          )}
-        </div>
+        <ProductImage
+          product={product}
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="rounded-xl"
+          priority
+        />
 
         <div>
           <p className="text-[11px] tracking-widest text-muted uppercase">

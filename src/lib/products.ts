@@ -9,6 +9,7 @@ export type Product = {
   weight: string; // ör. "42 g"
   craft: string; // işçilik bilgisi
   story: string; // zanaat / koleksiyon hikâyesi
+  images: string[]; // media/ klasöründeki dosya adları (ilki ana görsel)
   price: number; // TL
   stock: number;
   sample: boolean; // örnek (temsili) içerik

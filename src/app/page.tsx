@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProductImage } from "@/components/product-image";
 import { formatPrice, stockText } from "@/lib/format";
 import { getProducts, type Product } from "@/lib/products";
 
@@ -59,14 +60,11 @@ export default async function Home() {
                     href={`/urun/${product.slug}`}
                     className="flex h-full flex-col rounded-lg bg-paper p-4 shadow-sm transition hover:shadow-md"
                   >
-                    <div className="relative mb-4 flex aspect-[4/5] items-center justify-center rounded-md bg-gradient-to-br from-sand to-soft text-xs text-muted">
-                      Fotoğraf yakında
-                      {product.sample && (
-                        <span className="absolute top-3 left-3 rounded-sm bg-espresso px-2 py-1 text-[10px] tracking-wider text-paper uppercase">
-                          Örnek
-                        </span>
-                      )}
-                    </div>
+                    <ProductImage
+                      product={product}
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="mb-4 rounded-md"
+                    />
                     <p className="text-[11px] tracking-widest text-muted uppercase">
                       {product.material}
                     </p>
