@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { ProductImage } from "@/components/product-image";
-import { formatPrice, stockText } from "@/lib/format";
+import { ProductCard } from "@/components/product-card";
 import { getProducts, type Product } from "@/lib/products";
 
 // Ürünler her istekte MongoDB'den okunur.
@@ -56,24 +54,7 @@ export default async function Home() {
             <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {products.map((product) => (
                 <li key={product.slug}>
-                  <Link
-                    href={`/urun/${product.slug}`}
-                    className="flex h-full flex-col rounded-lg bg-paper p-4 shadow-sm transition hover:shadow-md"
-                  >
-                    <ProductImage
-                      product={product}
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      className="mb-4 rounded-md"
-                    />
-                    <p className="text-[11px] tracking-widest text-muted uppercase">
-                      {product.material}
-                    </p>
-                    <h3 className="mt-1 text-lg font-semibold">{product.name}</h3>
-                    <p className="mt-auto pt-4 font-display text-2xl">
-                      {formatPrice(product.price)}
-                    </p>
-                    <p className="text-xs text-muted">{stockText(product.stock)}</p>
-                  </Link>
+                  <ProductCard product={product} />
                 </li>
               ))}
             </ul>
