@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
 import { NOTE_MAX, removeFromCart, setGift, setNote, setQuantity, useCart } from "@/lib/cart";
+import { cartLines, linesSubtotal } from "@/lib/cart-lines";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/lib/products";
+import { shippingNote } from "@/lib/shipping";
 import { useReady } from "@/lib/use-ready";
 
 const stepButton =
@@ -19,13 +21,7 @@ export function CartView({ products }: { products: Product[] }) {
     return <p className="mt-8 text-sm text-muted">Yükleniyor…</p>;
   }
 
-  const bySlug = new Map(products.map((product) => [product.slug, product]));
-  // Silinmiş ürünlere ait eski kayıtlar atlanır; stok sonradan düştüyse adet stokla sınırlanır.
-  const lines = cart.items.flatMap((item) => {
-    const product = bySlug.get(item.slug);
-    if (!product) return [];
-    return [{ product, requested: item.qty, qty: Math.min(item.qty, product.stock) }];
-  });
+  const lines = cartLines(cart, products);
 
   if (lines.length === 0) {
     return (
@@ -41,7 +37,8 @@ export function CartView({ products }: { products: Product[] }) {
     );
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.qty, 0);
+  const subtotal = linesSubtotal(lines);
+  const canCheckout = lines.some((line) => line.qty > 0); // en az bir ürün alınabiliyorsa ödemeye geçilir
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start">
@@ -127,7 +124,7 @@ export function CartView({ products }: { products: Product[] }) {
             </div>
           )}
         </dl>
-        <p className="mt-2 text-xs text-muted">Kargo ücreti ödeme adımında eklenir.</p>
+        <p className="mt-2 text-xs text-muted">{shippingNote}</p>
 
         <div className="mt-6 border-t border-line pt-6">
           <label className="flex items-start gap-3 text-sm">
@@ -163,14 +160,25 @@ export function CartView({ products }: { products: Product[] }) {
           )}
         </div>
 
-        <button
-          type="button"
-          disabled
-          className="mt-6 min-h-11 w-full bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Ödemeye geç
-        </button>
-        <p className="mt-3 text-xs text-muted">Ödeme sayfası henüz hazır değil (demo).</p>
+        {canCheckout ? (
+          <Link
+            href="/odeme"
+            className="mt-6 flex min-h-11 w-full items-center justify-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+          >
+            Ödemeye geç
+          </Link>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled
+              className="mt-6 min-h-11 w-full bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Ödemeye geç
+            </button>
+            <p className="mt-3 text-xs text-muted">Sipariş vermek için sepette stokta olan bir ürün olmalı.</p>
+          </>
+        )}
       </aside>
     </div>
   );
