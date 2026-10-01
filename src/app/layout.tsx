@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { EB_Garamond, Manrope } from "next/font/google";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 const display = EB_Garamond({
@@ -29,14 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Demo sürümü · Ürünler ve fiyatlar örnek içeriktir
         </div>
 
-        <header className="border-b border-line py-6 text-center">
-          <Link href="/" className="inline-block">
-            <p className="font-display text-3xl tracking-[0.22em]">TAURA</p>
-            <p className="-mt-1 text-[11px] tracking-[0.38em] text-muted uppercase">
-              Tesbihçilik
-            </p>
-          </Link>
-        </header>
+        <SiteHeader />
 
         <main className="flex-1">{children}</main>
 

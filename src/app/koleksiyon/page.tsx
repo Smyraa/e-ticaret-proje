@@ -17,6 +17,9 @@ export const metadata: Metadata = {
 const field =
   "w-full rounded-md border border-line bg-paper px-4 py-3 text-sm outline-none transition focus:border-primary";
 
+// İlk satırdaki kartlar ekranın üstünde olduğundan görselleri tembel yüklenmez.
+const FIRST_ROW = 4;
+
 // Adres çubuğundaki değer tek ya da birden çok olabilir; ilkini al.
 const first = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value) ?? "";
@@ -60,7 +63,7 @@ export default async function CollectionPage({
           name="q"
           defaultValue={q}
           placeholder="Ara (ör. kuka, kehribar)"
-          className={field}
+          className={`${field} scroll-mt-24`}
         />
 
         <label className="sr-only" htmlFor="malzeme">
@@ -117,9 +120,9 @@ export default async function CollectionPage({
             </p>
           ) : (
             <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <li key={product.slug}>
-                  <ProductCard product={product} />
+                  <ProductCard product={product} eager={index < FIRST_ROW} />
                 </li>
               ))}
             </ul>
