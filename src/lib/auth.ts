@@ -13,7 +13,8 @@ import { verifyAgainstDummy, verifyPassword } from "./password";
 
 export const SESSION_COOKIE = "taura_oturum";
 const SESSION_DAYS = 7;
-const MAX_FAILURES = 5; // art arda yanlış deneme sınırı
+const MAX_FAILURES = 5; // aynı e-posta + aynı bağlantı adresinden art arda yanlış deneme sınırı
+const MAX_FAILURES_PER_EMAIL = 20; // adrese bakmadan, aynı e-posta için sınır (bkz. clientAddress)
 const LOCK_MINUTES = 15; // sınıra ulaşınca bekleme süresi
 
 type UserDoc = { _id: ObjectId; email: string; passwordHash: string; role: "admin"; createdAt: Date };
@@ -97,18 +98,24 @@ export async function endSession() {
   store.delete(SESSION_COOKIE);
 }
 
-// Deneme sınırı anahtarı: e-posta + bağlantı adresi. Canlıda Nginx adresi X-Forwarded-For ile iletir.
-async function attemptKey(email: string): Promise<string> {
+// Bağlantı adresi. Canlıda Nginx, gördüğü adresi X-Forwarded-For başlığının SONUNA ekler; baştaki değerleri
+// istemci kendisi yazabilir (taklit). Bu yüzden sondaki alınır. Yine de adres yalnızca ek bir ipucudur:
+// başlık hiç güvenilmez bir yoldan gelse bile e-posta başına sayaç (MAX_FAILURES_PER_EMAIL) devrededir.
+async function clientAddress(): Promise<string> {
   const forwarded = (await headers()).get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "yerel";
-  return `${email}|${ip}`;
+  const last = forwarded?.split(",").at(-1)?.trim();
+  return last ? last.slice(0, 64) : "yerel";
 }
 
-// Sınıra ulaşıldıysa kalan dakika, değilse 0.
-async function lockedMinutes(key: string): Promise<number> {
+// Yanlış deneme sayaçlarının anahtarları (loginAttempts koleksiyonunda; süresi dolunca MongoDB siler).
+const addressKey = (email: string, address: string) => `giris|${email}|${address}`;
+const emailKey = (email: string) => `giris-eposta|${email}`;
+
+// Sayaç sınıra ulaştıysa kalan dakika, değilse 0.
+async function lockedMinutes(key: string, limit: number): Promise<number> {
   const db = await getDb();
   const attempt = await db.collection<AttemptDoc>("loginAttempts").findOne({ _id: key });
-  if (!attempt || attempt.resetAt <= new Date() || attempt.failures < MAX_FAILURES) return 0;
+  if (!attempt || attempt.resetAt <= new Date() || attempt.failures < limit) return 0;
   return Math.max(1, Math.ceil((attempt.resetAt.getTime() - Date.now()) / 60000));
 }
 
@@ -127,6 +134,13 @@ async function recordFailure(key: string) {
   }
 }
 
+async function clearFailures(key: string) {
+  const db = await getDb();
+  await db.collection<AttemptDoc>("loginAttempts").deleteOne({ _id: key });
+}
+
+const lockedMessage = (minutes: number) => `Çok fazla hatalı deneme. Yaklaşık ${minutes} dakika sonra tekrar deneyin.`;
+
 export type LoginResult = { ok: true } | { ok: false; message: string };
 
 export async function loginWithPassword(email: string, password: string): Promise<LoginResult> {
@@ -136,11 +150,13 @@ export async function loginWithPassword(email: string, password: string): Promis
   }
 
   await ensureIndexes();
-  const key = await attemptKey(email);
-  const locked = await lockedMinutes(key);
-  if (locked > 0) {
-    return { ok: false, message: `Çok fazla hatalı deneme. Yaklaşık ${locked} dakika sonra tekrar deneyin.` };
-  }
+  const byAddress = addressKey(email, await clientAddress());
+  const byEmail = emailKey(email);
+  const locked = Math.max(
+    await lockedMinutes(byAddress, MAX_FAILURES),
+    await lockedMinutes(byEmail, MAX_FAILURES_PER_EMAIL),
+  );
+  if (locked > 0) return { ok: false, message: lockedMessage(locked) };
 
   const db = await getDb();
   const user = await db.collection<UserDoc>("users").findOne({ email });
@@ -152,11 +168,13 @@ export async function loginWithPassword(email: string, password: string): Promis
   }
 
   if (!user || !valid) {
-    await recordFailure(key);
+    await Promise.all([recordFailure(byAddress), recordFailure(byEmail)]);
     return { ok: false, message: "E-posta ya da parola hatalı." };
   }
 
-  await db.collection<AttemptDoc>("loginAttempts").deleteOne({ _id: key });
+  // Başarılı girişte yalnız bu adresin sayacı sıfırlanır; e-posta sayacı kendi süresinde biter
+  // (yoksa meşru bir girişle başka birinin biriken kaba kuvvet denemeleri de silinirdi).
+  await clearFailures(byAddress);
   await createSession(user._id);
   return { ok: true };
 }
