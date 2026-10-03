@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductActions } from "@/components/product-actions";
-import { ProductImage } from "@/components/product-image";
+import { ProductGallery } from "@/components/product-gallery";
 import { ProductJsonLd } from "@/components/product-json-ld";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { formatPrice, stockText } from "@/lib/format";
@@ -68,12 +68,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
       </Link>
 
       <div className="mt-8 grid gap-10 md:grid-cols-2">
-        <ProductImage
-          product={product}
-          sizes="(min-width: 768px) 50vw, 100vw"
-          className="rounded-xl"
-          preload
-        />
+        <ProductGallery product={product} />
 
         <div>
           <p className="text-[11px] tracking-widest text-muted uppercase">

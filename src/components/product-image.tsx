@@ -4,6 +4,7 @@ import type { Product } from "@/lib/products";
 
 type Props = {
   product: Product;
+  index?: number; // hangi görsel (varsayılan 0 = ana görsel)
   sizes: string; // tarayıcıya, görselin ekranda ne kadar yer kaplayacağını söyler
   className?: string;
   preload?: boolean; // sayfanın en önemli (LCP) görseli için: önceden yüklenir
@@ -12,8 +13,8 @@ type Props = {
 };
 
 // Ürünün ana görseli (4:5). Görsel yoksa yer tutucu gösterilir; örnek ürünlerde "Örnek" etiketi çıkar.
-export function ProductImage({ product, sizes, className = "", preload, eager, badge = true }: Props) {
-  const file = product.images?.[0];
+export function ProductImage({ product, index = 0, sizes, className = "", preload, eager, badge = true }: Props) {
+  const file = product.images?.[index];
 
   return (
     <div
@@ -22,7 +23,7 @@ export function ProductImage({ product, sizes, className = "", preload, eager, b
       {file ? (
         <Image
           src={mediaUrl(file)}
-          alt={product.name}
+          alt={index > 0 ? `${product.name} (görsel ${index + 1})` : product.name}
           fill
           sizes={sizes}
           preload={preload}
