@@ -8,6 +8,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { formatPrice, stockText } from "@/lib/format";
 import { pageMetadata } from "@/lib/metadata";
 import { getProductBySlug, type Product } from "@/lib/products";
+import { getSiteSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
     );
   }
   if (!product) notFound();
+  const { whatsapp } = await getSiteSettings();
 
   // Ölçü, ağırlık ve işçilik isteğe bağlıdır; boş olanlar tabloda gösterilmez.
   const details = [
@@ -79,7 +81,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
 
           <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
-          <WhatsAppButton slug={product.slug} name={product.name} />
+          <WhatsAppButton slug={product.slug} name={product.name} whatsapp={whatsapp} />
 
           {product.story && (
             <p className="mt-6 leading-relaxed whitespace-pre-line text-muted">{product.story}</p>
