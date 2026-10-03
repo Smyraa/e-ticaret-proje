@@ -1,5 +1,6 @@
 import "server-only";
 import { getDb } from "./mongodb";
+import { IMAGE_LIMITS } from "./images";
 import type { ProductData } from "./product-form";
 import { NAME_COLLATION, toProduct, type Product, type ProductDoc } from "./products";
 import { slugify } from "./slug";
@@ -62,4 +63,58 @@ export async function updateProduct(slug: string, data: ProductData, sample: boo
   const products = await productsOf();
   const result = await products.updateOne({ slug }, { $set: { ...data, sample, updatedAt: new Date() } });
   return result.matchedCount === 1;
+}
+
+export type AddImageResult = "added" | "duplicate" | "full" | "missing";
+
+// Görsel adını ürünün listesinin sonuna ekler. Sınır ve tekrar denetimi tek sorguda yapılır (aynı anda iki yükleme
+// sınırı aşamaz). Sonuç neden eklenmediğini söyler.
+export async function addProductImage(slug: string, name: string): Promise<AddImageResult> {
+  const products = await productsOf();
+  const result = await products.updateOne(
+    {
+      slug,
+      images: { $ne: name },
+      $expr: { $lt: [{ $size: { $ifNull: ["$images", []] } }, IMAGE_LIMITS.maxCount] },
+    },
+    { $push: { images: name }, $set: { updatedAt: new Date() } },
+  );
+  if (result.modifiedCount === 1) return "added";
+
+  const doc = await products.findOne({ slug }, { projection: { images: 1 } });
+  if (!doc) return "missing";
+  return doc.images?.includes(name) ? "duplicate" : "full";
+}
+
+export type MoveImageOp = "up" | "down" | "main";
+
+// Görseli listede bir yukarı/aşağı kaydırır ya da başa alır (ilk görsel ana görseldir).
+// Görsel üründe yoksa ya da liste bu sırada başka yerden değiştiyse false döner.
+export async function moveProductImage(slug: string, name: string, op: MoveImageOp): Promise<boolean> {
+  const products = await productsOf();
+  const doc = await products.findOne({ slug }, { projection: { images: 1 } });
+  const images = doc?.images ?? [];
+
+  const from = images.indexOf(name);
+  if (from === -1) return false;
+  const to = op === "up" ? from - 1 : op === "down" ? from + 1 : 0;
+  if (to < 0 || to >= images.length || to === from) return true; // zaten orada
+
+  const next = [...images];
+  next.splice(from, 1);
+  next.splice(to, 0, name);
+  // Süzgeçteki dizi tam eşleşmeli: okuma ile yazma arasında liste değiştiyse hiçbir şey yazılmaz.
+  const result = await products.updateOne({ slug, images }, { $set: { images: next, updatedAt: new Date() } });
+  return result.matchedCount === 1;
+}
+
+// Görseli üründen çıkarır. unused: dosya başka hiçbir üründe kullanılmıyor, yani diskten silinebilir.
+export async function removeProductImage(slug: string, name: string): Promise<{ removed: boolean; unused: boolean }> {
+  const products = await productsOf();
+  const result = await products.updateOne(
+    { slug, images: name },
+    { $pull: { images: name }, $set: { updatedAt: new Date() } },
+  );
+  if (result.modifiedCount !== 1) return { removed: false, unused: false };
+  return { removed: true, unused: (await products.countDocuments({ images: name }, { limit: 1 })) === 0 };
 }
