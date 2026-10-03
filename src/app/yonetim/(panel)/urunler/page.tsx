@@ -1,20 +1,36 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice, stockText } from "@/lib/format";
-import { getProducts } from "@/lib/products";
+import { getAllProducts } from "@/lib/products-admin";
 
 export const metadata: Metadata = { title: "Ürünler · Yönetim · TAURA" };
 
-// Ürün listesi (yalnızca görüntüleme). Ekleme ve düzenleme sonraki adımda eklenir.
+const badgeClass = "ml-2 rounded-sm px-2 py-1 align-middle text-[10px] font-normal tracking-wider uppercase";
+// Satır sonundaki bağlantılar: dar ekranda iki bağlantı yan yana sığsın diye yazı biraz küçük.
+const actionLinkClass =
+  "inline-flex min-h-11 items-center text-[11px] tracking-wider uppercase underline transition md:text-xs md:tracking-widest";
+
+// Ürün listesi (taslaklar dahil). Ad ve "Düzenle" bağlantısı ürünü düzenleme sayfasına götürür.
 export default async function AdminProductsPage() {
   await requireAdmin();
-  const products = await getProducts();
+  const products = await getAllProducts();
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
-      <h1 className="font-display text-4xl">Ürünler</h1>
-      <p className="mt-3 text-sm text-muted">Toplam {products.length} ürün.</p>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div>
+          <h1 className="font-display text-4xl">Ürünler</h1>
+          <p className="mt-3 text-sm text-muted">Toplam {products.length} ürün.</p>
+        </div>
+        <Link
+          href="/yonetim/urunler/yeni"
+          className="inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+        >
+          Yeni ürün
+        </Link>
+      </div>
 
       {products.length === 0 ? (
         <p className="mt-8 rounded-lg bg-paper p-6 text-sm text-muted">Henüz ürün yok.</p>
@@ -30,12 +46,11 @@ export default async function AdminProductsPage() {
               <div className="min-w-0 flex-1 md:flex md:items-center md:gap-4">
                 <div className="min-w-0 md:flex-1">
                   <p className="text-sm font-semibold">
-                    {product.name}
-                    {product.sample && (
-                      <span className="ml-2 rounded-sm bg-espresso px-2 py-1 align-middle text-[10px] font-normal tracking-wider text-paper uppercase">
-                        Örnek
-                      </span>
-                    )}
+                    <Link href={`/yonetim/urunler/${product.slug}`} className="transition hover:text-primary hover:underline">
+                      {product.name}
+                    </Link>
+                    {product.sample && <span className={`${badgeClass} bg-espresso text-paper`}>Örnek</span>}
+                    {!product.published && <span className={`${badgeClass} border border-ink`}>Taslak</span>}
                   </p>
                   <p className="text-[11px] tracking-widest text-muted uppercase">{product.material}</p>
                 </div>
@@ -47,17 +62,24 @@ export default async function AdminProductsPage() {
                   >
                     {stockText(product.stock)}
                   </p>
-                  <a
-                    href={`/urun/${product.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase underline transition hover:text-primary"
+                  <Link
+                    href={`/yonetim/urunler/${product.slug}`}
+                    className={`${actionLinkClass} hover:text-primary`}
                   >
-                    Sitede gör
-                    <span className="sr-only">
-                      : {product.name} (yeni sekmede açılır)
-                    </span>
-                  </a>
+                    Düzenle
+                    <span className="sr-only">: {product.name}</span>
+                  </Link>
+                  {product.published && (
+                    <a
+                      href={`/urun/${product.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${actionLinkClass} text-muted hover:text-primary`}
+                    >
+                      Sitede gör
+                      <span className="sr-only">: {product.name} (yeni sekmede açılır)</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </li>

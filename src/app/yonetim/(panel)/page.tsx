@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { getProducts } from "@/lib/products";
+import { getAllProducts } from "@/lib/products-admin";
 
 // Yönetim ana sayfası: ürünlerin kısa özeti ve ürün listesine geçiş.
 export default async function AdminHomePage() {
   const admin = await requireAdmin();
-  const products = await getProducts();
+  const products = await getAllProducts();
 
-  const inStock = products.filter((product) => product.stock > 0).length;
+  const published = products.filter((product) => product.published).length;
+  const soldOut = products.filter((product) => product.stock === 0).length;
   const samples = products.filter((product) => product.sample).length;
   const stats = [
-    { label: "Toplam ürün", value: products.length },
-    { label: "Stokta", value: inStock },
-    { label: "Tükenen", value: products.length - inStock },
+    { label: "Yayında", value: published },
+    { label: "Taslak", value: products.length - published },
+    { label: "Tükenen", value: soldOut },
     { label: "Örnek ürün", value: samples },
   ];
 
@@ -39,12 +40,20 @@ export default async function AdminHomePage() {
         </p>
       )}
 
-      <Link
-        href="/yonetim/urunler"
-        className="mt-8 inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
-      >
-        Ürünleri gör
-      </Link>
+      <div className="mt-8 flex flex-wrap gap-4">
+        <Link
+          href="/yonetim/urunler"
+          className="inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+        >
+          Ürünleri gör
+        </Link>
+        <Link
+          href="/yonetim/urunler/yeni"
+          className="inline-flex min-h-11 items-center border border-espresso px-8 text-xs font-semibold tracking-widest uppercase transition hover:border-primary hover:text-primary"
+        >
+          Yeni ürün
+        </Link>
+      </div>
     </div>
   );
 }
