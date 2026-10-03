@@ -14,7 +14,7 @@ npm run dev    # http://localhost:3000
 
 Veritabanı adresi varsayılan olarak `mongodb://127.0.0.1:27017/taura`. Değiştirmek için `MONGODB_URI` ortam değişkenini kullanın.
 
-WhatsApp numarası için `NEXT_PUBLIC_WHATSAPP_NUMBER` ortam değişkenini kullanın (`.env.local` dosyasına, ülke koduyla ve artı/boşluk olmadan; örn. `905551112233`). Tanımlanmazsa geçersiz bir yer tutucu numara kullanılır. Değişkeni değiştirince geliştirme sunucusunu yeniden başlatın ya da uygulamayı yeniden derleyin.
+WhatsApp numarası, iletişim bilgileri ve kargo ücreti ortam değişkeniyle değil, yönetim panelindeki Site ayarları sayfasından girilir (aşağıya bakın). WhatsApp numarası girilmezse geçersiz bir yer tutucu numara kullanılır ve WhatsApp düğmelerinin altında demo uyarısı çıkar.
 
 Demo sürümü arama motorlarına kapalıdır (`noindex`, `/robots.txt` her şeyi engeller). Canlıya çıkarken `SITE_INDEXING=on` ve sitenin tam adresi için `SITE_URL` (örn. `https://ornek.com`) verilir; sonra uygulama yeniden derlenir.
 
@@ -29,6 +29,8 @@ npm run admin:create
 Parolayı değiştirmek ya da unutulan parolayı sıfırlamak için `npm run admin:reset`, hesapları listelemek için `npm run admin:list` kullanılır. Parola en az 12 karakter olmalı; art arda 5 yanlış girişten sonra 15 dakika beklenir. Oturum 7 gün sürer.
 
 Ürünler `/yonetim/urunler` sayfasında yönetilir: listeden ürün düzenlenir, "Yeni ürün" ile eklenir. Yeni ürün önce taslak olarak kaydedilir; "Yayında" kutusu işaretlenince sitede görünür, işaret kaldırılınca yeniden gizlenir. Ürünün adresi (`/urun/<ad>`) ilk kayıtta addan üretilir ve sonradan değişmez. Fiyat tam lira, stok tam sayıdır. `npm run seed` yalnızca örnek ürünleri (örnek işaretli olanları) yeniden yazar. Bir ürünü kalıcı olarak silmek için düzenleme sayfasının altındaki "Ürünü sil" kullanılır (görselleri de silinir, geri alınamaz); geçici olarak gizlemek için "Yayında" kutusunu kaldırmak yeterlidir. Canlıya çıkmadan önce Ürünler sayfasındaki "Örnek ürünleri sil" düğmesi tüm örnek ürünleri ve görsellerini tek seferde siler (gerçek ürünlere dokunmaz); `npm run seed` yeniden çalıştırılırsa gerçek bir ürünle çakışan örnek adresi varsa hiçbir şey yazmadan durur.
+
+Site ayarları `/yonetim/ayarlar` sayfasındadır: WhatsApp numarası, telefon, e-posta, adres, çalışma saatleri, kargo ücreti (tam lira, 0 = ücretsiz) ve ana sayfa görseli. Telefonlar "0555 111 22 33" gibi yazılır, kaydedilirken ülke koduyla tek biçime çevrilir. Boş bırakılan iletişim bilgisi sitede gösterilmez; ayarlar kaydedilince iletişim sayfası, alt bilgi, ürün sayfasındaki WhatsApp düğmesi, sepet/ödeme özeti ve SSS ile Kargo ve iade sayfaları hemen yeni değerleri kullanır. Ana sayfa görseli ürün görselleriyle aynı işlemden geçer (tür doğrulama, gizli bilgi silme, küçültme).
 
 ## Medya
 
