@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { mediaUrl } from "@/lib/media";
 import { getProducts, type Product } from "@/lib/products";
-import { getSiteSettings, type SiteSettings } from "@/lib/settings";
+import { getSiteSettings } from "@/lib/settings";
 
 // Ürünler her istekte MongoDB'den okunur.
 export const dynamic = "force-dynamic";
@@ -20,18 +20,9 @@ async function loadProducts(): Promise<{ products: Product[]; failed: boolean }>
   }
 }
 
-// Ayarlar okunamazsa sayfa yine açılır; ana sayfa görseli yerine yer tutucu gösterilir.
-async function loadSettings(): Promise<SiteSettings> {
-  try {
-    return await getSiteSettings();
-  } catch (error) {
-    console.error("Site ayarları okunamadı", error);
-    return {};
-  }
-}
-
 export default async function Home() {
-  const [{ products, failed }, settings] = await Promise.all([loadProducts(), loadSettings()]);
+  // Ayarlar okunamazsa getSiteSettings varsayılanları döner; sayfa yine açılır, görsel yerine yer tutucu görünür.
+  const [{ products, failed }, settings] = await Promise.all([loadProducts(), getSiteSettings()]);
 
   return (
     <>
