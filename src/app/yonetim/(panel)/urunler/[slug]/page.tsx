@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { valuesOf } from "@/lib/product-form";
 import { getProductForAdmin, listMaterials } from "@/lib/products-admin";
-import { saveProduct } from "../actions";
+import { changeImage, saveProduct } from "../actions";
 import { ProductForm } from "../edit-form";
+import { ImageManager } from "../image-manager";
 
 export const metadata: Metadata = { title: "Ürünü düzenle · Yönetim · TAURA" };
 
@@ -48,11 +49,14 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
       {eklendi && (
         <p role="status" className="mt-6 rounded-md bg-paper p-4 text-sm">
-          Ürün eklendi.
-          {!product.published && " Taslak olarak duruyor; hazır olunca “Yayında” kutusunu işaretleyip kaydedin."}
+          Ürün eklendi. Fotoğrafları aşağıdaki “Görseller” bölümünden ekleyebilirsiniz.
+          {!product.published && " Ürün taslak olarak duruyor; hazır olunca “Yayında” kutusunu işaretleyip kaydedin."}
         </p>
       )}
 
+      <ImageManager slug={product.slug} images={product.images} action={changeImage.bind(null, product.slug)} />
+
+      <h2 className="mt-12 font-display text-2xl">Ürün bilgileri</h2>
       <ProductForm
         action={saveProduct.bind(null, product.slug)}
         initial={valuesOf(product)}

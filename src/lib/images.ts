@@ -22,3 +22,6 @@ export function isSafeMediaName(name: unknown): name is string {
     /^[a-z0-9][a-z0-9._-]*\.(jpe?g|png|webp|avif)$/.test(name)
   );
 }
+
+// Görsel listesindeki işlem (yukarı, aşağı, ana görsel yap, sil) sonrası ekranda gösterilecek ileti.
+export type ImageActionState = { message?: string; error?: string } | undefined;

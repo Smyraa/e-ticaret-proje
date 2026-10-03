@@ -3,8 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { isSafeMediaName, type ImageActionState } from "@/lib/images";
+import { deleteMediaFile } from "@/lib/media-files";
 import { readProductForm, type ProductFormState } from "@/lib/product-form";
-import { getProductForAdmin, insertProduct, updateProduct } from "@/lib/products-admin";
+import {
+  getProductForAdmin,
+  insertProduct,
+  moveProductImage,
+  removeProductImage,
+  updateProduct,
+  type MoveImageOp,
+} from "@/lib/products-admin";
 
 const SAVE_FAILED = "Kaydedilemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
 const NOT_FOUND = "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün.";
@@ -55,4 +64,50 @@ export async function saveProduct(
 
   revalidatePath("/", "layout");
   return { values, saved: true };
+}
+
+const MOVES: Record<string, MoveImageOp> = { yukari: "up", asagi: "down", ana: "main" };
+const MOVE_DONE: Record<MoveImageOp, string> = { up: "Görsel bir yukarı alındı.", down: "Görsel bir aşağı alındı.", main: "Görsel ana görsel yapıldı." };
+
+// Görsel listesindeki bir düğmenin işlemi. Düğmenin değeri "<işlem>:<dosya adı>" biçimindedir (yukari, asagi, ana, sil).
+// Dosya adı formdan geldiği için güvenilmez: biçimi denetlenir ve yalnız bu ürünün listesinde varsa işlem yapılır.
+export async function changeImage(
+  slug: string,
+  _state: ImageActionState,
+  formData: FormData,
+): Promise<ImageActionState> {
+  await requireAdmin();
+
+  const command = formData.get("islem");
+  const split = typeof command === "string" ? command.indexOf(":") : -1;
+  if (typeof command !== "string" || split < 1) return { error: "Geçersiz işlem." };
+  const op = command.slice(0, split);
+  const name = command.slice(split + 1);
+  if (typeof slug !== "string" || !isSafeMediaName(name)) return { error: "Geçersiz görsel." };
+
+  try {
+    const product = await getProductForAdmin(slug);
+    if (!product?.images.includes(name)) return { error: "Bu görsel artık üründe yok. Sayfayı yenileyin." };
+
+    if (op === "sil") {
+      const { removed, unused } = await removeProductImage(slug, name);
+      if (!removed) return { error: "Görsel silinemedi. Sayfayı yenileyip yeniden deneyin." };
+      if (unused) await deleteMediaFile(name); // başka üründe kullanılmıyorsa dosya da diskten gider
+      revalidatePath("/", "layout");
+      return { message: "Görsel silindi." };
+    }
+
+    if (Object.hasOwn(MOVES, op)) {
+      const move = MOVES[op];
+      if (!(await moveProductImage(slug, name, move))) {
+        return { error: "Liste başka yerden değişmiş. Sayfayı yenileyip yeniden deneyin." };
+      }
+      revalidatePath("/", "layout");
+      return { message: MOVE_DONE[move] };
+    }
+  } catch (error) {
+    console.error("Görsel işlemi yapılamadı", error);
+    return { error: "İşlem yapılamadı. Biraz sonra yeniden deneyin." };
+  }
+  return { error: "Geçersiz işlem." };
 }
