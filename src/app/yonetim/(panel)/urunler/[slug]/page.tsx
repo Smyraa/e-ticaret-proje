@@ -1,0 +1,65 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/auth";
+import { valuesOf } from "@/lib/product-form";
+import { getProductForAdmin, listMaterials } from "@/lib/products-admin";
+import { saveProduct } from "../actions";
+import { ProductForm } from "../edit-form";
+
+export const metadata: Metadata = { title: "Ürünü düzenle · Yönetim · TAURA" };
+
+export default async function EditProductPage({ params, searchParams }: PageProps<"/yonetim/urunler/[slug]">) {
+  await requireAdmin();
+  const { slug } = await params;
+  const { eklendi } = await searchParams;
+
+  const product = await getProductForAdmin(slug);
+  if (!product) notFound();
+  const materials = await listMaterials();
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-6 py-10">
+      <Link
+        href="/yonetim/urunler"
+        className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
+      >
+        ← Ürünlere dön
+      </Link>
+      <h1 className="mt-4 font-display text-4xl">Ürünü düzenle</h1>
+      <p className="mt-3 text-sm text-muted">{product.name}</p>
+      <p className="mt-1 text-sm text-muted">
+        Adres: <span className="text-ink">/urun/{product.slug}</span>
+        {" · "}
+        {product.published ? (
+          <a
+            href={`/urun/${product.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline transition hover:text-primary"
+          >
+            Sitede gör
+            <span className="sr-only"> (yeni sekmede açılır)</span>
+          </a>
+        ) : (
+          "Taslak (sitede görünmez)"
+        )}
+      </p>
+
+      {eklendi && (
+        <p role="status" className="mt-6 rounded-md bg-paper p-4 text-sm">
+          Ürün eklendi.
+          {!product.published && " Taslak olarak duruyor; hazır olunca “Yayında” kutusunu işaretleyip kaydedin."}
+        </p>
+      )}
+
+      <ProductForm
+        action={saveProduct.bind(null, product.slug)}
+        initial={valuesOf(product)}
+        materials={materials}
+        submitLabel="Kaydet"
+        showSample={product.sample}
+      />
+    </div>
+  );
+}
