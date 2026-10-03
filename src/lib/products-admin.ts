@@ -121,7 +121,7 @@ export async function removeProductImage(slug: string, name: string): Promise<{ 
 
 // Verilen görsel adlarından, artık ne bir üründe ne de bir siparişte kullanılanlar (diskten silinebilir).
 // Siparişler ürün görselini anlık kopya olarak tutar: ürün silinse de sipariş sayfası görseli gösterebilsin.
-async function unusedImages(names: string[]): Promise<string[]> {
+export async function unusedImages(names: string[]): Promise<string[]> {
   if (names.length === 0) return [];
   const products = await productsOf();
   const orders = (await getDb()).collection<{ items?: { image?: string | null }[] }>("orders");
