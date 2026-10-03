@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { MEDIA_DIR } from "@/lib/media-files";
 
-// Yerel medya klasörü (git'e girmez). Yayında bu isteği Nginx doğrudan diskten karşılayacak.
-const MEDIA_DIR = path.join(process.cwd(), "media");
+// Medya klasörü media-files.ts'te (git'e girmez). Yayında bu isteği Nginx doğrudan diskten karşılayacak.
 
 const TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
