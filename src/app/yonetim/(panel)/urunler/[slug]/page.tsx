@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { valuesOf } from "@/lib/product-form";
 import { getProductForAdmin, listMaterials } from "@/lib/products-admin";
-import { changeImage, saveProduct } from "../actions";
+import { changeImage, removeProduct, saveProduct } from "../actions";
+import { DeleteButton } from "../delete-button";
 import { ProductForm } from "../edit-form";
 import { ImageManager } from "../image-manager";
 
@@ -64,6 +65,23 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         submitLabel="Kaydet"
         showSample={product.sample}
       />
+
+      <section aria-labelledby="sil-baslik" className="mt-12 border-t border-line pt-8">
+        <h2 id="sil-baslik" className="font-display text-2xl">
+          Ürünü sil
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted">
+          Silinen ürün ve görselleri geri getirilemez. Ürünü yalnızca bir süre gizlemek istiyorsanız silmeyin: “Ürün
+          bilgileri” bölümündeki “Yayında” kutusunun işaretini kaldırıp kaydedin (taslak olur).
+        </p>
+        <div className="mt-4">
+          <DeleteButton
+            action={removeProduct.bind(null, product.slug)}
+            confirmText={`“${product.name}” kalıcı olarak silinsin mi? Ürünün görselleri de silinir, bu işlem geri alınamaz.`}
+            label="Ürünü sil"
+          />
+        </div>
+      </section>
     </div>
   );
 }

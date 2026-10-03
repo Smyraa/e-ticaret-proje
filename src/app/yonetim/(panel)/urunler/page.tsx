@@ -4,6 +4,8 @@ import { ProductImage } from "@/components/product-image";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice, stockText } from "@/lib/format";
 import { getAllProducts } from "@/lib/products-admin";
+import { removeSampleProducts } from "./actions";
+import { DeleteButton } from "./delete-button";
 
 export const metadata: Metadata = { title: "Ürünler · Yönetim · TAURA" };
 
@@ -12,10 +14,22 @@ const badgeClass = "ml-2 rounded-sm px-2 py-1 align-middle text-[10px] font-norm
 const actionLinkClass =
   "inline-flex min-h-11 items-center text-[11px] tracking-wider uppercase underline transition md:text-xs md:tracking-widest";
 
+// Silme işleminden sonra adrese eklenen işaretlerden gösterilecek ileti (sayı doğrulanır, serbest metin yazılmaz).
+function noticeFor(deleted: string | string[] | undefined, samples: string | string[] | undefined) {
+  if (deleted === "1") return "Ürün silindi.";
+  if (typeof samples === "string" && /^\d{1,4}$/.test(samples)) {
+    return Number(samples) === 0 ? "Silinecek örnek ürün yoktu." : `${Number(samples)} örnek ürün silindi.`;
+  }
+  return null;
+}
+
 // Ürün listesi (taslaklar dahil). Ad ve "Düzenle" bağlantısı ürünü düzenleme sayfasına götürür.
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({ searchParams }: PageProps<"/yonetim/urunler">) {
   await requireAdmin();
+  const { silindi, ornekler } = await searchParams;
   const products = await getAllProducts();
+  const sampleCount = products.filter((product) => product.sample).length;
+  const notice = noticeFor(silindi, ornekler);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -31,6 +45,31 @@ export default async function AdminProductsPage() {
           Yeni ürün
         </Link>
       </div>
+
+      {notice && (
+        <p role="status" className="mt-6 rounded-md bg-paper p-4 text-sm">
+          {notice}
+        </p>
+      )}
+
+      {sampleCount > 0 && (
+        <section aria-labelledby="ornek-baslik" className="mt-8 rounded-lg bg-paper p-5 shadow-sm">
+          <h2 id="ornek-baslik" className="text-sm font-semibold">
+            Örnek ürünler
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted">
+            Listede {sampleCount} örnek (demo) ürün var. Gerçek ürünlerinizi ekledikten sonra, canlıya çıkmadan önce
+            hepsini tek seferde silebilirsiniz. Gerçek ürünlere dokunulmaz.
+          </p>
+          <div className="mt-4">
+            <DeleteButton
+              action={removeSampleProducts}
+              confirmText={`${sampleCount} örnek ürün ve görselleri silinsin mi? Gerçek ürünlere dokunulmaz, bu işlem geri alınamaz.`}
+              label={`Örnek ürünleri sil (${sampleCount})`}
+            />
+          </div>
+        </section>
+      )}
 
       {products.length === 0 ? (
         <p className="mt-8 rounded-lg bg-paper p-6 text-sm text-muted">Henüz ürün yok.</p>

@@ -36,7 +36,7 @@ export default async function AdminHomePage() {
       {samples > 0 && (
         <p className="mt-6 max-w-2xl text-sm text-muted">
           Sitede {samples} örnek ürün var. Bunlar demo içindir; gerçek ürünler eklenince canlıya çıkmadan önce
-          kaldırılmalıdır.
+          kaldırılmalıdır. Ürünler sayfasından tek seferde silebilirsiniz.
         </p>
       )}
 
