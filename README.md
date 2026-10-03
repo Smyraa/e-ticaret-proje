@@ -28,6 +28,8 @@ npm run admin:create
 
 Parolayı değiştirmek ya da unutulan parolayı sıfırlamak için `npm run admin:reset`, hesapları listelemek için `npm run admin:list` kullanılır. Parola en az 12 karakter olmalı; art arda 5 yanlış girişten sonra 15 dakika beklenir. Oturum 7 gün sürer.
 
+Ürünler `/yonetim/urunler` sayfasında yönetilir: listeden ürün düzenlenir, "Yeni ürün" ile eklenir. Yeni ürün önce taslak olarak kaydedilir; "Yayında" kutusu işaretlenince sitede görünür, işaret kaldırılınca yeniden gizlenir. Ürünün adresi (`/urun/<ad>`) ilk kayıtta addan üretilir ve sonradan değişmez. Fiyat tam lira, stok tam sayıdır. `npm run seed` yalnızca örnek ürünleri (örnek işaretli olanları) yeniden yazar.
+
 ## Medya
 
 Görseller `media/` klasöründe tutulur (git'e girmez) ve `/media/...` adresinden sunulur; veritabanında yalnızca dosya adı saklanır. Dosya adlarına içerik izi (hash) eklenir, böylece 1 yıl önbelleğe alınabilirler. Sayfalarda görseller `next/image` ile ekrana uygun boyutta ve WebP olarak gösterilir.
