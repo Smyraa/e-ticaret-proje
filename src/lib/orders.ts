@@ -28,7 +28,10 @@ function ensureOrderIndexes(): Promise<void> {
 }
 
 // Siparişe girecek bilgiler; numara, anahtar, durum ve tarihler kayıt sırasında eklenir.
-export type NewOrder = Omit<Order, "number" | "trackKey" | "status" | "stockDeducted" | "createdAt" | "updatedAt">;
+export type NewOrder = Omit<
+  Order,
+  "number" | "trackKey" | "status" | "stockDeducted" | "createdAt" | "updatedAt" | "shipment" | "adminNote" | "history"
+>;
 
 const MAX_TRIES = 5;
 
@@ -47,6 +50,7 @@ export async function createOrder(data: NewOrder): Promise<{ number: string; tra
       stockDeducted: false,
       createdAt: now,
       updatedAt: now,
+      history: [{ status: "pending", at: now }],
     };
     try {
       await orders.insertOne({ ...order });

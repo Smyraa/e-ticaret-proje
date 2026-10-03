@@ -28,6 +28,8 @@ export type OrderItem = {
 
 export type OrderCustomer = { name: string; phone: string; email: string }; // phone: ülke koduyla yalnız rakamlar
 export type OrderAddress = { line: string; city: string; district: string; postalCode: string };
+export type OrderShipment = { carrier: string; trackingNumber: string }; // trackingNumber boş olabilir (elden teslim vb.)
+export type OrderHistoryEntry = { status: OrderStatus; at: Date };
 
 export type Order = {
   number: string; // müşterinin gördüğü sipariş numarası: TA-7KQ2-X9DM
@@ -47,6 +49,10 @@ export type Order = {
   consentAt: Date; // ön bilgilendirme ve satış sözleşmesi onayı
   createdAt: Date;
   updatedAt: Date;
+  // Yönetimin ekledikleri (sipariş verilirken yoktur):
+  shipment?: OrderShipment; // kargoya verilince
+  adminNote?: string; // yalnız yönetim görür
+  history?: OrderHistoryEntry[]; // durum değişikliklerinin kaydı (en eskisi başta)
 };
 
 // Müşteriye gösterilirken kısmen gizlenir: sayfanın adresini bulan biri bilgilerin tamamını görmesin.
