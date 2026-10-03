@@ -7,6 +7,7 @@ import { readProductForm, type ProductFormState } from "@/lib/product-form";
 import { getProductForAdmin, insertProduct, updateProduct } from "@/lib/products-admin";
 
 const SAVE_FAILED = "Kaydedilemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
+const NOT_FOUND = "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün.";
 
 // Yeni ürün ekler. Her sunucu eylemi gibi, yetki kontrolü bu işlevin içinde yapılır (formun yalnız
 // girişli sayfada görünmesi güvenlik sayılmaz); girdiler güvenilmez kabul edilip yeniden doğrulanır.
@@ -39,10 +40,11 @@ export async function saveProduct(
 
   const { values, errors, data } = readProductForm(formData);
   if (!data) return { values, errors };
+  if (typeof slug !== "string" || slug === "") return { values, message: NOT_FOUND };
 
   try {
     const existing = await getProductForAdmin(slug);
-    if (!existing) return { values, message: "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün." };
+    if (!existing) return { values, message: NOT_FOUND };
 
     // "Örnek" işareti yalnız kaldırılabilir; formdan hiçbir ürün örnek yapılamaz.
     await updateProduct(slug, data, existing.sample && values.sample);
