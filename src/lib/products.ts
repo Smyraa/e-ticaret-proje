@@ -53,6 +53,18 @@ export async function getProducts(): Promise<Product[]> {
   return docs.map(toProduct);
 }
 
+// Verilen adreslerdeki YAYINDAKİ ürünler. Sipariş verilirken sepetin içeriği sunucuda bununla yeniden okunur
+// (adresler çağıranda doğrulanmış metinlerdir).
+export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
+  if (slugs.length === 0) return [];
+  const db = await getDb();
+  const docs = await db
+    .collection<ProductDoc>("products")
+    .find({ slug: { $in: slugs }, ...PUBLISHED }, { projection: { _id: 0 } })
+    .toArray();
+  return docs.map(toProduct);
+}
+
 export type ProductFilter = {
   q?: string; // arama metni (ad ve malzeme içinde aranır)
   material?: string; // tam eşleşen malzeme

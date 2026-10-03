@@ -116,18 +116,23 @@ export async function removeProductImage(slug: string, name: string): Promise<{ 
     { $pull: { images: name }, $set: { updatedAt: new Date() } },
   );
   if (result.modifiedCount !== 1) return { removed: false, unused: false };
-  return { removed: true, unused: (await products.countDocuments({ images: name }, { limit: 1 })) === 0 };
+  return { removed: true, unused: (await unusedImages([name])).length === 1 };
 }
 
-// Verilen görsel adlarından, artık hiçbir üründe kullanılmayanlar (diskten silinebilir).
+// Verilen görsel adlarından, artık ne bir üründe ne de bir siparişte kullanılanlar (diskten silinebilir).
+// Siparişler ürün görselini anlık kopya olarak tutar: ürün silinse de sipariş sayfası görseli gösterebilsin.
 async function unusedImages(names: string[]): Promise<string[]> {
   if (names.length === 0) return [];
   const products = await productsOf();
-  const stillUsed = new Set(
-    (await products.find({ images: { $in: names } }, { projection: { images: 1 } }).toArray()).flatMap(
-      (doc) => doc.images ?? [],
-    ),
-  );
+  const orders = (await getDb()).collection<{ items?: { image?: string | null }[] }>("orders");
+  const [inProducts, inOrders] = await Promise.all([
+    products.find({ images: { $in: names } }, { projection: { images: 1 } }).toArray(),
+    orders.find({ "items.image": { $in: names } }, { projection: { "items.image": 1 } }).toArray(),
+  ]);
+  const stillUsed = new Set([
+    ...inProducts.flatMap((doc) => doc.images ?? []),
+    ...inOrders.flatMap((doc) => (doc.items ?? []).map((item) => item.image ?? "")),
+  ]);
   return names.filter((name) => !stillUsed.has(name));
 }
 
