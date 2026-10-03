@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { mediaUrl } from "@/lib/media";
 import { readSettings } from "@/lib/settings";
 import { settingsValues } from "@/lib/settings-form";
+import { SettingsTabs } from "../settings-tabs";
 import { DeleteButton } from "../urunler/delete-button";
 import { removeHeroImage, saveSettings } from "./actions";
 import { HeroUploader } from "./hero-uploader";
@@ -20,7 +21,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/yonetim
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       <h1 className="font-display text-4xl">Site ayarları</h1>
-      <p className="mt-3 max-w-2xl text-sm text-muted">
+      <SettingsTabs current="site" />
+      <p className="mt-6 max-w-2xl text-sm text-muted">
         Buradaki bilgiler sitede iletişim sayfasında, alt bilgide, ürün sayfasındaki WhatsApp düğmesinde ve sepet ile
         ödeme özetinde kullanılır. Boş bıraktığınız bilgi sitede görünmez.
       </p>

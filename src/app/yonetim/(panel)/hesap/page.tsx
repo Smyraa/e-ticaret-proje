@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
 import { PASSWORD_MIN_LENGTH } from "@/lib/password";
+import { SettingsTabs } from "../settings-tabs";
 import { changeAdminPassword } from "./actions";
 import { PasswordForm } from "./password-form";
 
@@ -13,6 +14,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       <h1 className="font-display text-4xl">Hesap</h1>
+      <SettingsTabs current="hesap" />
 
       <h2 className="mt-10 font-display text-2xl">Parolayı değiştir</h2>
       <p className="mt-2 max-w-2xl text-sm text-muted">

@@ -25,7 +25,9 @@ export default async function AdminPanelLayout({ children }: LayoutProps<"/yonet
           </div>
 
           <div className="order-2 ml-auto flex items-center gap-x-5 text-sm md:order-none">
-            <span className="hidden text-muted lg:inline">{admin.email}</span>
+            <Link href="/yonetim/hesap" className="hidden text-muted transition hover:text-primary hover:underline lg:inline">
+              {admin.email}
+            </Link>
             <form action={logout}>
               <button
                 type="submit"
