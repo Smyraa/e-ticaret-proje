@@ -2,9 +2,10 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { clientAddress } from "./client-address";
 import { getDb } from "./mongodb";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
 
@@ -98,16 +99,8 @@ export async function endSession() {
   store.delete(SESSION_COOKIE);
 }
 
-// Bağlantı adresi. Canlıda Nginx, gördüğü adresi X-Forwarded-For başlığının SONUNA ekler; baştaki değerleri
-// istemci kendisi yazabilir (taklit). Bu yüzden sondaki alınır. Yine de adres yalnızca ek bir ipucudur:
-// başlık hiç güvenilmez bir yoldan gelse bile e-posta başına sayaç (MAX_FAILURES_PER_EMAIL) devrededir.
-async function clientAddress(): Promise<string> {
-  const forwarded = (await headers()).get("x-forwarded-for");
-  const last = forwarded?.split(",").at(-1)?.trim();
-  return last ? last.slice(0, 64) : "yerel";
-}
-
 // Yanlış deneme sayaçlarının anahtarları (loginAttempts koleksiyonunda; süresi dolunca MongoDB siler).
+// Adres taklit edilebildiğinden (bkz. clientAddress) giriş için e-posta başına ikinci bir sayaç da tutulur.
 const addressKey = (email: string, address: string) => `giris|${email}|${address}`;
 const emailKey = (email: string) => `giris-eposta|${email}`;
 const passwordKey = (userId: string) => `parola|${userId}`;
