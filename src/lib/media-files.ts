@@ -6,11 +6,12 @@ import { isSafeMediaName } from "./images";
 
 // Görsellerin durduğu klasör (git'e girmez). Yayında bu klasörü Nginx doğrudan diskten sunar. MEDIA_DIR ile
 // uygulama klasörünün dışında kalıcı bir yere alınabilir; böylece yeni sürüm kurulunca yüklemeler kaybolmaz.
-export const MEDIA_DIR = path.resolve(process.env.MEDIA_DIR ?? path.join(process.cwd(), "media"));
+// (turbopackIgnore: klasör çalışma anında belirlenir; derleyici "tüm projeyi izle" uyarısı vermesin.)
+export const MEDIA_DIR = path.resolve(/*turbopackIgnore: true*/ process.env.MEDIA_DIR ?? path.join(process.cwd(), "media"));
 
 function fileOf(name: string) {
   if (!isSafeMediaName(name)) throw new Error("Güvenli olmayan dosya adı");
-  return path.join(MEDIA_DIR, name);
+  return path.join(/*turbopackIgnore: true*/ MEDIA_DIR, name);
 }
 
 async function exists(file: string) {
