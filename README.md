@@ -33,3 +33,5 @@ Parolayı değiştirmek ya da unutulan parolayı sıfırlamak için `npm run adm
 ## Medya
 
 Görseller `media/` klasöründe tutulur (git'e girmez) ve `/media/...` adresinden sunulur; veritabanında yalnızca dosya adı saklanır. Dosya adlarına içerik izi (hash) eklenir, böylece 1 yıl önbelleğe alınabilirler. Sayfalarda görseller `next/image` ile ekrana uygun boyutta ve WebP olarak gösterilir.
+
+Ürün görselleri yönetim panelinden yüklenir (ürünü düzenle → Görseller): JPG, PNG veya WebP, dosya başına en çok 10 MB, üründe en çok 8 görsel; ilk görsel ana görseldir, sıralanabilir ve silinebilir. Yüklenen dosyanın türü içeriğinden doğrulanır, fotoğraftaki konum ve tarih gibi gizli bilgiler silinir, en uzun kenar 2400 piksele indirilir ve dosya `media/` klasörüne içerik izli bir adla yazılır. Klasörü `MEDIA_DIR` ortam değişkeniyle başka bir yere alabilirsiniz (canlıda uygulama klasörünün dışında, kalıcı bir yer önerilir; yeni sürüm kurulunca yüklemeler kaybolmasın). Uygulama Nginx'in arkasında çalışacaksa yüklemeler için `client_max_body_size 12m;` gerekir ve Nginx `Host` başlığını uygulamaya iletmelidir.
