@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { formatPhone } from "@/lib/phone";
+import { getSiteSettings } from "@/lib/settings";
 
 // Atölye, iletişim ve bilgi sayfalarının bağlantıları alt bilgide durur (kullanıcı kararı: üst menüde değil).
 const groups = [
@@ -25,7 +27,11 @@ const groups = [
   },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  // Telefon ve e-posta yönetim panelindeki Site ayarlarından gelir; boş olanlar gösterilmez.
+  const { phone, email } = await getSiteSettings();
+  const contactClass = "inline-flex min-h-11 items-center text-sm transition hover:text-primary";
+
   return (
     <footer className="border-t border-line">
       <div className="mx-auto max-w-6xl px-6 py-10">
@@ -33,6 +39,24 @@ export function SiteFooter() {
           <div className="col-span-2 sm:col-span-1">
             <p className="font-display text-2xl tracking-[0.16em]">TAURA</p>
             <p className="text-[11px] tracking-[0.3em] text-muted uppercase">Tesbihçilik</p>
+            {(phone || email) && (
+              <ul className="mt-3">
+                {phone && (
+                  <li>
+                    <a href={`tel:+${phone}`} className={contactClass}>
+                      {formatPhone(phone)}
+                    </a>
+                  </li>
+                )}
+                {email && (
+                  <li>
+                    <a href={`mailto:${email}`} className={`${contactClass} break-all`}>
+                      {email}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            )}
           </div>
 
           {groups.map((group) => (

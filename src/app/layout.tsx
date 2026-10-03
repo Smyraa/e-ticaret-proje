@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   robots: indexingAllowed ? { index: true, follow: true } : { index: false, follow: false },
 };
 
+// Alt bilgi ve bilgi sayfaları site ayarlarını (iletişim, kargo ücreti) veritabanından okur; sayfalar derleme anındaki
+// değerle donmasın, ayarlar değişince hemen yansısın diye hepsi her istekte çizilir.
+export const dynamic = "force-dynamic";
+
 // Ana düzen yalnızca sayfa kabuğunu (html, yazı tipleri, renkler) kurar. Mağaza çerçevesi (üst menü, alt bilgi)
 // "(site)" grubunun düzeninde, yönetim çerçevesi "yonetim" klasöründe.
 export default function RootLayout({ children }: LayoutProps<"/">) {
