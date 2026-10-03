@@ -1,5 +1,7 @@
 // Ürün formunun alanları, doğrulaması ve durum türleri. Hem sunucu eylemlerinde hem formda kullanılır
 // (tarayıcıya yalnızca türler gider). Doğrulama sunucuda yapılır; tarayıcıdaki kontrole güvenilmez.
+import { charCount, multiLine, oneLine, tooLong } from "./form-text";
+import { parseLira } from "./money";
 import type { Product } from "./products";
 
 export const LIMITS = {
@@ -85,45 +87,10 @@ export type ProductData = {
   published: boolean;
 };
 
-const length = (text: string) => [...text].length; // emoji gibi karakterler tek sayılır
-
-function entry(raw: FormDataEntryValue | null): string {
-  return typeof raw === "string" ? raw.normalize("NFC") : "";
-}
-
-// Tek satırlık alan: satır sonu ve sekme boşluğa döner, görünmez/denetim karakterleri atılır.
-function oneLine(raw: FormDataEntryValue | null): string {
-  return entry(raw)
-    .replace(/[​-‏⁠﻿]/g, "")
-    .replace(/[\u0000-\u0008\u000e-\u001f\u007f-\u0084\u0086-\u009f]/g, "") // boşluk anlamı olmayan denetim karakterleri
-    .replace(/[\s\u0085]+/g, " ")
-    .trim();
-}
-
-// Çok satırlık alan (hikâye): satır sonları korunur, üst üste en çok bir boş satır kalır.
-function multiLine(raw: FormDataEntryValue | null): string {
-  return entry(raw)
-    .replace(/\r\n?/g, "\n")
-    .replace(/\t/g, " ")
-    .replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f​-‏⁠﻿]/g, "")
-    .replace(/[^\S\n]+/g, " ")
-    .replace(/ *\n */g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-// "3500", "3.500", "₺3.500" ve "3.500,00" geçerli (tam lira); kuruşlu ya da başka biçimler geçersiz.
-function parsePrice(text: string): number | null {
-  const match = text.replace(/[\s₺]|TL/gi, "").match(/^(\d{1,3}(?:\.\d{3})+|\d+)(?:,0{1,2})?$/);
-  return match ? Number(match[1].replace(/\./g, "")) : null;
-}
-
 function parseStock(text: string): number | null {
   const digits = text.replace(/\s/g, "");
   return /^\d+$/.test(digits) ? Number(digits) : null;
 }
-
-const tooLong = (limit: number, text: string) => `En çok ${limit} karakter olabilir (şu an ${length(text)}).`;
 
 export function readProductForm(formData: FormData): {
   values: ProductFormValues;
@@ -145,17 +112,17 @@ export function readProductForm(formData: FormData): {
   const errors: ProductFormErrors = {};
 
   if (!values.name) errors.name = "Ürün adını yazın.";
-  else if (length(values.name) < 2) errors.name = "Ürün adı en az 2 karakter olmalı.";
-  else if (length(values.name) > LIMITS.name) errors.name = tooLong(LIMITS.name, values.name);
+  else if (charCount(values.name) < 2) errors.name = "Ürün adı en az 2 karakter olmalı.";
+  else if (charCount(values.name) > LIMITS.name) errors.name = tooLong(LIMITS.name, values.name);
 
   if (!values.material) errors.material = "Malzemeyi yazın.";
-  else if (length(values.material) > LIMITS.material) errors.material = tooLong(LIMITS.material, values.material);
+  else if (charCount(values.material) > LIMITS.material) errors.material = tooLong(LIMITS.material, values.material);
 
   for (const field of ["size", "weight", "craft", "story"] as const) {
-    if (length(values[field]) > LIMITS[field]) errors[field] = tooLong(LIMITS[field], values[field]);
+    if (charCount(values[field]) > LIMITS[field]) errors[field] = tooLong(LIMITS[field], values[field]);
   }
 
-  const price = parsePrice(values.price);
+  const price = parseLira(values.price);
   if (!values.price) errors.price = "Fiyatı yazın.";
   else if (price === null) errors.price = "Fiyatı tam lira olarak, yalnız rakamla yazın (örn. 3500).";
   else if (price < 1) errors.price = "Fiyat 0'dan büyük olmalı.";
