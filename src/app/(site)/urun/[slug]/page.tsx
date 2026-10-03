@@ -19,10 +19,15 @@ export async function generateMetadata({
     const product = await getProductBySlug(slug);
     if (!product) return { title: "Ürün bulunamadı" };
     const sample = product.sample ? " Örnek ürün (demo)." : "";
-    return pageMetadata(
-      product.name,
-      `${product.name}. Malzeme: ${product.material}. Ölçü: ${product.size}. Ağırlık: ${product.weight}.${sample}`,
-    );
+    // Ölçü ve ağırlık isteğe bağlıdır; boşsa açıklamaya yazılmaz.
+    const facts = [
+      `Malzeme: ${product.material}.`,
+      product.size && `Ölçü: ${product.size}.`,
+      product.weight && `Ağırlık: ${product.weight}.`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return pageMetadata(product.name, `${product.name}. ${facts}${sample}`);
   } catch {
     return { title: "TAURA Tesbihçilik" };
   }
@@ -44,12 +49,13 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
   }
   if (!product) notFound();
 
+  // Ölçü, ağırlık ve işçilik isteğe bağlıdır; boş olanlar tabloda gösterilmez.
   const details = [
     ["Malzeme", product.material],
     ["Ölçü", product.size],
     ["Ağırlık", product.weight],
     ["İşçilik", product.craft],
-  ];
+  ].filter(([, value]) => value);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -80,7 +86,9 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
           <WhatsAppButton slug={product.slug} name={product.name} />
 
-          <p className="mt-6 leading-relaxed text-muted">{product.story}</p>
+          {product.story && (
+            <p className="mt-6 leading-relaxed whitespace-pre-line text-muted">{product.story}</p>
+          )}
 
           <dl className="mt-8 divide-y divide-line border-y border-line text-sm">
             {details.map(([label, value]) => (
@@ -91,9 +99,9 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
             ))}
           </dl>
 
-          <p className="mt-6 text-xs text-muted">
-            Bu sayfadaki tüm bilgiler örnek içeriktir.
-          </p>
+          {product.sample && (
+            <p className="mt-6 text-xs text-muted">Bu sayfadaki tüm bilgiler örnek içeriktir.</p>
+          )}
         </div>
       </div>
     </div>

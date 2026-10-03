@@ -12,7 +12,7 @@ export function ProductJsonLd({ product }: { product: Product }) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    description: product.story,
+    description: product.story || undefined, // hikâye isteğe bağlı; boşsa alan hiç yazılmaz
     sku: product.slug,
     material: product.material,
     image: product.images.map((file) => `${siteUrl}${mediaUrl(file)}`),
