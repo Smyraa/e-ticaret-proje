@@ -20,9 +20,20 @@ export type Product = {
 // Veritabanındaki belge. Eski kayıtlarda published alanı yoktur; yoksa yayında sayılır.
 export type ProductDoc = Omit<Product, "published"> & { published?: boolean };
 
-export const toProduct = ({ published, ...rest }: ProductDoc): Product => ({
-  ...rest,
-  published: published !== false,
+// Belgeden yalnız bilinen alanlar alınır (tarihler gibi iç alanlar sayfalara ve tarayıcıya gitmez).
+export const toProduct = (doc: ProductDoc): Product => ({
+  slug: doc.slug,
+  name: doc.name,
+  material: doc.material,
+  size: doc.size ?? "",
+  weight: doc.weight ?? "",
+  craft: doc.craft ?? "",
+  story: doc.story ?? "",
+  images: doc.images ?? [],
+  price: doc.price,
+  stock: doc.stock,
+  sample: doc.sample === true,
+  published: doc.published !== false,
 });
 
 // Sitede görünecek ürünlerin süzgeci. Taslaklar yalnız yönetim sayfalarında (products-admin.ts) okunur.
