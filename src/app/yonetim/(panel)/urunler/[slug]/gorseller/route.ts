@@ -1,79 +1,19 @@
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getAdmin } from "@/lib/auth";
 import { ImageError, processImage } from "@/lib/image-process";
-import { IMAGE_LIMITS, MAX_MB } from "@/lib/images";
+import { IMAGE_LIMITS } from "@/lib/images";
 import { deleteMediaFile, writeMediaFile } from "@/lib/media-files";
 import { addProductImage, getProductForAdmin } from "@/lib/products-admin";
+import { fail, readImageUpload } from "@/lib/upload-request";
 
 // Ürüne görsel yükler: istek başına tek dosya (tarayıcı birden çok dosyayı sırayla gönderir).
-// Sunucu eylemi yerine yol işleyicisi (route handler) kullanılır: sunucu eylemlerinin gövde sınırı (varsayılan 1 MB)
-// tüm eylemler için birlikte yükseltilirdi, ayrıca eylemlerde yetki kontrolü gövde okunduktan sonra yapılır.
-// Burada yetki, gövdeye dokunulmadan ÖNCE denetlenir.
-
-// Kabul edilen gövde sınırı: dosya + çok parçalı (multipart) istek başlıkları için pay.
-const MAX_BODY = IMAGE_LIMITS.maxBytes + 64 * 1024;
-
-const fail = (status: number, error: string) => Response.json({ ok: false, error }, { status });
-
-// İstek bizim sitemizden mi geldi? Sunucu eylemlerindeki Origin denetiminin aynısı (SameSite çerezine ek koruma).
-function sameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
-
-// Gövdeyi en çok `limit` bayt olacak şekilde okur; aşarsa okumayı keser ve null döner. (Content-Length başlığı
-// olmayan ya da yalan söyleyen istekler de belleği dolduramaz.)
-async function readLimited(request: Request, limit: number): Promise<Buffer | null> {
-  const reader = request.body?.getReader();
-  if (!reader) return Buffer.alloc(0);
-
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > limit) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(value);
-  }
-  return Buffer.concat(chunks);
-}
-
+// İstek ön denetimi (Origin, yönetici, boyut, biçim) upload-request.ts'te.
 export async function POST(request: Request, { params }: RouteContext<"/yonetim/urunler/[slug]/gorseller">) {
-  if (!sameOrigin(request)) return fail(403, "İstek reddedildi.");
-  if (!(await getAdmin())) return fail(401, "Oturumunuz kapanmış. Yeniden giriş yapın.");
-
-  const tooBig = fail(413, `Dosya ${MAX_MB} MB'tan büyük olamaz.`);
-  const declared = Number(request.headers.get("content-length"));
-  if (declared > MAX_BODY) return tooBig;
-  if (!request.headers.get("content-type")?.startsWith("multipart/form-data")) return fail(400, "Geçersiz istek.");
+  const upload = await readImageUpload(request);
+  if ("response" in upload) return upload.response;
+  const { file } = upload;
 
   try {
-    const body = await readLimited(request, MAX_BODY);
-    if (!body) return tooBig;
-
-    let form: FormData;
-    try {
-      form = await new Response(new Uint8Array(body), {
-        headers: { "content-type": request.headers.get("content-type") ?? "" },
-      }).formData();
-    } catch {
-      return fail(400, "İstek okunamadı.");
-    }
-    const file = form.get("dosya");
-    if (!(file instanceof File) || file.size === 0) return fail(400, "Dosya bulunamadı.");
-    if (file.size > IMAGE_LIMITS.maxBytes) return tooBig;
-
     const { slug } = await params;
     const product = await getProductForAdmin(slug);
     if (!product) return fail(404, "Ürün bulunamadı.");

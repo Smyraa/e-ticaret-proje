@@ -25,3 +25,13 @@ export function isSafeMediaName(name: unknown): name is string {
 
 // Görsel listesindeki işlem (yukarı, aşağı, ana görsel yap, sil) sonrası ekranda gösterilecek ileti.
 export type ImageActionState = { message?: string; error?: string } | undefined;
+
+// Tarayıcıda, yüklemeden önce hızlı ön denetim (asıl denetim sunucuda yapılır). Sorun yoksa null döner.
+export function checkImageFile(file: File): string | null {
+  if (file.type && !IMAGE_TYPES.includes(file.type)) {
+    return "Yalnız JPG, PNG veya WebP yüklenebilir. HEIC ise fotoğrafı JPG olarak kaydedip yükleyin.";
+  }
+  if (file.size > IMAGE_LIMITS.maxBytes) return `Dosya ${MAX_MB} MB'tan büyük.`;
+  if (file.size === 0) return "Dosya boş.";
+  return null;
+}

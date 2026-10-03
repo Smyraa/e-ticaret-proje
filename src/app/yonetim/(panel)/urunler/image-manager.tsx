@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { IMAGE_ACCEPT, IMAGE_LIMITS, IMAGE_TYPES, MAX_MB, type ImageActionState } from "@/lib/images";
+import { checkImageFile, IMAGE_ACCEPT, IMAGE_LIMITS, MAX_MB, type ImageActionState } from "@/lib/images";
 import { mediaUrl } from "@/lib/media";
 type Props = {
   slug: string;
@@ -24,16 +24,6 @@ const STATE_TEXT: Record<Upload["state"], string> = {
 
 const linkButton =
   "inline-flex min-h-11 items-center text-[11px] tracking-wider uppercase underline transition hover:text-primary disabled:cursor-not-allowed disabled:no-underline disabled:opacity-40 md:text-xs md:tracking-widest";
-
-// Tarayıcıda yapılan ön denetim (hızlı geri bildirim için); asıl denetim sunucuda yapılır.
-function precheck(file: File): string | null {
-  if (file.type && !IMAGE_TYPES.includes(file.type)) {
-    return "Yalnız JPG, PNG veya WebP yüklenebilir. HEIC ise fotoğrafı JPG olarak kaydedip yükleyin.";
-  }
-  if (file.size > IMAGE_LIMITS.maxBytes) return `Dosya ${MAX_MB} MB'tan büyük.`;
-  if (file.size === 0) return "Dosya boş.";
-  return null;
-}
 
 // Ürünün görselleri: sıralama (yukarı/aşağı/ana görsel yap), silme ve yükleme.
 // Yükleme istekleri sırayla, dosya başına bir istek olarak gider (her biri ayrı doğrulanır).
@@ -86,7 +76,7 @@ export function ImageManager({ slug, images, action }: Props) {
     let added = 0;
     for (const [index, file] of files.entries()) {
       update(index, { state: "working" });
-      const problem = precheck(file) ?? (free <= 0 ? `Bir ürüne en çok ${IMAGE_LIMITS.maxCount} görsel eklenebilir.` : null);
+      const problem = checkImageFile(file) ?? (free <= 0 ? `Bir ürüne en çok ${IMAGE_LIMITS.maxCount} görsel eklenebilir.` : null);
       if (problem) {
         update(index, { state: "error", message: problem });
         continue;
