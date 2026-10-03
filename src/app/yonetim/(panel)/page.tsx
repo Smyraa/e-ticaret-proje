@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { countByStatus } from "@/lib/orders-admin";
 import { getAllProducts } from "@/lib/products-admin";
 
-// Yönetim ana sayfası: ürünlerin kısa özeti ve ürün listesine geçiş.
+// Yönetim ana sayfası: ürünlerin ve siparişlerin kısa özeti, ürün ve sipariş listelerine geçiş.
 export default async function AdminHomePage() {
   const admin = await requireAdmin();
-  const products = await getAllProducts();
+  const [products, orderCounts] = await Promise.all([getAllProducts(), countByStatus()]);
 
   const published = products.filter((product) => product.published).length;
   const soldOut = products.filter((product) => product.stock === 0).length;
@@ -15,6 +16,12 @@ export default async function AdminHomePage() {
     { label: "Taslak", value: products.length - published },
     { label: "Tükenen", value: soldOut },
     { label: "Örnek ürün", value: samples },
+  ];
+  // Hazırlanacak: ödemesi alınmış, henüz kargoya verilmemiş siparişler (yapılacak iş).
+  const orderStats = [
+    { label: "Ödeme bekleyen", value: orderCounts.pending },
+    { label: "Hazırlanacak", value: orderCounts.paid + orderCounts.preparing },
+    { label: "Kargoda", value: orderCounts.shipped },
   ];
 
   return (
@@ -40,10 +47,26 @@ export default async function AdminHomePage() {
         </p>
       )}
 
+      <h2 className="mt-10 font-display text-2xl">Siparişler</h2>
+      <dl className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {orderStats.map(({ label, value }) => (
+          <div key={label} className="rounded-lg bg-paper p-5 shadow-sm">
+            <dt className="text-[11px] tracking-widest text-muted uppercase">{label}</dt>
+            <dd className="mt-2 font-display text-4xl">{value}</dd>
+          </div>
+        ))}
+      </dl>
+
       <div className="mt-8 flex flex-wrap gap-4">
         <Link
-          href="/yonetim/urunler"
+          href="/yonetim/siparisler"
           className="inline-flex min-h-11 items-center bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary"
+        >
+          Siparişleri gör
+        </Link>
+        <Link
+          href="/yonetim/urunler"
+          className="inline-flex min-h-11 items-center border border-espresso px-8 text-xs font-semibold tracking-widest uppercase transition hover:border-primary hover:text-primary"
         >
           Ürünleri gör
         </Link>
