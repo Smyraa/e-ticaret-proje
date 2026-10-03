@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import type { ProductField, ProductFormState, ProductFormValues } from "@/lib/product-form";
+import type { ProductFormState, ProductFormValues } from "@/lib/product-form";
+import { Check, Field } from "../form-fields";
 
 type Props = {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -11,84 +12,6 @@ type Props = {
   submitLabel: string;
   showSample?: boolean; // yalnız örnek ürünlerde: "Örnek ürün" işaretini kaldırma kutusu
 };
-
-type FieldProps = {
-  name: ProductField;
-  label: string;
-  value: string;
-  error?: string;
-  hint?: string;
-  required?: boolean;
-  multiline?: boolean;
-  inputMode?: "numeric";
-  list?: string;
-};
-
-const controlClass = "mt-2 w-full rounded-md border bg-paper p-3 text-sm";
-
-// Etiket + giriş kutusu + ipucu + hata iletisi. Hata ve ipucu kutuya aria-describedby ile bağlanır.
-function Field({ name, label, value, error, hint, required, multiline, inputMode, list }: FieldProps) {
-  const id = `urun-${name}`;
-  const describedBy = [hint && `${id}-ipucu`, error && `${id}-hata`].filter(Boolean).join(" ") || undefined;
-  const shared = {
-    id,
-    name,
-    defaultValue: value,
-    autoComplete: "off",
-    "aria-required": required || undefined,
-    "aria-invalid": error ? true : undefined,
-    "aria-describedby": describedBy,
-    className: `${controlClass} ${error ? "border-danger" : "border-field"}`,
-  };
-
-  return (
-    <div>
-      <label htmlFor={id} className="text-sm">
-        {label}
-        {required && <span className="text-muted"> (zorunlu)</span>}
-      </label>
-      {multiline ? (
-        <textarea {...shared} rows={7} />
-      ) : (
-        <input {...shared} type="text" inputMode={inputMode} list={list} />
-      )}
-      {hint && (
-        <p id={`${id}-ipucu`} className="mt-1 text-xs text-muted">
-          {hint}
-        </p>
-      )}
-      {error && (
-        <p id={`${id}-hata`} className="mt-1 text-sm font-semibold text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Check({ name, label, hint, checked }: { name: string; label: string; hint: string; checked: boolean }) {
-  const id = `urun-${name}`;
-  return (
-    <div className="flex items-start gap-3">
-      <input
-        id={id}
-        name={name}
-        type="checkbox"
-        defaultChecked={checked}
-        aria-describedby={`${id}-ipucu`}
-        className="mt-0.5 size-6 shrink-0 accent-primary"
-      />
-      <div className="min-w-0">
-        <label htmlFor={id} className="block text-sm font-semibold">
-          {label}
-        </label>
-        <p id={`${id}-ipucu`} className="text-xs text-muted">
-          {hint}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // Ürün ekleme ve düzenleme formu (ikisinde de aynı). Doğrulama sunucuda yapılır; hata varsa yazılanlar korunur,
 // ilk hatalı kutuya odaklanılır.
@@ -115,10 +38,11 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       onChange={() => setEditedAfter(state)}
       className="mt-8 space-y-6"
     >
-      <Field name="name" label="Ürün adı" required value={values.name} error={errors.name} />
+      <Field prefix="urun" name="name" label="Ürün adı" required value={values.name} error={errors.name} />
 
       <div>
         <Field
+          prefix="urun"
           name="material"
           label="Malzeme"
           required
@@ -135,12 +59,27 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field name="size" label="Ölçü" value={values.size} error={errors.size} hint="Örn. 8 mm tane · 33 tane" />
-        <Field name="weight" label="Ağırlık" value={values.weight} error={errors.weight} hint="Örn. 42 g" />
+        <Field
+          prefix="urun"
+          name="size"
+          label="Ölçü"
+          value={values.size}
+          error={errors.size}
+          hint="Örn. 8 mm tane · 33 tane"
+        />
+        <Field
+          prefix="urun"
+          name="weight"
+          label="Ağırlık"
+          value={values.weight}
+          error={errors.weight}
+          hint="Örn. 42 g"
+        />
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Field
+          prefix="urun"
           name="price"
           label="Fiyat (TL)"
           required
@@ -150,6 +89,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
           hint="Tam lira, kuruşsuz. Örn. 3500"
         />
         <Field
+          prefix="urun"
           name="stock"
           label="Stok (adet)"
           required
@@ -161,6 +101,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       </div>
 
       <Field
+        prefix="urun"
         name="craft"
         label="İşçilik"
         value={values.craft}
@@ -169,6 +110,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       />
 
       <Field
+        prefix="urun"
         name="story"
         label="Hikâye"
         multiline
@@ -178,6 +120,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       />
 
       <Check
+        prefix="urun"
         name="published"
         label="Yayında (sitede görünsün)"
         hint="İşaretli değilse ürün taslak olarak kalır ve sitede görünmez."
@@ -186,6 +129,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
 
       {showSample && (
         <Check
+          prefix="urun"
           name="sample"
           label="Örnek ürün"
           hint="Demo içeriğidir; sitede “Örnek” etiketiyle görünür. Gerçek bir ürüne çevirmek için işareti kaldırın."
