@@ -1,0 +1,187 @@
+// Ürün formunun alanları, doğrulaması ve durum türleri. Hem sunucu eylemlerinde hem formda kullanılır
+// (tarayıcıya yalnızca türler gider). Doğrulama sunucuda yapılır; tarayıcıdaki kontrole güvenilmez.
+import type { Product } from "./products";
+
+export const LIMITS = {
+  name: 80,
+  material: 40,
+  size: 80,
+  weight: 40,
+  craft: 200,
+  story: 2000,
+  priceMax: 10_000_000,
+  stockMax: 100_000,
+} as const;
+
+// Formdaki alanlar; fiyat ve stok yazıldığı gibi (metin) tutulur ki hata sonrası kullanıcının yazdığı geri gelsin.
+export type ProductFormValues = {
+  name: string;
+  material: string;
+  size: string;
+  weight: string;
+  craft: string;
+  story: string;
+  price: string;
+  stock: string;
+  published: boolean;
+  sample: boolean;
+};
+
+// Yeni ürün formunun başlangıç değerleri: taslak olarak başlar.
+export const EMPTY_VALUES: ProductFormValues = {
+  name: "",
+  material: "",
+  size: "",
+  weight: "",
+  craft: "",
+  story: "",
+  price: "",
+  stock: "",
+  published: false,
+  sample: false,
+};
+
+// Var olan ürünün değerleriyle formu doldurmak için.
+export function valuesOf(product: Product): ProductFormValues {
+  return {
+    name: product.name,
+    material: product.material,
+    size: product.size,
+    weight: product.weight,
+    craft: product.craft,
+    story: product.story,
+    price: String(product.price),
+    stock: String(product.stock),
+    published: product.published,
+    sample: product.sample,
+  };
+}
+
+export type ProductField = Exclude<keyof ProductFormValues, "published" | "sample">;
+export type ProductFormErrors = Partial<Record<ProductField, string>>;
+
+export type ProductFormState =
+  | {
+      values?: ProductFormValues; // son gönderilen (düzeltilmiş) değerler
+      errors?: ProductFormErrors; // alan başına hata iletisi
+      message?: string; // genel hata (ör. veritabanına yazılamadı)
+      saved?: boolean; // değişiklikler kaydedildi
+    }
+  | undefined;
+
+// Doğrulanmış, veritabanına yazılmaya hazır ürün bilgisi.
+export type ProductData = {
+  name: string;
+  material: string;
+  size: string;
+  weight: string;
+  craft: string;
+  story: string;
+  price: number;
+  stock: number;
+  published: boolean;
+};
+
+const length = (text: string) => [...text].length; // emoji gibi karakterler tek sayılır
+
+function entry(raw: FormDataEntryValue | null): string {
+  return typeof raw === "string" ? raw.normalize("NFC") : "";
+}
+
+// Tek satırlık alan: satır sonu ve sekme boşluğa döner, görünmez/denetim karakterleri atılır.
+function oneLine(raw: FormDataEntryValue | null): string {
+  return entry(raw)
+    .replace(/[​-‏⁠﻿]/g, "")
+    .replace(/[\u0000-\u0008\u000e-\u001f\u007f-\u0084\u0086-\u009f]/g, "") // boşluk anlamı olmayan denetim karakterleri
+    .replace(/[\s\u0085]+/g, " ")
+    .trim();
+}
+
+// Çok satırlık alan (hikâye): satır sonları korunur, üst üste en çok bir boş satır kalır.
+function multiLine(raw: FormDataEntryValue | null): string {
+  return entry(raw)
+    .replace(/\r\n?/g, "\n")
+    .replace(/\t/g, " ")
+    .replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f​-‏⁠﻿]/g, "")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// "3500", "3.500", "₺3.500" ve "3.500,00" geçerli (tam lira); kuruşlu ya da başka biçimler geçersiz.
+function parsePrice(text: string): number | null {
+  const match = text.replace(/[\s₺]|TL/gi, "").match(/^(\d{1,3}(?:\.\d{3})+|\d+)(?:,0{1,2})?$/);
+  return match ? Number(match[1].replace(/\./g, "")) : null;
+}
+
+function parseStock(text: string): number | null {
+  const digits = text.replace(/\s/g, "");
+  return /^\d+$/.test(digits) ? Number(digits) : null;
+}
+
+const tooLong = (limit: number, text: string) => `En çok ${limit} karakter olabilir (şu an ${length(text)}).`;
+
+export function readProductForm(formData: FormData): {
+  values: ProductFormValues;
+  errors: ProductFormErrors;
+  data?: ProductData;
+} {
+  const values: ProductFormValues = {
+    name: oneLine(formData.get("name")),
+    material: oneLine(formData.get("material")),
+    size: oneLine(formData.get("size")),
+    weight: oneLine(formData.get("weight")),
+    craft: oneLine(formData.get("craft")),
+    story: multiLine(formData.get("story")),
+    price: oneLine(formData.get("price")),
+    stock: oneLine(formData.get("stock")),
+    published: formData.get("published") === "on",
+    sample: formData.get("sample") === "on",
+  };
+  const errors: ProductFormErrors = {};
+
+  if (!values.name) errors.name = "Ürün adını yazın.";
+  else if (length(values.name) < 2) errors.name = "Ürün adı en az 2 karakter olmalı.";
+  else if (length(values.name) > LIMITS.name) errors.name = tooLong(LIMITS.name, values.name);
+
+  if (!values.material) errors.material = "Malzemeyi yazın.";
+  else if (length(values.material) > LIMITS.material) errors.material = tooLong(LIMITS.material, values.material);
+
+  for (const field of ["size", "weight", "craft", "story"] as const) {
+    if (length(values[field]) > LIMITS[field]) errors[field] = tooLong(LIMITS[field], values[field]);
+  }
+
+  const price = parsePrice(values.price);
+  if (!values.price) errors.price = "Fiyatı yazın.";
+  else if (price === null) errors.price = "Fiyatı tam lira olarak, yalnız rakamla yazın (örn. 3500).";
+  else if (price < 1) errors.price = "Fiyat 0'dan büyük olmalı.";
+  else if (price > LIMITS.priceMax) {
+    errors.price = `Fiyat en çok ${LIMITS.priceMax.toLocaleString("tr-TR")} TL olabilir.`;
+  }
+
+  const stock = parseStock(values.stock);
+  if (!values.stock) errors.stock = "Stok adedini yazın (yoksa 0).";
+  else if (stock === null) errors.stock = "Stok adedini yalnız rakamla yazın (örn. 3).";
+  else if (stock > LIMITS.stockMax) {
+    errors.stock = `Stok en çok ${LIMITS.stockMax.toLocaleString("tr-TR")} olabilir.`;
+  }
+
+  if (Object.keys(errors).length > 0 || price === null || stock === null) return { values, errors };
+
+  return {
+    values,
+    errors,
+    data: {
+      name: values.name,
+      material: values.material,
+      size: values.size,
+      weight: values.weight,
+      craft: values.craft,
+      story: values.story,
+      price,
+      stock,
+      published: values.published,
+    },
+  };
+}
