@@ -118,3 +118,35 @@ export async function removeProductImage(slug: string, name: string): Promise<{ 
   if (result.modifiedCount !== 1) return { removed: false, unused: false };
   return { removed: true, unused: (await products.countDocuments({ images: name }, { limit: 1 })) === 0 };
 }
+
+// Verilen görsel adlarından, artık hiçbir üründe kullanılmayanlar (diskten silinebilir).
+async function unusedImages(names: string[]): Promise<string[]> {
+  if (names.length === 0) return [];
+  const products = await productsOf();
+  const stillUsed = new Set(
+    (await products.find({ images: { $in: names } }, { projection: { images: 1 } }).toArray()).flatMap(
+      (doc) => doc.images ?? [],
+    ),
+  );
+  return names.filter((name) => !stillUsed.has(name));
+}
+
+// Ürünü kalıcı olarak siler. unusedImages: başka üründe kullanılmayan, diskten de silinecek görsel dosyaları.
+// Ürün zaten yoksa deleted false döner.
+export async function deleteProduct(slug: string): Promise<{ deleted: boolean; unusedImages: string[] }> {
+  const products = await productsOf();
+  const doc = await products.findOneAndDelete({ slug }, { projection: { images: 1 } });
+  if (!doc) return { deleted: false, unusedImages: [] };
+  return { deleted: true, unusedImages: await unusedImages(doc.images ?? []) };
+}
+
+// Örnek (demo) işaretli TÜM ürünleri siler; gerçek ürünlere dokunmaz.
+export async function deleteSampleProducts(): Promise<{ count: number; unusedImages: string[] }> {
+  const products = await productsOf();
+  const samples = await products.find({ sample: true }, { projection: { slug: 1, images: 1 } }).toArray();
+  if (samples.length === 0) return { count: 0, unusedImages: [] };
+
+  const result = await products.deleteMany({ slug: { $in: samples.map((doc) => doc.slug) }, sample: true });
+  const names = [...new Set(samples.flatMap((doc) => doc.images ?? []))];
+  return { count: result.deletedCount, unusedImages: await unusedImages(names) };
+}

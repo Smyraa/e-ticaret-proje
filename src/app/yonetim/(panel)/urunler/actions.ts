@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isSafeMediaName, type ImageActionState } from "@/lib/images";
 import { deleteMediaFile } from "@/lib/media-files";
-import { readProductForm, type ProductFormState } from "@/lib/product-form";
+import { readProductForm, type DeleteState, type ProductFormState } from "@/lib/product-form";
 import {
+  deleteProduct,
+  deleteSampleProducts,
   getProductForAdmin,
   insertProduct,
   moveProductImage,
@@ -17,6 +19,8 @@ import {
 
 const SAVE_FAILED = "Kaydedilemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
 const NOT_FOUND = "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün.";
+const DELETE_FAILED = "Silinemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
+const NOT_CONFIRMED = "Silme onaylanmadı. Sayfa tam yüklenince yeniden deneyin.";
 
 // Yeni ürün ekler. Her sunucu eylemi gibi, yetki kontrolü bu işlevin içinde yapılır (formun yalnız
 // girişli sayfada görünmesi güvenlik sayılmaz); girdiler güvenilmez kabul edilip yeniden doğrulanır.
@@ -110,4 +114,53 @@ export async function changeImage(
     return { error: "İşlem yapılamadı. Biraz sonra yeniden deneyin." };
   }
   return { error: "Geçersiz işlem." };
+}
+
+// Görsel dosyalarını diskten siler; biri silinemezse diğerleri yine denenir (yetim dosya kalması siteyi bozmaz).
+async function deleteFiles(names: string[]) {
+  for (const name of names) {
+    try {
+      await deleteMediaFile(name);
+    } catch (error) {
+      console.error("Görsel dosyası silinemedi", name, error);
+    }
+  }
+}
+
+// Ürünü kalıcı olarak siler (görselleri de, başka üründe kullanılmıyorsa). "onay" alanı, tarayıcıdaki onay
+// penceresinden SONRA forma yazılır; JavaScript yoksa ya da henüz yüklenmediyse onay gelmez ve silinmez.
+export async function removeProduct(slug: string, _state: DeleteState, formData: FormData): Promise<DeleteState> {
+  await requireAdmin();
+  if (formData.get("onay") !== "evet") return { error: NOT_CONFIRMED };
+  if (typeof slug !== "string" || slug === "") return { error: NOT_FOUND };
+
+  try {
+    const { unusedImages } = await deleteProduct(slug);
+    await deleteFiles(unusedImages);
+  } catch (error) {
+    console.error("Ürün silinemedi", error);
+    return { error: DELETE_FAILED };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/yonetim/urunler?silindi=1");
+}
+
+// Örnek (demo) işaretli TÜM ürünleri ve yalnız onların kullandığı görselleri siler; gerçek ürünlere dokunmaz.
+export async function removeSampleProducts(_state: DeleteState, formData: FormData): Promise<DeleteState> {
+  await requireAdmin();
+  if (formData.get("onay") !== "evet") return { error: NOT_CONFIRMED };
+
+  let count: number;
+  try {
+    const result = await deleteSampleProducts();
+    count = result.count;
+    await deleteFiles(result.unusedImages);
+  } catch (error) {
+    console.error("Örnek ürünler silinemedi", error);
+    return { error: DELETE_FAILED };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(`/yonetim/urunler?ornekler=${count}`);
 }

@@ -69,6 +69,9 @@ export type ProductFormState =
     }
   | undefined;
 
+// Silme düğmelerinin sonucu (başarıda sayfa yönlendirildiği için yalnız hata döner).
+export type DeleteState = { error?: string } | undefined;
+
 // Doğrulanmış, veritabanına yazılmaya hazır ürün bilgisi.
 export type ProductData = {
   name: string;
