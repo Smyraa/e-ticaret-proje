@@ -14,16 +14,32 @@ export type Product = {
   price: number; // TL
   stock: number;
   sample: boolean; // örnek (temsili) içerik
+  published: boolean; // yayında: sitede görünür; değilse taslak (yalnız yönetimde görünür)
 };
+
+// Veritabanındaki belge. Eski kayıtlarda published alanı yoktur; yoksa yayında sayılır.
+export type ProductDoc = Omit<Product, "published"> & { published?: boolean };
+
+export const toProduct = ({ published, ...rest }: ProductDoc): Product => ({
+  ...rest,
+  published: published !== false,
+});
+
+// Sitede görünecek ürünlerin süzgeci. Taslaklar yalnız yönetim sayfalarında (products-admin.ts) okunur.
+const PUBLISHED = { published: { $ne: false } };
+
+// Türkçe sıralama (Ç, Ö, Ş, Ü ve ı doğru yerde); büyük/küçük harf fark etmez.
+export const NAME_COLLATION = { locale: "tr", strength: 2 } as const;
 
 export async function getProducts(): Promise<Product[]> {
   const db = await getDb();
-  const products = await db
-    .collection<Product>("products")
-    .find({}, { projection: { _id: 0 } })
+  const docs = await db
+    .collection<ProductDoc>("products")
+    .find(PUBLISHED, { projection: { _id: 0 } })
     .sort({ name: 1 })
+    .collation(NAME_COLLATION)
     .toArray();
-  return products;
+  return docs.map(toProduct);
 }
 
 export type ProductFilter = {
@@ -57,5 +73,8 @@ export function materialsOf(products: Product[]): string[] {
 // cache(): aynı istek içinde (sayfa + başlık) tekrar sorgulanmasın.
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   const db = await getDb();
-  return db.collection<Product>("products").findOne({ slug }, { projection: { _id: 0 } });
+  const doc = await db
+    .collection<ProductDoc>("products")
+    .findOne({ slug, ...PUBLISHED }, { projection: { _id: 0 } });
+  return doc ? toProduct(doc) : null;
 });

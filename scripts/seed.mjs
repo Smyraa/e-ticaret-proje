@@ -26,12 +26,14 @@ const files = await createSampleImages(mediaDir);
 const heroImage = await createHeroImage(mediaDir);
 for (const product of products) {
   product.images = [files[product.slug]];
+  product.published = true;
 }
 
 const client = new MongoClient(uri, { serverSelectionTimeoutMS: 3000 });
 try {
   await client.connect();
   const collection = client.db().collection("products");
+  await collection.createIndex({ slug: 1 }, { unique: true }); // aynı adres iki üründe olamaz
   await collection.deleteMany({ sample: true });
   await collection.insertMany(products);
   // Ana sayfa görselinin adı ayarlarda tutulur; diğer ayarlara dokunulmaz.
