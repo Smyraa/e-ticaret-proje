@@ -7,7 +7,7 @@ import { useCart } from "@/lib/cart";
 import { cartLines, linesSubtotal } from "@/lib/cart-lines";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/lib/products";
-import { SHIPPING_FEE, shippingLabel } from "@/lib/shipping";
+import { shippingLabel } from "@/lib/shipping";
 import { useReady } from "@/lib/use-ready";
 
 const inputClass = "mt-2 w-full rounded-md border border-field bg-paper p-3 text-sm";
@@ -39,7 +39,7 @@ function Field({ label, name, className = "", ...input }: FieldProps) {
 // Ödeme sayfasının arayüzü. Hiçbir şey kaydedilmez ve gönderilmez: alanlar yalnızca tarayıcıdaki form içinde durur,
 // "Siparişi tamamla" yalnızca demo bildirimi gösterir. Kart alanı yok: canlıda kart bilgisini ödeme kuruluşunun
 // kendi güvenli formu alacak.
-export function CheckoutView({ products }: { products: Product[] }) {
+export function CheckoutView({ products, shippingFee }: { products: Product[]; shippingFee: number }) {
   const cart = useCart();
   const ready = useReady();
   const [submitted, setSubmitted] = useState(false);
@@ -197,11 +197,11 @@ export function CheckoutView({ products }: { products: Product[] }) {
           )}
           <div className="flex justify-between gap-4">
             <dt className="text-muted">Kargo</dt>
-            <dd>{shippingLabel}</dd>
+            <dd>{shippingLabel(shippingFee)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
             <dt className="font-semibold">Toplam</dt>
-            <dd className="font-display text-2xl">{formatPrice(subtotal + SHIPPING_FEE)}</dd>
+            <dd className="font-display text-2xl">{formatPrice(subtotal + shippingFee)}</dd>
           </div>
         </dl>
         {cart.gift && note && (

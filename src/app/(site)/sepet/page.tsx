@@ -1,6 +1,7 @@
 import { CartView } from "@/components/cart-view";
 import { pageMetadata } from "@/lib/metadata";
 import { getProducts, type Product } from "@/lib/products";
+import { getSiteSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export const metadata = pageMetadata(
 );
 
 export default async function CartPage() {
+  const { shippingFee } = await getSiteSettings();
   let products: Product[] = [];
   let failed = false;
   try {
@@ -30,7 +32,7 @@ export default async function CartPage() {
           Ürünler şu an yüklenemedi. Yerel MongoDB çalışıyor mu? (127.0.0.1:27017)
         </p>
       ) : (
-        <CartView products={products} />
+        <CartView products={products} shippingFee={shippingFee} />
       )}
     </div>
   );

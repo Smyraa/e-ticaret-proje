@@ -13,7 +13,7 @@ const stepButton =
   "flex h-11 w-11 items-center justify-center rounded-full border border-line text-lg transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink";
 
 // Sunucu tüm ürünleri verir (sayıları az); sepette hangilerinin kaç adet olduğunu tarayıcı bilir.
-export function CartView({ products }: { products: Product[] }) {
+export function CartView({ products, shippingFee }: { products: Product[]; shippingFee: number }) {
   const cart = useCart();
   const ready = useReady();
 
@@ -124,7 +124,7 @@ export function CartView({ products }: { products: Product[] }) {
             </div>
           )}
         </dl>
-        <p className="mt-2 text-xs text-muted">{shippingNote}</p>
+        <p className="mt-2 text-xs text-muted">{shippingNote(shippingFee)}</p>
 
         <div className="mt-6 border-t border-line pt-6">
           <label className="flex items-start gap-3 text-sm">

@@ -1,15 +1,17 @@
 import { StaticPage } from "@/components/static-page";
 import { pageMetadata } from "@/lib/metadata";
+import { getSiteSettings } from "@/lib/settings";
 import { shippingInfo } from "@/lib/shipping";
 
 export const metadata = pageMetadata("Kargo ve iade", "Kargo ve iade bilgileri (örnek içerik).");
 
 // Yalnızca bilinen bilgiler yazılır (kargo şimdilik ücretsiz, iade kabul edilir); koşullar belirlenince güncellenir.
-export default function ShippingAndReturnsPage() {
+export default async function ShippingAndReturnsPage() {
+  const { shippingFee } = await getSiteSettings();
   return (
     <StaticPage title="Kargo ve iade">
       <h2>Kargo</h2>
-      <p>{shippingInfo}</p>
+      <p>{shippingInfo(shippingFee)}</p>
       <p>Teslimat süresi ve kargo firması henüz belirlenmedi.</p>
 
       <h2>İade</h2>

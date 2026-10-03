@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { StaticPage } from "@/components/static-page";
 import { pageMetadata } from "@/lib/metadata";
+import { getSiteSettings } from "@/lib/settings";
 import { shippingInfo } from "@/lib/shipping";
 
 export const metadata = pageMetadata(
@@ -10,10 +11,10 @@ export const metadata = pageMetadata(
 );
 
 // Yalnızca bilinen bilgiler yazılır; belli olmayanlar "henüz belirlenmedi" olarak kalır.
-const questions: { question: string; answer: ReactNode }[] = [
+const questions = (shippingFee: number): { question: string; answer: ReactNode }[] => [
   {
     question: "Kargo ücretli mi?",
-    answer: shippingInfo,
+    answer: shippingInfo(shippingFee),
   },
   {
     question: "İade kabul ediyor musunuz?",
@@ -44,11 +45,12 @@ const questions: { question: string; answer: ReactNode }[] = [
   },
 ];
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const { shippingFee } = await getSiteSettings();
   return (
     <StaticPage title="Sıkça sorulan sorular">
       <div className="divide-y divide-line border-y border-line">
-        {questions.map(({ question, answer }) => (
+        {questions(shippingFee).map(({ question, answer }) => (
           <details key={question}>
             <summary className="cursor-pointer py-4 font-semibold text-ink marker:text-primary">
               {question}
