@@ -49,6 +49,28 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
         {ORDER_STATUS_LABELS[order.status]}
       </p>
 
+      {order.shipment && (order.status === "shipped" || order.status === "delivered") && (
+        <p className="mt-4 text-sm">
+          Kargo: <span className="font-semibold">{order.shipment.carrier}</span>
+          {order.shipment.trackingNumber && (
+            <>
+              {" · Takip numarası: "}
+              <span className="font-semibold break-all">{order.shipment.trackingNumber}</span>
+            </>
+          )}
+        </p>
+      )}
+
+      {order.status === "cancelled" && (
+        <p className="mt-4 text-sm text-muted">
+          Bu sipariş iptal edildi. Sorularınız için{" "}
+          <Link href="/iletisim" className="underline transition hover:text-primary">
+            bizimle iletişime geçebilirsiniz
+          </Link>
+          .
+        </p>
+      )}
+
       {order.status === "pending" && (
         <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">
           Demo sürümü: ödeme alınmadı ve ödeme adımı henüz kurulmadı. Canlıda bu adımda ödeme kuruluşunun güvenli formu
