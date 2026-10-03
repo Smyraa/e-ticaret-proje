@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/yonetim", label: "Ana sayfa", exact: true },
   { href: "/yonetim/urunler", label: "Ürünler", exact: false },
+  { href: "/yonetim/ayarlar", label: "Ayarlar", exact: false },
 ];
 
 const linkClass = "inline-flex min-h-11 items-center whitespace-nowrap underline-offset-8 transition hover:text-primary";
