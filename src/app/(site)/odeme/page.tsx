@@ -3,13 +3,14 @@ import { CheckoutView } from "@/components/checkout-view";
 import { pageMetadata } from "@/lib/metadata";
 import { getProducts, type Product } from "@/lib/products";
 import { getSiteSettings } from "@/lib/settings";
+import { placeOrder } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 // Kişiye özel sayfa: canlıda da arama motorlarına kapalı kalır.
 export const metadata = pageMetadata(
   "Ödeme",
-  "Demo ödeme sayfası: bilgiler kaydedilmez, ödeme alınmaz.",
+  "Teslimat bilgileriniz ve sipariş özeti. Demo sürümünde ödeme alınmaz.",
   { noindex: true },
 );
 
@@ -34,7 +35,7 @@ export default async function CheckoutPage() {
       </Link>
       <h1 className="mt-6 font-display text-4xl">Ödeme</h1>
       <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">
-        Demo sayfası: girdiğiniz bilgiler hiçbir yere gönderilmez ve kaydedilmez, ödeme alınmaz.
+        Demo sürümü: sipariş kaydedilir, ödeme alınmaz.
       </p>
 
       {failed ? (
@@ -42,7 +43,7 @@ export default async function CheckoutPage() {
           Ürünler şu an yüklenemedi. Yerel MongoDB çalışıyor mu? (127.0.0.1:27017)
         </p>
       ) : (
-        <CheckoutView products={products} shippingFee={shippingFee} />
+        <CheckoutView products={products} shippingFee={shippingFee} action={placeOrder} />
       )}
     </div>
   );

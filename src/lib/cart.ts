@@ -1,9 +1,11 @@
+import { NOTE_MAX } from "./gift-note";
 import { createLocalStore } from "./local-store";
+
+export { NOTE_MAX };
 
 // Sepet tarayıcıda tutulur (favorilerle aynı yöntem). Yalnızca ürün adresi (slug) ve adet saklanır;
 // fiyat saklanmaz, böylece fiyat değişirse sepet güncel fiyatı gösterir.
 // Hediye paketi ve not kartı tüm sipariş için tek seçenektir; not yalnızca hediye paketi işaretliyken geçerlidir.
-export const NOTE_MAX = 200;
 
 export type CartItem = { slug: string; qty: number };
 export type Cart = { items: CartItem[]; gift: boolean; note: string };
@@ -69,6 +71,11 @@ export function removeFromCart(slug: string) {
     const items = cart.items.filter((item) => item.slug !== slug);
     return items.length === 0 ? EMPTY_CART : { ...cart, items }; // son ürün çıkınca hediye seçimi de sıfırlanır
   });
+}
+
+// Sipariş verildikten sonra sepet boşaltılır.
+export function clearCart() {
+  update(() => EMPTY_CART);
 }
 
 export function setGift(gift: boolean) {

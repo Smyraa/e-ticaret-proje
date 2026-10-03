@@ -1,8 +1,8 @@
 // Ödeme formunun alanları, doğrulaması ve durum türleri. Sunucu eyleminde ve formda kullanılır (tarayıcıya yalnızca
 // türler gider). Doğrulama sunucuda yapılır; tarayıcıdan gelen hiçbir değere (fiyat dahil) güvenilmez.
-import { NOTE_MAX } from "./cart";
 import { EMAIL_ERROR, isEmail } from "./email";
 import { charCount, multiLine, oneLine, tooLong } from "./form-text";
+import { NOTE_MAX } from "./gift-note";
 import type { OrderAddress, OrderCustomer } from "./order-model";
 import { normalizePhone, PHONE_ERROR } from "./phone";
 
