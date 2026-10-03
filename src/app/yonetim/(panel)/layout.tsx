@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { logout } from "./actions";
+import { AdminNav } from "./admin-nav";
 
 // Giriş gerektiren yönetim sayfalarının çerçevesi (rota grubu "(panel)": adreste görünmez).
 // Giriş sayfası bu grubun dışında. Not: yetki kontrolü yalnız burada yapılmaz; her sayfa ve her eylem
@@ -11,30 +12,20 @@ export default async function AdminPanelLayout({ children }: LayoutProps<"/yonet
   return (
     <>
       <header className="border-b border-line bg-paper">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-6 py-2">
-          <div className="flex items-center gap-6">
-            <Link href="/yonetim" className="inline-flex min-h-11 items-center gap-2">
-              <span className="font-display text-xl tracking-[0.16em]">TAURA</span>
-              <span className="text-[11px] tracking-[0.3em] text-muted uppercase">Yönetim</span>
-            </Link>
-            <nav aria-label="Yönetim menüsü" className="flex items-center gap-5 text-xs tracking-widest uppercase">
-              <Link href="/yonetim" className="inline-flex min-h-11 items-center transition hover:text-primary">
-                Ana sayfa
-              </Link>
-            </nav>
+        {/* Dar ekranda iki satır: üstte marka + çıkış, altta menü. Geniş ekranda tek satır.
+            Kaynak sırası (odak sırası) geniş ekrandaki görünüşle aynı: marka, menü, çıkış. */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 px-6 py-1 md:gap-x-6 md:py-2">
+          <Link href="/yonetim" className="order-1 inline-flex min-h-11 items-center gap-2 md:order-none">
+            <span className="font-display text-xl tracking-[0.16em]">TAURA</span>
+            <span className="text-[11px] tracking-[0.3em] text-muted uppercase">Yönetim</span>
+          </Link>
+
+          <div className="order-3 w-full md:order-none md:w-auto">
+            <AdminNav />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 text-sm">
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-muted transition hover:text-primary"
-            >
-              Siteyi gör
-              <span className="sr-only"> (yeni sekmede açılır)</span>
-            </a>
-            <span className="text-muted">{admin.email}</span>
+          <div className="order-2 ml-auto flex items-center gap-x-5 text-sm md:order-none">
+            <span className="hidden text-muted lg:inline">{admin.email}</span>
             <form action={logout}>
               <button
                 type="submit"
