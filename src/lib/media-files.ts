@@ -44,3 +44,14 @@ export async function writeMediaFile(name: string, data: Buffer): Promise<boolea
 export async function deleteMediaFile(name: string): Promise<void> {
   await rm(fileOf(name), { force: true });
 }
+
+// Birkaç dosyayı siler; biri silinemezse diğerleri yine denenir (yetim dosya kalması siteyi bozmaz).
+export async function deleteMediaFiles(names: string[]): Promise<void> {
+  for (const name of names) {
+    try {
+      await deleteMediaFile(name);
+    } catch (error) {
+      console.error("Görsel dosyası silinemedi", name, error);
+    }
+  }
+}

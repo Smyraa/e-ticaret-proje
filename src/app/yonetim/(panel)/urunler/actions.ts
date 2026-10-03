@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isSafeMediaName, type ImageActionState } from "@/lib/images";
-import { deleteMediaFile } from "@/lib/media-files";
+import { deleteMediaFile, deleteMediaFiles } from "@/lib/media-files";
 import { readProductForm, type DeleteState, type ProductFormState } from "@/lib/product-form";
 import {
   deleteProduct,
@@ -116,17 +116,6 @@ export async function changeImage(
   return { error: "Geçersiz işlem." };
 }
 
-// Görsel dosyalarını diskten siler; biri silinemezse diğerleri yine denenir (yetim dosya kalması siteyi bozmaz).
-async function deleteFiles(names: string[]) {
-  for (const name of names) {
-    try {
-      await deleteMediaFile(name);
-    } catch (error) {
-      console.error("Görsel dosyası silinemedi", name, error);
-    }
-  }
-}
-
 // Ürünü kalıcı olarak siler (görselleri de, başka üründe kullanılmıyorsa). "onay" alanı, tarayıcıdaki onay
 // penceresinden SONRA forma yazılır; JavaScript yoksa ya da henüz yüklenmediyse onay gelmez ve silinmez.
 export async function removeProduct(slug: string, _state: DeleteState, formData: FormData): Promise<DeleteState> {
@@ -136,7 +125,7 @@ export async function removeProduct(slug: string, _state: DeleteState, formData:
 
   try {
     const { unusedImages } = await deleteProduct(slug);
-    await deleteFiles(unusedImages);
+    await deleteMediaFiles(unusedImages);
   } catch (error) {
     console.error("Ürün silinemedi", error);
     return { error: DELETE_FAILED };
@@ -155,7 +144,7 @@ export async function removeSampleProducts(_state: DeleteState, formData: FormDa
   try {
     const result = await deleteSampleProducts();
     count = result.count;
-    await deleteFiles(result.unusedImages);
+    await deleteMediaFiles(result.unusedImages);
   } catch (error) {
     console.error("Örnek ürünler silinemedi", error);
     return { error: DELETE_FAILED };
