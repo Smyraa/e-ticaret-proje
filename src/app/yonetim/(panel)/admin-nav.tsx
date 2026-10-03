@@ -7,13 +7,14 @@ const links = [
   { href: "/yonetim", label: "Ana sayfa", exact: true, hideOnTiny: true },
   { href: "/yonetim/urunler", label: "Ürünler", exact: false, hideOnTiny: false },
   { href: "/yonetim/ayarlar", label: "Ayarlar", exact: false, hideOnTiny: false },
+  { href: "/yonetim/hesap", label: "Hesap", exact: false, hideOnTiny: false },
 ];
 
 // "display" burada yok: her bağlantı kendi görünürlüğünü (inline-flex ya da dar ekranda gizli) ayrıca alır.
 const linkClass = "min-h-11 items-center whitespace-nowrap underline-offset-8 transition hover:text-primary";
 
-// Yönetim menüsü; bulunulan sayfa işaretlenir (aria-current + alt çizgi). "Ana sayfa" 360 px'ten dar ekranda gizlenir
-// (menü iki satıra sığsın diye); oradan marka yazısı zaten ana sayfaya götürür.
+// Yönetim menüsü; bulunulan sayfa işaretlenir (aria-current + alt çizgi). "Ana sayfa" 420 px'ten dar ekranda gizlenir
+// (menü tek satıra sığsın diye); oradan marka yazısı zaten ana sayfaya götürür.
 export function AdminNav() {
   const pathname = usePathname();
 
@@ -29,7 +30,7 @@ export function AdminNav() {
             key={href}
             href={href}
             aria-current={current ? "page" : undefined}
-            className={`${linkClass} ${current ? "text-primary underline decoration-2" : ""} ${hideOnTiny ? "hidden min-[360px]:inline-flex" : "inline-flex"}`}
+            className={`${linkClass} ${current ? "text-primary underline decoration-2" : ""} ${hideOnTiny ? "hidden min-[420px]:inline-flex" : "inline-flex"}`}
           >
             {label}
           </Link>

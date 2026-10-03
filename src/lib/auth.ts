@@ -1,12 +1,12 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
-import type { ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getDb } from "./mongodb";
-import { verifyAgainstDummy, verifyPassword } from "./password";
+import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
 
 // Yönetici girişi: e-posta + parola. Oturum = tarayıcıya verilen rastgele uzun bir anahtar (HttpOnly çerez).
 // Veritabanında anahtarın kendisi değil özeti durur; veritabanı sızsa bile çalınan kayıtla giriş yapılamaz.
@@ -110,6 +110,7 @@ async function clientAddress(): Promise<string> {
 // Yanlış deneme sayaçlarının anahtarları (loginAttempts koleksiyonunda; süresi dolunca MongoDB siler).
 const addressKey = (email: string, address: string) => `giris|${email}|${address}`;
 const emailKey = (email: string) => `giris-eposta|${email}`;
+const passwordKey = (userId: string) => `parola|${userId}`;
 
 // Sayaç sınıra ulaştıysa kalan dakika, değilse 0.
 async function lockedMinutes(key: string, limit: number): Promise<number> {
@@ -175,6 +176,55 @@ export async function loginWithPassword(email: string, password: string): Promis
   // Başarılı girişte yalnız bu adresin sayacı sıfırlanır; e-posta sayacı kendi süresinde biter
   // (yoksa meşru bir girişle başka birinin biriken kaba kuvvet denemeleri de silinirdi).
   await clearFailures(byAddress);
+  await createSession(user._id);
+  return { ok: true };
+}
+
+// field: hatanın ait olduğu form kutusu (null: genel hata).
+export type PasswordChangeResult = { ok: true } | { ok: false; field: "mevcut" | "yeni" | null; message: string };
+
+// Yönetici parolasını değiştirir. Mevcut parola sorulur (açık kalmış bir oturumdan hesabı ele geçirmek zorlaşsın);
+// yanlış denemeler girişteki gibi sınırlanır. Değişince bu yöneticinin TÜM oturumları silinir ve bu tarayıcıya yeni
+// bir oturum verilir: eski bir oturum anahtarı (çalınmış olsa bile) bir daha işe yaramaz.
+export async function changePassword(
+  admin: Admin,
+  currentPassword: string,
+  newPassword: string,
+): Promise<PasswordChangeResult> {
+  const problem = passwordProblem(newPassword);
+  if (problem) return { ok: false, field: "yeni", message: problem };
+  if (newPassword === currentPassword) {
+    return { ok: false, field: "yeni", message: "Yeni parola mevcut parolayla aynı olamaz." };
+  }
+
+  await ensureIndexes();
+  const key = passwordKey(admin.id);
+  const locked = await lockedMinutes(key, MAX_FAILURES);
+  if (locked > 0) return { ok: false, field: null, message: lockedMessage(locked) };
+
+  const db = await getDb();
+  const users = db.collection<UserDoc>("users");
+  const user = await users.findOne({ _id: new ObjectId(admin.id) });
+  if (!user || currentPassword.length > 1024 || !(await verifyPassword(currentPassword, user.passwordHash))) {
+    await recordFailure(key);
+    return { ok: false, field: "mevcut", message: "Mevcut parola yanlış." };
+  }
+  await clearFailures(key);
+
+  // Özet yalnızca okuduğumuz özetle aynıysa yazılır: aynı anda başka yerden değişmişse üzerine yazılmaz.
+  const changed = await users.updateOne(
+    { _id: user._id, passwordHash: user.passwordHash },
+    { $set: { passwordHash: await hashPassword(newPassword), updatedAt: new Date() } },
+  );
+  if (changed.modifiedCount === 0) {
+    return {
+      ok: false,
+      field: null,
+      message: "Parola başka bir yerden değiştirilmiş görünüyor. Sayfayı yenileyip yeniden deneyin.",
+    };
+  }
+
+  await db.collection<SessionDoc>("sessions").deleteMany({ userId: user._id });
   await createSession(user._id);
   return { ok: true };
 }
