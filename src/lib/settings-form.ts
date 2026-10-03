@@ -1,11 +1,12 @@
 // Site ayarları formunun alanları, doğrulaması ve durum türleri. Sunucu eyleminde ve formda kullanılır
 // (tarayıcıya yalnızca türler gider). Doğrulama sunucuda yapılır.
+import { EMAIL_ERROR, EMAIL_MAX, isEmail } from "./email";
 import { charCount, multiLine, oneLine, tooLong } from "./form-text";
 import { parseLira } from "./money";
-import { formatPhone, normalizePhone } from "./phone";
+import { formatPhone, normalizePhone, PHONE_ERROR } from "./phone";
 import type { SiteSettings } from "./settings";
 
-export const SETTINGS_LIMITS = { email: 120, address: 300, hours: 120, shippingMax: 10_000 } as const;
+export const SETTINGS_LIMITS = { email: EMAIL_MAX, address: 300, hours: 120, shippingMax: 10_000 } as const;
 
 // Formdaki alanlar; kullanıcının yazdığı gibi (metin) tutulur ki hata sonrası yazdıkları geri gelsin.
 export type SettingsValues = {
@@ -44,9 +45,6 @@ export function settingsValues(settings: SiteSettings): SettingsValues {
   };
 }
 
-const PHONE_ERROR = "Numarayı ülke koduyla ya da başında 0 ile yazın (örn. 0555 111 22 33).";
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
 export function readSettingsForm(formData: FormData): {
   values: SettingsValues;
   errors: SettingsErrors;
@@ -67,9 +65,7 @@ export function readSettingsForm(formData: FormData): {
   const phone = normalizePhone(values.phone);
   if (phone === null) errors.phone = PHONE_ERROR;
 
-  if (values.email && (values.email.length > SETTINGS_LIMITS.email || !EMAIL_PATTERN.test(values.email))) {
-    errors.email = "Geçerli bir e-posta adresi yazın (örn. ad@ornek.com).";
-  }
+  if (values.email && !isEmail(values.email)) errors.email = EMAIL_ERROR;
   if (charCount(values.address) > SETTINGS_LIMITS.address) errors.address = tooLong(SETTINGS_LIMITS.address, values.address);
   if (charCount(values.hours) > SETTINGS_LIMITS.hours) errors.hours = tooLong(SETTINGS_LIMITS.hours, values.hours);
 

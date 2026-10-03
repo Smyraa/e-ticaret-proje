@@ -21,6 +21,9 @@ export function normalizePhone(input: string): string | null {
   return /^[1-9]\d{7,14}$/.test(number) ? number : null;
 }
 
+// Geçersiz numara için forma yazılan ortak ileti.
+export const PHONE_ERROR = "Numarayı ülke koduyla ya da başında 0 ile yazın (örn. 0555 111 22 33).";
+
 // Okunaklı gösterim: "+90 555 111 22 33" (Türkiye) ya da "+49151…" (diğer ülkeler, olduğu gibi).
 export function formatPhone(digits: string): string {
   if (/^90[1-9]\d{9}$/.test(digits)) {
