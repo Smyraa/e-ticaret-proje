@@ -20,19 +20,28 @@ const products = [
   { slug: "ornek-narcil-koyu", name: "Örnek Narçıl Tesbih (Koyu Ton)", material: "Narçıl", size: "7 mm tane · 33 tane", weight: "31 g", craft, story, price: 2950, stock: 0, sample: true },
 ];
 
-// Çizim örnek görselleri media/ klasörüne yazılır; veritabanında yalnızca dosya adı tutulur.
-const mediaDir = path.join(process.cwd(), "media");
-const files = await createSampleImages(mediaDir);
-const heroImage = await createHeroImage(mediaDir);
-for (const product of products) {
-  product.images = [files[product.slug]];
-  product.published = true;
-}
+// Çizim örnek görselleri media/ klasörüne (ya da MEDIA_DIR'e) yazılır; veritabanında yalnızca dosya adı tutulur.
+const mediaDir = path.resolve(process.env.MEDIA_DIR ?? path.join(process.cwd(), "media"));
 
 const client = new MongoClient(uri, { serverSelectionTimeoutMS: 3000 });
 try {
   await client.connect();
   const collection = client.db().collection("products");
+
+  // Aynı adreste GERÇEK (örnek olmayan) bir ürün varsa hiçbir şey yazılmaz. Görsel dosyaları da yazılmaz:
+  // aynı adlı gerçek ürünün yüklenmiş fotoğrafları silinmesin.
+  const clash = await collection.findOne({ slug: { $in: products.map((product) => product.slug) }, sample: { $ne: true } });
+  if (clash) {
+    throw new Error(`"${clash.slug}" adresli gerçek bir ürün var; örnek ürünler yazılmadı. Önce o ürünü silin ya da adresini değiştirin.`);
+  }
+
+  const files = await createSampleImages(mediaDir);
+  const heroImage = await createHeroImage(mediaDir);
+  for (const product of products) {
+    product.images = [files[product.slug]];
+    product.published = true;
+  }
+
   await collection.createIndex({ slug: 1 }, { unique: true }); // aynı adres iki üründe olamaz
   await collection.deleteMany({ sample: true });
   await collection.insertMany(products);
