@@ -4,6 +4,7 @@ import { deleteMailsForOrders } from "./mail";
 import { getDb } from "./mongodb";
 import { releaseOrderStock } from "./order-flow";
 import type { Order, OrderStatus } from "./order-model";
+import { deletePaymentsForOrders } from "./payments";
 import { unusedImages } from "./products-admin";
 
 // Yönetim tarafı: siparişleri listeleme, okuma, not yazma ve test siparişlerini temizleme. Bu dosyadaki her işlev yalnız
@@ -95,6 +96,7 @@ export async function deleteTestOrders(): Promise<{ count: number; unusedImages:
   const numbers = tests.map((order) => order.number);
   const result = await orders.deleteMany({ test: true, number: { $in: numbers } });
   await deleteMailsForOrders(numbers); // e-posta kayıtlarında da müşterinin bilgileri var
+  await deletePaymentsForOrders(numbers); // ödeme denemeleri (deneme ödeme sayfasıyla yapılmış olabilir)
 
   const names = [...new Set(tests.flatMap((order) => order.items.map((item) => item.image).filter((name): name is string => Boolean(name))))];
   return { count: result.deletedCount, unusedImages: await unusedImages(names) };

@@ -5,7 +5,7 @@ import { ORDER_STATUS_LABELS, type Order, type OrderItem, type OrderShipment, ty
 import { availableCommands, targetStatus, type OrderCommand } from "./order-status";
 
 // Siparişin durumunu değiştiren ve stoğu düşüp iade eden işlemler. Çağıranın yetkisi kendi işidir: yönetim eylemleri
-// requireAdmin() geçtikten sonra, ödeme kuruluşunun bildirimi (Aşama D-5) imzası doğrulandıktan sonra çağırır.
+// requireAdmin() geçtikten sonra, ödeme (applyPayment) ise sonucu kuruluşa sorularak doğrulandıktan sonra çağırır.
 //
 // Stok kuralı (kullanıcı kararı): stok sipariş verilince değil ÖDEME ALININCA düşer; iptalde ya da ödeme geri alınınca
 // iade edilir. MongoDB'de çok belgeli işlem (transaction) kullanmıyoruz; bunun yerine adımların sırası, bir çökme ya da
@@ -92,6 +92,25 @@ export async function releaseOrderStock(order: Order): Promise<void> {
     { $set: { stockDeducted: false, updatedAt: new Date() } },
   );
   if (flipped.modifiedCount === 1) await returnStock(order.items);
+}
+
+// Kartla ödeme alındı (sonuç kuruluştan sorularak doğrulanmış): sipariş "ödendi" olur ve stok düşer. Elle "ödendi"den
+// farkı: stok yetmese bile sipariş "ödendi" KALIR, çünkü para alınmıştır; yetmeyen ürünler döndürülür ve sipariş sayfasındaki
+// stok uyarısı + "Stoğu şimdi düş" düğmesi ya da iptal (ödemeyi de iade eder) ile çözülür.
+// Sipariş artık "ödeme bekleniyor" değilse (iptal edilmiş, silinmiş ya da başka yoldan ödenmiş) hiçbir şey değişmez.
+export type ApplyPaymentResult =
+  | { applied: true; stockProblems: string[] }
+  | { applied: false; reason: "missing" | "closed" | "already-paid" };
+
+export async function applyPayment(number: string): Promise<ApplyPaymentResult> {
+  const paid = await setStatus(number, ["pending"], "paid");
+  if (!paid) {
+    const orders = await ordersOf();
+    const current = await orders.findOne({ number }, { projection: { status: 1 } });
+    if (!current) return { applied: false, reason: "missing" };
+    return { applied: false, reason: current.status === "cancelled" ? "closed" : "already-paid" };
+  }
+  return { applied: true, stockProblems: await deductOrderStock(paid) };
 }
 
 const moved = (to: OrderStatus) => `Sipariş “${ORDER_STATUS_LABELS[to]}” durumuna alındı.`;
