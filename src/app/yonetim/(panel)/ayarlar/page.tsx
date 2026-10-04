@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/auth";
 import { mailSetup } from "@/lib/mail";
 import { describeMailSetup } from "@/lib/mail-model";
 import { mediaUrl } from "@/lib/media";
+import { paymentSetup } from "@/lib/payment-config";
+import { describePaymentSetup } from "@/lib/payment-model";
 import { readSettings } from "@/lib/settings";
 import { settingsValues } from "@/lib/settings-form";
 import { SettingsTabs } from "../settings-tabs";
@@ -31,6 +33,18 @@ export default async function SettingsPage({ searchParams }: PageProps<"/yonetim
 
       <h2 className="mt-10 font-display text-2xl">İletişim</h2>
       <SettingsForm action={saveSettings} initial={settingsValues(settings)} mailNote={describeMailSetup(mailSetup())} />
+
+      <section aria-labelledby="kart-odeme-ayar-baslik" className="mt-12 border-t border-line pt-8">
+        <h2 id="kart-odeme-ayar-baslik" className="font-display text-2xl">
+          Kartla ödeme
+        </h2>
+        <p className="mt-3 max-w-2xl rounded-md bg-soft p-3 text-sm text-muted">
+          {describePaymentSetup(paymentSetup()) || "Kartla ödeme bağlı."}
+        </p>
+        <p className="mt-3 max-w-2xl text-sm text-muted">
+          Ödeme kuruluşunun anahtarları bu sayfaya yazılmaz; sunucudaki ortam değişkenlerinde tutulur.
+        </p>
+      </section>
 
       <section aria-labelledby="ana-gorsel-baslik" className="mt-12 border-t border-line pt-8">
         <h2 id="ana-gorsel-baslik" className="font-display text-2xl">

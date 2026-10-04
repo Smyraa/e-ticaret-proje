@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { formatPrice } from "@/lib/format";
 import { countByStatus } from "@/lib/orders-admin";
+import { listPaymentsNeedingAttention } from "@/lib/payments";
 import { getAllProducts } from "@/lib/products-admin";
 
 // Yönetim ana sayfası: ürünlerin ve siparişlerin kısa özeti, ürün ve sipariş listelerine geçiş.
 export default async function AdminHomePage() {
   const admin = await requireAdmin();
-  const [products, orderCounts] = await Promise.all([getAllProducts(), countByStatus()]);
+  const [products, orderCounts, attention] = await Promise.all([
+    getAllProducts(),
+    countByStatus(),
+    listPaymentsNeedingAttention(),
+  ]);
 
   const published = products.filter((product) => product.published).length;
   const soldOut = products.filter((product) => product.stock === 0).length;
@@ -56,6 +62,27 @@ export default async function AdminHomePage() {
           </div>
         ))}
       </dl>
+
+      {attention.length > 0 && (
+        <section aria-labelledby="odeme-uyari-baslik" className="mt-8 rounded-md border border-danger p-4">
+          <h3 id="odeme-uyari-baslik" className="text-sm font-semibold text-danger">
+            İlgilenmeniz gereken ödemeler
+          </h3>
+          <ul className="mt-2 space-y-1 text-sm">
+            {attention.map((item) => (
+              <li key={item.orderNumber}>
+                <Link
+                  href={`/yonetim/siparisler/${item.orderNumber}`}
+                  className="underline transition hover:text-primary"
+                >
+                  {item.orderNumber}
+                </Link>{" "}
+                <span className="text-muted">({formatPrice(item.amount)})</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mt-8 flex flex-wrap gap-4">
         <Link

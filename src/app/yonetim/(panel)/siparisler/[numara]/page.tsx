@@ -12,15 +12,25 @@ import { ORDER_NUMBER_PATTERN } from "@/lib/order-ids";
 import { ORDER_STATUS_LABELS } from "@/lib/order-model";
 import { availableCommands, HOLDS_STOCK } from "@/lib/order-status";
 import { getOrderForAdmin } from "@/lib/orders-admin";
+import { paymentSetup } from "@/lib/payment-config";
+import {
+  canRefund,
+  describePaymentSetup,
+  PAYMENT_STATUS_LABELS,
+  paymentConcern,
+  PROVIDER_LABELS,
+} from "@/lib/payment-model";
+import { listPaymentsForOrder } from "@/lib/payments";
 import { formatPhone } from "@/lib/phone";
 import { shippingLabel } from "@/lib/shipping";
 import { siteUrl } from "@/lib/site";
 import { orderMessage, whatsappLink } from "@/lib/whatsapp";
-import { changeOrder, saveOrderNote } from "../actions";
+import { changeOrder, paymentOperation, saveOrderNote } from "../actions";
 import { StatusBadge } from "../status-badge";
 import { CopyButton } from "../copy-button";
 import { NoteForm } from "../note-form";
 import { OrderActions } from "../order-actions";
+import { PaymentOps, type PaymentOp } from "../payment-ops";
 
 export const metadata: Metadata = { title: "Sipariş · Yönetim · TAURA" };
 
@@ -45,6 +55,13 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
   const history = order.history ?? [];
   const mails = await listMailsForOrder(order.number);
   const mailNote = describeMailSetup(mailSetup());
+  const payments = await listPaymentsForOrder(order.number);
+  const paymentNote = describePaymentSetup(paymentSetup());
+  const cardPaid = payments.some((payment) => payment.status === "paid"); // kartla ödeme alınmış
+  const concerns = payments.flatMap((payment) => {
+    const text = paymentConcern(payment);
+    return text ? [{ id: payment.id, text }] : [];
+  });
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -70,10 +87,20 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
 
       {holdsStock && !order.stockDeducted && (
         <p role="alert" className="mt-6 rounded-md border border-danger p-4 text-sm font-semibold text-danger">
-          Bu sipariş ödenmiş görünüyor ama ürünlerin stoğu düşülmemiş. İşlemler bölümündeki “Stoğu şimdi düş” düğmesini
-          kullanın.
+          {cardPaid
+            ? "Kartla ödeme alındı ama ürünlerin stoğu düşülemedi (stok yetmemiş olabilir). Stoğu güncelleyip İşlemler bölümündeki “Stoğu şimdi düş” düğmesini kullanın ya da siparişi iptal edin; iptal, kartla alınan ödemeyi de müşteriye iade eder."
+            : "Bu sipariş ödenmiş görünüyor ama ürünlerin stoğu düşülmemiş. İşlemler bölümündeki “Stoğu şimdi düş” düğmesini kullanın."}
         </p>
       )}
+      {concerns.map((concern) => (
+        <p
+          key={concern.id}
+          role="alert"
+          className="mt-6 rounded-md border border-danger p-4 text-sm font-semibold text-danger"
+        >
+          Ödeme: {concern.text}
+        </p>
+      ))}
       {!holdsStock && order.stockDeducted && (
         <p role="alert" className="mt-6 rounded-md border border-danger p-4 text-sm font-semibold text-danger">
           Bu sipariş ödenmemiş ya da iptal edilmiş ama düşülen stok iade edilmemiş. İşlemler bölümündeki “Stoğu şimdi iade
@@ -228,6 +255,71 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
                   </li>
                 ))}
               </ol>
+            )}
+          </section>
+
+          <section aria-labelledby="kart-odeme-baslik">
+            <h2 id="kart-odeme-baslik" className="font-display text-2xl">
+              Kartla ödemeler
+            </h2>
+            {paymentNote && <p className="mt-3 rounded-md bg-soft p-3 text-sm text-muted">{paymentNote}</p>}
+            {payments.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">Bu sipariş için kartla ödeme denemesi yok.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {payments.map((payment) => {
+                  const concern = paymentConcern(payment);
+                  const ops: PaymentOp[] = [];
+                  if (canRefund(payment, order.status)) ops.push("refund");
+                  if (payment.status === "paid" && !payment.applied && payment.attention !== "amount-mismatch") ops.push("apply");
+                  return (
+                    <li key={payment.id} className="rounded-lg bg-paper p-4 text-sm shadow-sm">
+                      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="font-semibold">{PROVIDER_LABELS[payment.provider]}</span>
+                        <span className={concern ? "font-semibold text-danger" : "text-muted"}>
+                          {PAYMENT_STATUS_LABELS[payment.status]}
+                        </span>
+                        <span>{formatPrice(payment.amount)}</span>
+                        <span className="text-muted">{formatDateTime(payment.createdAt)}</span>
+                      </p>
+                      <dl className="mt-1 space-y-1 text-xs text-muted">
+                        {payment.paidAt && (
+                          <div>
+                            <dt className="inline">Ödeme alındı: </dt>
+                            <dd className="inline">{formatDateTime(payment.paidAt)}</dd>
+                          </div>
+                        )}
+                        {payment.refundedAt && (
+                          <div>
+                            <dt className="inline">İade edildi: </dt>
+                            <dd className="inline">{formatDateTime(payment.refundedAt)}</dd>
+                          </div>
+                        )}
+                        {payment.providerPaymentId && (
+                          <div className="break-all">
+                            <dt className="inline">Kuruluş ödeme no: </dt>
+                            <dd className="inline">{payment.providerPaymentId}</dd>
+                          </div>
+                        )}
+                        {payment.failure && (
+                          <div>
+                            <dt className="inline">Neden: </dt>
+                            <dd className="inline">{payment.failure}</dd>
+                          </div>
+                        )}
+                      </dl>
+                      {concern && <p className="mt-2 text-xs font-semibold text-danger">{concern}</p>}
+                      <PaymentOps action={paymentOperation.bind(null, order.number, payment.id)} ops={ops} />
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {payments.length > 0 && (
+              <PaymentOps
+                action={paymentOperation.bind(null, order.number, "")}
+                ops={payments.some((payment) => payment.status === "started") ? ["check"] : []}
+              />
             )}
           </section>
 

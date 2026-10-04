@@ -31,7 +31,8 @@ const BUTTONS: Partial<Record<OrderCommand, ButtonSpec>> = {
   cancel: {
     label: "Siparişi iptal et",
     tone: "danger",
-    confirm: "Sipariş iptal edilsin mi? Stok düşülmüşse iade edilir. İptal geri alınamaz.",
+    confirm:
+      "Sipariş iptal edilsin mi? Stok düşülmüşse iade edilir; kartla ödeme alınmışsa ödeme de müşteriye iade edilir. İptal geri alınamaz.",
   },
 };
 
