@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CheckoutView } from "@/components/checkout-view";
 import { pageMetadata } from "@/lib/metadata";
+import { paymentSetup } from "@/lib/payment-config";
+import { checkoutPaymentText, paymentsActive } from "@/lib/payment-model";
 import { getProducts, type Product } from "@/lib/products";
 import { getSiteSettings } from "@/lib/settings";
 import { placeOrder } from "./actions";
@@ -16,6 +18,8 @@ export const metadata = pageMetadata(
 
 export default async function CheckoutPage() {
   const { shippingFee } = await getSiteSettings();
+  const setup = paymentSetup();
+  const payment = checkoutPaymentText(setup);
   let products: Product[] = [];
   let failed = false;
   try {
@@ -34,16 +38,22 @@ export default async function CheckoutPage() {
         ← Sepete dön
       </Link>
       <h1 className="mt-6 font-display text-4xl">Ödeme</h1>
-      <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">
-        Demo sürümü: sipariş kaydedilir, ödeme alınmaz.
-      </p>
+      {!paymentsActive(setup) && (
+        <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">Demo sürümü: sipariş kaydedilir, ödeme alınmaz.</p>
+      )}
 
       {failed ? (
         <p className="mt-8 rounded-md bg-soft p-4 text-sm text-muted">
           Ürünler şu an yüklenemedi. Yerel MongoDB çalışıyor mu? (127.0.0.1:27017)
         </p>
       ) : (
-        <CheckoutView products={products} shippingFee={shippingFee} action={placeOrder} />
+        <CheckoutView
+          products={products}
+          shippingFee={shippingFee}
+          paymentNote={payment.note}
+          submitLabel={payment.button}
+          action={placeOrder}
+        />
       )}
     </div>
   );

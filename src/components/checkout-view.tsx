@@ -61,15 +61,17 @@ function Field({ label, name, field, errors, value, multiline, rows = 3, optiona
 type Props = {
   products: Product[];
   shippingFee: number;
+  paymentNote: string; // "Ödeme" bölümünde müşteriye söylenen (ödeme ayarına göre sunucu belirler)
+  submitLabel: string; // gönder düğmesinin yazısı
   // Sunucu eylemi (sipariş verme). Sayfa (sunucu) verir; bu bileşende `.bind` edilmez.
   action: (state: CheckoutState, formData: FormData) => Promise<CheckoutState>;
 };
 
-// Ödeme sayfası: iletişim + teslimat formu ve sipariş özeti. "Siparişi tamamla" siparişi sunucuda kaydeder ve müşteriyi
-// sipariş sayfasına götürür. Ödeme henüz alınmıyor (demo); kart alanı hiç yok: canlıda kart bilgisini ödeme kuruluşunun
-// kendi güvenli formu alacak. Sepet tarayıcıda durur, bu yüzden form sunucuda çizilir ama sepet hazır olana kadar gizli
-// kalır (gizli alanlar sunucuda çizilen biçimle gelir; sepet içeriği tarayıcıda forma yazılır).
-export function CheckoutView({ products, shippingFee, action }: Props) {
+// Ödeme sayfası: iletişim + teslimat formu ve sipariş özeti. Gönder düğmesi siparişi sunucuda kaydeder; kartla ödeme açıksa
+// müşteriyi ödeme kuruluşunun sayfasına, değilse sipariş sayfasına götürür. Kart alanı hiç yok: kart bilgisini yalnız ödeme
+// kuruluşunun kendi güvenli sayfası alır. Sepet tarayıcıda durur, bu yüzden form sunucuda çizilir ama sepet hazır olana kadar
+// gizli kalır (gizli alanlar sunucuda çizilen biçimle gelir; sepet içeriği tarayıcıda forma yazılır).
+export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, action }: Props) {
   const cart = useCart();
   const ready = useReady();
   const [state, formAction, pending] = useActionState(action, undefined);
@@ -212,10 +214,7 @@ export function CheckoutView({ products, shippingFee, action }: Props) {
             <h2 id="odeme-baslik" className="font-display text-2xl">
               Ödeme
             </h2>
-            <p className="mt-4 rounded-md border border-dashed border-line p-4 text-sm text-muted">
-              Ödeme adımı henüz hazır değil: siparişi tamamladığınızda siparişiniz kaydedilir, ödeme alınmaz. Canlıda
-              ödeme kuruluşunun güvenli formu burada açılacak; kart bilgisi bu sitede hiç girilmez.
-            </p>
+            <p className="mt-4 rounded-md border border-dashed border-line p-4 text-sm text-muted">{paymentNote}</p>
           </section>
 
           <div>
@@ -330,7 +329,7 @@ export function CheckoutView({ products, shippingFee, action }: Props) {
             disabled={pending}
             className="mt-6 min-h-11 w-full bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary disabled:opacity-60"
           >
-            {pending ? "Sipariş oluşturuluyor…" : "Siparişi tamamla"}
+            {pending ? "Sipariş oluşturuluyor…" : submitLabel}
           </button>
         </aside>
       </div>

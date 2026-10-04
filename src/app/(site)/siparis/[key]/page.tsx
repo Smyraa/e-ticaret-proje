@@ -2,12 +2,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { NewOrderNotice } from "@/components/new-order-notice";
+import { OrderPaymentSection } from "@/components/order-payment-section";
 import { formatPrice } from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
 import { pageMetadata } from "@/lib/metadata";
 import { maskEmail, maskPhone, ORDER_STATUS_LABELS, type Order } from "@/lib/order-model";
 import { getOrderByKey } from "@/lib/orders";
+import { paymentSetup } from "@/lib/payment-config";
+import { paymentsActive, type PaymentRecord } from "@/lib/payment-model";
+import { latestPaymentOf } from "@/lib/payments";
 import { shippingLabel } from "@/lib/shipping";
+import { checkOrderPayment, startOrderPayment } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +42,21 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
   }
   if (!order) notFound();
 
+  // Ödeme bölümü sipariş ve ödeme kayıtlarının gerçek durumundan çizilir. Ödeme kaydı okunamazsa sayfa yine açılır.
+  const setup = paymentSetup();
+  let latest: PaymentRecord | null = null;
+  try {
+    latest = await latestPaymentOf(order.number);
+  } catch (error) {
+    console.error("Ödeme kaydı okunamadı", error);
+  }
+  // Kartla ödeme açıkken ödenmemiş siparişe "alındı, teşekkür ederiz" denmez (henüz ödenmedi).
+  const announce = order.status !== "pending" || !paymentsActive(setup);
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="font-display text-4xl">Sipariş</h1>
-      <NewOrderNotice fresh={fresh} />
+      <NewOrderNotice fresh={fresh} announce={announce} />
       <p className="mt-3 text-sm text-muted">
         Sipariş numaranız:{" "}
         <span className="font-semibold tracking-wider text-ink">{order.number}</span>
@@ -71,12 +87,13 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
         </p>
       )}
 
-      {order.status === "pending" && (
-        <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">
-          Demo sürümü: ödeme alınmadı ve ödeme adımı henüz kurulmadı. Canlıda bu adımda ödeme kuruluşunun güvenli formu
-          açılacak.
-        </p>
-      )}
+      <OrderPaymentSection
+        order={order}
+        setup={setup}
+        latest={latest}
+        startAction={startOrderPayment.bind(null, key)}
+        checkAction={checkOrderPayment.bind(null, key)}
+      />
       <p className="mt-4 text-sm text-muted">
         Bu sayfanın adresini kaydedin: siparişinizin durumunu buradan takip edebilirsiniz. Adresi yalnızca güvendiğiniz
         kişilerle paylaşın. Kaybederseniz{" "}

@@ -6,7 +6,10 @@ import { clientAddress } from "@/lib/client-address";
 import { buildOrderItems } from "@/lib/order-build";
 import { readCartPayload, readCheckoutForm, type CheckoutState } from "@/lib/order-form";
 import { notifyOrderPlaced } from "@/lib/order-notify";
-import { createOrder } from "@/lib/orders";
+import { createOrder, getOrderByNumber } from "@/lib/orders";
+import { paymentSetup } from "@/lib/payment-config";
+import { paymentsActive } from "@/lib/payment-model";
+import { startPayment } from "@/lib/payments";
 import { getProductsBySlugs } from "@/lib/products";
 import { allowRequest } from "@/lib/rate-limit";
 import { readSettings } from "@/lib/settings";
@@ -16,8 +19,9 @@ const ORDERS_PER_WINDOW = 5;
 const WINDOW_MINUTES = 30;
 
 // "Siparişi tamamla": sepet ve form sunucuda doğrulanır, ürün bilgisi ve fiyatlar veritabanından yeniden okunur,
-// sipariş "ödeme bekleniyor" durumunda kaydedilir ve müşteri sipariş sayfasına yönlenir. Giriş gerekmez (misafir
-// alışveriş); stok burada düşmez, ödeme alınınca düşer.
+// sipariş "ödeme bekleniyor" durumunda kaydedilir. Giriş gerekmez (misafir alışveriş); stok burada düşmez, ödeme
+// alınınca düşer. Kartla ödeme açıksa müşteri ödeme sayfasına yönlenir (sonuç siteye dönünce işlenir, bkz.
+// odeme/geri-donus); değilse sipariş sayfasına yönlenir ve sipariş e-postaları hemen hazırlanır.
 export async function placeOrder(_state: CheckoutState, formData: FormData): Promise<CheckoutState> {
   const form = readCheckoutForm(formData);
   if (!form.data) return { values: form.values, errors: form.errors };
@@ -28,8 +32,11 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
 
   let trackKey: string;
   let number: string;
+  let payUrl: string | null = null;
+  let notifyNow = true;
   try {
-    if (!(await allowRequest(`siparis|${await clientAddress()}`, ORDERS_PER_WINDOW, WINDOW_MINUTES))) {
+    const address = await clientAddress();
+    if (!(await allowRequest(`siparis|${address}`, ORDERS_PER_WINDOW, WINDOW_MINUTES))) {
       return { values, message: "Kısa sürede çok fazla sipariş verildi. Birkaç dakika bekleyip yeniden deneyin." };
     }
 
@@ -61,6 +68,22 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
     });
     trackKey = created.trackKey;
     number = created.number;
+
+    // Kartla ödeme açıksa ödeme oturumu şimdi açılır. Açılamazsa sipariş yine de kayıtlıdır: müşteri sipariş sayfasından
+    // "Kartla öde" ile yeniden dener.
+    if (paymentsActive(paymentSetup())) {
+      notifyNow = false; // e-postalar ödeme ALININCA gider; ödenmemiş denemeler için gitmesin
+      try {
+        const order = await getOrderByNumber(number);
+        if (order) {
+          const started = await startPayment(order, address);
+          if (started.ok) payUrl = started.url;
+        }
+      } catch (error) {
+        // Sipariş kaydedildi; yalnız ödeme sayfası açılamadı. Müşteri hata görmez, sipariş sayfasından yeniden dener.
+        console.error(`Ödeme oturumu açılamadı (${number})`, error);
+      }
+    }
   } catch (error) {
     console.error("Sipariş oluşturulamadı", error);
     return { values, message: "Sipariş şu an oluşturulamadı. Biraz sonra yeniden deneyin." };
@@ -68,6 +91,7 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
 
   // E-postalar (müşteriye "sipariş alındı", size "yeni sipariş") yanıt gittikten SONRA hazırlanır: müşteri beklemez,
   // e-posta sorunu siparişi bozmaz.
-  after(() => notifyOrderPlaced(number));
+  if (notifyNow) after(() => notifyOrderPlaced(number));
+  if (payUrl) redirect(payUrl);
   redirect(`/siparis/${trackKey}?yeni=1`);
 }

@@ -8,7 +8,9 @@ import { clearCart } from "@/lib/cart";
 // boşaltır, sonra işareti adresten kaldırır: sayfa yenilenince ya da sipariş bağlantısı sonradan açılınca müşterinin
 // yeni sepeti silinmez. İşaret kalkınca sayfa yeniden çizilir; "ilk açılış" bilgisi bu yüzden durumda tutulur ve ileti
 // sayfa açık kaldıkça görünür.
-export function NewOrderNotice({ fresh }: { fresh: boolean }) {
+// announce=false: iletiyi gösterme, yalnız sepeti boşalt (kartla ödeme açıkken sipariş henüz ödenmediğinden "alındı, teşekkür
+// ederiz" denmez; sayfanın ödeme bölümü durumu anlatır).
+export function NewOrderNotice({ fresh, announce = true }: { fresh: boolean; announce?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isNew] = useState(fresh);
@@ -19,7 +21,7 @@ export function NewOrderNotice({ fresh }: { fresh: boolean }) {
     router.replace(pathname);
   }, [isNew, router, pathname]);
 
-  if (!isNew) return null;
+  if (!isNew || !announce) return null;
   return (
     <p role="status" className="mt-6 rounded-md bg-soft p-4 text-sm font-semibold">
       Siparişiniz alındı, teşekkür ederiz.
