@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { deleteMediaFiles } from "@/lib/media-files";
 import { readAdminNote, readCommand, readShipForm, type OrderActionState } from "@/lib/order-admin-form";
 import { runOrderCommand } from "@/lib/order-flow";
+import { notifyOrderShipped } from "@/lib/order-notify";
 import { ORDER_NUMBER_PATTERN } from "@/lib/order-ids";
 import type { OrderCommand } from "@/lib/order-status";
 import { deleteTestOrders, saveAdminNote } from "@/lib/orders-admin";
@@ -40,6 +42,8 @@ export async function changeOrder(number: string, _state: OrderActionState, form
   try {
     const result = await runOrderCommand(number, command, ship);
     revalidatePath("/", "layout"); // durum ve stok değişti (başarısızsa da güncel durum görünsün)
+    // Sipariş gerçekten kargoya verildiyse (bilgi düzeltmesi değil) müşteriye e-posta, yanıt gittikten sonra hazırlanır.
+    if (result.ok && result.notify === "shipped") after(() => notifyOrderShipped(number));
     return result.ok ? { message: result.message } : { error: result.error, problems: result.problems };
   } catch (error) {
     console.error("Sipariş işlemi yapılamadı", error);

@@ -16,7 +16,10 @@ import { availableCommands, targetStatus, type OrderCommand } from "./order-stat
 //   - İade: önce bayrak false olur, sonra stok iade edilir. İki kez iade edilemez; çökerse stok eksik kalır.
 // Durum geçişleri "durum hâlâ beklediğimiz gibiyse" koşuluyla yapılır: aynı anda gelen iki istekten biri kazanır.
 
-export type FlowResult = { ok: true; message: string } | { ok: false; error: string; problems?: string[] };
+// notify: işlemin ardından müşteriye e-posta gitmesi gerekiyorsa hangisi (yalnız durum gerçekten değiştiğinde).
+export type FlowResult =
+  | { ok: true; message: string; notify?: "shipped" }
+  | { ok: false; error: string; problems?: string[] };
 
 const MISSING = "Sipariş bulunamadı.";
 const NOT_ALLOWED = "Bu işlem siparişin şu anki durumunda yapılamaz. Sayfayı yenileyip yeniden deneyin.";
@@ -123,7 +126,9 @@ export async function runOrderCommand(number: string, command: OrderCommand, shi
         return updated.matchedCount === 1 ? { ok: true, message: "Kargo bilgisi güncellendi." } : { ok: false, error: CHANGED };
       }
       const shipped = await setStatus(number, ["paid", "preparing"], "shipped", { shipment: ship });
-      return shipped ? { ok: true, message: "Sipariş kargoya verildi olarak işaretlendi." } : { ok: false, error: CHANGED };
+      return shipped
+        ? { ok: true, message: "Sipariş kargoya verildi olarak işaretlendi.", notify: "shipped" }
+        : { ok: false, error: CHANGED };
     }
 
     case "cancel": {

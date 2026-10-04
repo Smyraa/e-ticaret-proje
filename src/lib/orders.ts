@@ -70,6 +70,12 @@ export async function getOrderByKey(key: string): Promise<Order | null> {
   return orders.findOne({ trackKey: key }, { projection: { _id: 0 } });
 }
 
+// Sunucu içi işler için (e-posta bildirimleri): numarayla siparişin tamamı. Müşteriye ya da bir sayfaya doğrudan verilmez.
+export async function getOrderByNumber(number: string): Promise<Order | null> {
+  const orders = await ordersOf();
+  return orders.findOne({ number }, { projection: { _id: 0 } });
+}
+
 const digest = (text: string) => createHash("sha256").update(text).digest();
 
 // Sipariş sorgulama: numara ve e-posta (küçük harfle) birlikte doğruysa siparişin gizli anahtarını verir, değilse null.

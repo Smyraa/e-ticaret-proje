@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { clientAddress } from "@/lib/client-address";
 import { buildOrderItems } from "@/lib/order-build";
 import { readCartPayload, readCheckoutForm, type CheckoutState } from "@/lib/order-form";
+import { notifyOrderPlaced } from "@/lib/order-notify";
 import { createOrder } from "@/lib/orders";
 import { getProductsBySlugs } from "@/lib/products";
 import { allowRequest } from "@/lib/rate-limit";
@@ -25,6 +27,7 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
   if ("error" in cart) return { values, message: cart.error };
 
   let trackKey: string;
+  let number: string;
   try {
     if (!(await allowRequest(`siparis|${await clientAddress()}`, ORDERS_PER_WINDOW, WINDOW_MINUTES))) {
       return { values, message: "Kısa sürede çok fazla sipariş verildi. Birkaç dakika bekleyip yeniden deneyin." };
@@ -57,10 +60,14 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
       consentAt: new Date(),
     });
     trackKey = created.trackKey;
+    number = created.number;
   } catch (error) {
     console.error("Sipariş oluşturulamadı", error);
     return { values, message: "Sipariş şu an oluşturulamadı. Biraz sonra yeniden deneyin." };
   }
 
+  // E-postalar (müşteriye "sipariş alındı", size "yeni sipariş") yanıt gittikten SONRA hazırlanır: müşteri beklemez,
+  // e-posta sorunu siparişi bozmaz.
+  after(() => notifyOrderPlaced(number));
   redirect(`/siparis/${trackKey}?yeni=1`);
 }

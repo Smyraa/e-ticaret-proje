@@ -1,5 +1,6 @@
 import "server-only";
 
+import { deleteMailsForOrders } from "./mail";
 import { getDb } from "./mongodb";
 import { releaseOrderStock } from "./order-flow";
 import type { Order, OrderStatus } from "./order-model";
@@ -91,7 +92,9 @@ export async function deleteTestOrders(): Promise<{ count: number; unusedImages:
   if (tests.length === 0) return { count: 0, unusedImages: [] };
 
   for (const order of tests) if (order.stockDeducted) await releaseOrderStock(order);
-  const result = await orders.deleteMany({ test: true, number: { $in: tests.map((order) => order.number) } });
+  const numbers = tests.map((order) => order.number);
+  const result = await orders.deleteMany({ test: true, number: { $in: numbers } });
+  await deleteMailsForOrders(numbers); // e-posta kayıtlarında da müşterinin bilgileri var
 
   const names = [...new Set(tests.flatMap((order) => order.items.map((item) => item.image).filter((name): name is string => Boolean(name))))];
   return { count: result.deletedCount, unusedImages: await unusedImages(names) };
