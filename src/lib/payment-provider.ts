@@ -3,16 +3,14 @@ import "server-only";
 import type { Order } from "./order-model";
 import type { PaymentRecord, ProviderName } from "./payment-model";
 
+export { PaymentError } from "./payment-error";
+
 // Ödeme kuruluşlarının uyması gereken arayüz. Sipariş ve ödeme akışı (payments.ts) yalnız bunu bilir; kuruluşa özgü
 // ayrıntılar (adresler, imzalar, alan adları) kendi dosyasında kalır. Yeni kuruluş eklemek = bu arayüzü uygulayan bir
 // dosya yazıp payment-providers.ts'e eklemek.
 //
 // Güven ilkesi: müşterinin tarayıcısıyla gelen hiçbir şeye ödemenin sonucu olarak güvenilmez. Müşteri ödeme sonrası
 // sitemize döner, ama ödemenin gerçekten olup olmadığını SUNUCU kuruluşa sorarak öğrenir (verify).
-
-// Kuruluşla konuşurken bir sorun çıktığında fırlatılır (ağ hatası, beklenmeyen yanıt). İleti günlüğe yazılır;
-// müşteriye ya da yönetime olduğu gibi gösterilmez.
-export class PaymentError extends Error {}
 
 export type StartInput = {
   order: Order;

@@ -2,18 +2,19 @@ import "server-only";
 
 import { paymentSetup } from "./payment-config";
 import { fakeProvider } from "./payment-fake";
+import { iyzicoProvider } from "./payment-iyzico";
 import type { ProviderName } from "./payment-model";
 import type { PaymentProvider } from "./payment-provider";
 
-// Kurulu ödeme kuruluşları. iyzico bağlandığında buraya eklenir.
-const providers: Partial<Record<ProviderName, PaymentProvider>> = { fake: fakeProvider };
+// Kurulu ödeme kuruluşları.
+const providers: Record<ProviderName, PaymentProvider> = { fake: fakeProvider, iyzico: iyzicoProvider };
 
 export function getProvider(name: ProviderName): PaymentProvider {
   const provider = providers[name];
   if (!provider) throw new Error(`Ödeme sağlayıcısı kurulu değil: ${name}`);
-  // Deneme sağlayıcısı yalnız ayar açıkça "fake" iken (ve adres yerelken) çalışır. Başka bir ayarda, veritabanında kalmış
-  // eski deneme ödemeleri bile ona başvuramaz: sahte bir ödeme gerçek bir siparişi "ödendi" yapamaz.
-  if (name === "fake" && paymentSetup().mode !== "fake") throw new Error("Deneme ödeme sağlayıcısı kapalı.");
+  // Bir kuruluş yalnız ayar onu açıkça seçmişken çalışır. Başka bir ayarda, veritabanında kalmış eski ödemeler bile ona
+  // başvuramaz: deneme sağlayıcısıyla (yerel olmayan bir adreste) sahte ödeme siparişi "ödendi" yapamaz.
+  if (paymentSetup().mode !== name) throw new Error(`Ödeme sağlayıcısı şu an kapalı: ${name}`);
   return provider;
 }
 
