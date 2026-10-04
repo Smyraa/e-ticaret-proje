@@ -125,6 +125,12 @@ export function OrderActions({ action, commands, shipped, shipment, carriers }: 
         <form ref={shipForm} action={formAction} noValidate className={buttons.length > 0 ? "mt-8 border-t border-line pt-6" : "mt-4"}>
           <input type="hidden" name="islem" value="ship" />
           <h3 className="text-sm font-semibold">{shipped ? "Kargo bilgisi" : "Kargoya ver"}</h3>
+          {!shipped && (
+            <p className="mt-1 text-xs text-muted">
+              Kargoya verildi olarak işaretleyince müşteri için “kargoya verildi” e-postası oluşturulur (durumunu aşağıdaki
+              E-postalar bölümünde görürsünüz).
+            </p>
+          )}
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="kargo-firmasi" className="text-sm">

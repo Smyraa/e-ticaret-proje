@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { requireAdmin } from "@/lib/auth";
+import { mailSetup } from "@/lib/mail";
+import { describeMailSetup } from "@/lib/mail-model";
 import { mediaUrl } from "@/lib/media";
 import { readSettings } from "@/lib/settings";
 import { settingsValues } from "@/lib/settings-form";
@@ -28,7 +30,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/yonetim
       </p>
 
       <h2 className="mt-10 font-display text-2xl">İletişim</h2>
-      <SettingsForm action={saveSettings} initial={settingsValues(settings)} />
+      <SettingsForm action={saveSettings} initial={settingsValues(settings)} mailNote={describeMailSetup(mailSetup())} />
 
       <section aria-labelledby="ana-gorsel-baslik" className="mt-12 border-t border-line pt-8">
         <h2 id="ana-gorsel-baslik" className="font-display text-2xl">

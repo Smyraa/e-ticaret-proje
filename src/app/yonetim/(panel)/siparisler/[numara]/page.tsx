@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatPrice } from "@/lib/format";
+import { listMailsForOrder, mailSetup } from "@/lib/mail";
+import { describeMailSetup, MAIL_KIND_LABELS, MAIL_STATUS_LABELS } from "@/lib/mail-model";
 import { mediaUrl } from "@/lib/media";
 import { ADMIN_LIMITS } from "@/lib/order-admin-form";
 import { ORDER_NUMBER_PATTERN } from "@/lib/order-ids";
@@ -13,7 +15,7 @@ import { getOrderForAdmin } from "@/lib/orders-admin";
 import { formatPhone } from "@/lib/phone";
 import { shippingLabel } from "@/lib/shipping";
 import { siteUrl } from "@/lib/site";
-import { whatsappLink } from "@/lib/whatsapp";
+import { orderMessage, whatsappLink } from "@/lib/whatsapp";
 import { changeOrder, saveOrderNote } from "../actions";
 import { StatusBadge } from "../status-badge";
 import { CopyButton } from "../copy-button";
@@ -39,11 +41,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
   const holdsStock = HOLDS_STOCK.includes(order.status);
   const trackUrl = `${siteUrl}/siparis/${order.trackKey}`;
   const firstName = order.customer.name.split(" ")[0];
-  const whatsapp = whatsappLink(
-    order.customer.phone,
-    `Merhaba ${firstName}, ${order.number} numaralı siparişiniz hakkında yazıyorum. Siparişinizin durumunu buradan takip edebilirsiniz: ${trackUrl}`,
-  );
+  const whatsapp = whatsappLink(order.customer.phone, orderMessage(firstName, order.number, trackUrl));
   const history = order.history ?? [];
+  const mails = await listMailsForOrder(order.number);
+  const mailNote = describeMailSetup(mailSetup());
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -112,7 +113,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
       </section>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_24rem] lg:items-start">
-        <div className="space-y-10">
+        <div className="min-w-0 space-y-10">
           <section aria-labelledby="urunler-baslik">
             <h2 id="urunler-baslik" className="font-display text-2xl">
               Ürünler
@@ -227,6 +228,42 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
                   </li>
                 ))}
               </ol>
+            )}
+          </section>
+
+          <section aria-labelledby="eposta-baslik">
+            <h2 id="eposta-baslik" className="font-display text-2xl">
+              E-postalar
+            </h2>
+            {mailNote && <p className="mt-3 rounded-md bg-soft p-3 text-sm text-muted">{mailNote}</p>}
+            {mails.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">Bu sipariş için e-posta kaydı yok.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {mails.map((mail) => (
+                  <li key={mail.id} className="rounded-lg bg-paper p-4 text-sm shadow-sm">
+                    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="font-semibold">{MAIL_KIND_LABELS[mail.kind]}</span>
+                      <span className={mail.status === "failed" ? "font-semibold text-danger" : "text-muted"}>
+                        {MAIL_STATUS_LABELS[mail.status]}
+                      </span>
+                      <span className="text-muted">{formatDateTime(mail.createdAt)}</span>
+                    </p>
+                    <p className="mt-1 text-xs break-all text-muted">
+                      Alıcı: {mail.to || "—"}
+                      {mail.replyTo && ` · Yanıt adresi: ${mail.replyTo}`}
+                    </p>
+                    <p className="mt-1 text-xs break-words text-muted">Konu: {mail.subject}</p>
+                    {mail.error && <p className="mt-1 text-xs font-semibold text-danger">{mail.error}</p>}
+                    {mail.text && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs underline">İçeriği göster</summary>
+                        <pre className="mt-2 font-sans text-xs break-words whitespace-pre-wrap">{mail.text}</pre>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </div>
