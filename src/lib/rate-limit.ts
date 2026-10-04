@@ -2,48 +2,72 @@ import "server-only";
 
 import { getDb } from "./mongodb";
 
-// Basit hız sınırı: bir anahtar (örn. "siparis|<adres>") için belirli bir süre içinde en çok N istek.
-// Sayaçlar "rateLimits" koleksiyonunda durur; süresi dolunca MongoDB kendisi siler (TTL dizini).
-// Giriş denemelerinin sayacı (auth.ts) farklı çalışır: orada yalnız hatalar sayılır ve başarıda sıfırlanır.
+// Hız sınırı sayaçları: bir anahtar (örn. "siparis|<adres>") için belirli bir süre içinde en çok N hak. Sayaçlar
+// MongoDB'de durur; süresi dolunca MongoDB kendisi siler (TTL dizini). Hak TEK adımda (atomik) ayrılır: önce sayaca
+// bakıp sonra yazan bir düzen, aynı anda gelen onlarca isteğin hepsinin sınıra takılmadan geçmesine yol açardı.
+// Yönetici girişi de (auth.ts) aynı mekanizmayı kendi koleksiyonunda ("loginAttempts") kullanır.
 
-type LimitDoc = { _id: string; count: number; resetAt: Date };
+type CounterDoc = { _id: string; count: number; resetAt: Date };
 
-let indexReady: Promise<void> | undefined;
-function ensureIndex(): Promise<void> {
-  indexReady ??= (async () => {
-    const db = await getDb();
-    await db.collection("rateLimits").createIndex({ resetAt: 1 }, { expireAfterSeconds: 0 });
-  })().catch((error) => {
-    indexReady = undefined;
-    throw error;
-  });
-  return indexReady;
+const indexReady = new Map<string, Promise<void>>();
+function ensureIndex(collection: string): Promise<void> {
+  let ready = indexReady.get(collection);
+  if (!ready) {
+    ready = (async () => {
+      const db = await getDb();
+      await db.collection(collection).createIndex({ resetAt: 1 }, { expireAfterSeconds: 0 });
+    })().catch((error) => {
+      indexReady.delete(collection);
+      throw error;
+    });
+    indexReady.set(collection, ready);
+  }
+  return ready;
 }
 
-// İsteği sayar. Sınır içindeyse true, aşıldıysa false döner (aşılan istekler de sayılır, pencere uzamaz).
-export async function allowRequest(key: string, limit: number, windowMinutes: number): Promise<boolean> {
-  await ensureIndex();
+export type Slot = { allowed: boolean; resetAt: Date };
+
+// Sayaçtan bir hak ayırır. Pencere açıksa ve sınır dolmadıysa sayaç bir artar ve izin verilir; sınır dolduysa sayaç
+// değişmez (pencere de uzamaz) ve izin verilmez. Pencere yoksa ya da bittiyse yenisi açılır (bu istek ilk haktır).
+export async function takeSlot(
+  collection: string,
+  key: string,
+  limit: number,
+  windowMinutes: number,
+): Promise<Slot> {
+  await ensureIndex(collection);
   const db = await getDb();
-  const limits = db.collection<LimitDoc>("rateLimits");
+  const counters = db.collection<CounterDoc>(collection);
   const now = new Date();
+  const windowEnd = new Date(now.getTime() + windowMinutes * 60_000);
+  const open = { $gt: ["$resetAt", now] };
 
-  const open = await limits.findOneAndUpdate(
-    { _id: key, resetAt: { $gt: now } },
-    { $inc: { count: 1 } },
-    { returnDocument: "after" },
-  );
-  if (open) return open.count <= limit;
-
-  // Pencere yok ya da bitmiş: yenisini aç.
-  try {
-    await limits.replaceOne(
-      { _id: key },
-      { count: 1, resetAt: new Date(now.getTime() + windowMinutes * 60_000) },
-      { upsert: true },
-    );
-  } catch (error) {
-    // Aynı anda başka bir istek pencereyi açtı; bu istek sayılmadan geçer (en çok bir istek fazla izin verilir).
-    if ((error as { code?: number }).code !== 11000) throw error;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      // Tek güncelleme: açık pencerede sayaç bir artar (en çok sınıra kadar), değilse 1'den yeni pencere başlar.
+      // Dönen kayıt güncellemeden ÖNCEKİ halidir; iznin verilip verilmediği ondan anlaşılır.
+      const before = await counters.findOneAndUpdate(
+        { _id: key },
+        [
+          {
+            $set: {
+              count: { $cond: [open, { $min: [{ $add: [{ $ifNull: ["$count", 0] }, 1] }, limit] }, 1] },
+              resetAt: { $cond: [open, "$resetAt", windowEnd] },
+            },
+          },
+        ],
+        { upsert: true, returnDocument: "before" },
+      );
+      if (!before || before.resetAt <= now) return { allowed: true, resetAt: windowEnd };
+      return { allowed: (before.count ?? 0) < limit, resetAt: before.resetAt };
+    } catch (error) {
+      // Aynı anahtar için iki sayaç aynı anda açılırsa biri çakışır; sunucu çoğu zaman kendisi yeniden dener, değilse burada.
+      if ((error as { code?: number }).code !== 11000 || attempt >= 3) throw error;
+    }
   }
-  return true;
+}
+
+// İsteği sayar. Sınır içindeyse true, aşıldıysa false döner.
+export async function allowRequest(key: string, limit: number, windowMinutes: number): Promise<boolean> {
+  return (await takeSlot("rateLimits", key, limit, windowMinutes)).allowed;
 }

@@ -8,19 +8,20 @@ import { cache } from "react";
 import { clientAddress } from "./client-address";
 import { getDb } from "./mongodb";
 import { hashPassword, passwordProblem, verifyAgainstDummy, verifyPassword } from "./password";
+import { takeSlot } from "./rate-limit";
 
 // Yönetici girişi: e-posta + parola. Oturum = tarayıcıya verilen rastgele uzun bir anahtar (HttpOnly çerez).
 // Veritabanında anahtarın kendisi değil özeti durur; veritabanı sızsa bile çalınan kayıtla giriş yapılamaz.
 
 export const SESSION_COOKIE = "taura_oturum";
 const SESSION_DAYS = 7;
-const MAX_FAILURES = 5; // aynı e-posta + aynı bağlantı adresinden art arda yanlış deneme sınırı
+const MAX_FAILURES = 5; // aynı e-posta + aynı bağlantı adresinden 15 dakikada en çok bu kadar giriş denemesi
 const MAX_FAILURES_PER_EMAIL = 20; // adrese bakmadan, aynı e-posta için sınır (bkz. clientAddress)
 const LOCK_MINUTES = 15; // sınıra ulaşınca bekleme süresi
 
 type UserDoc = { _id: ObjectId; email: string; passwordHash: string; role: "admin"; createdAt: Date };
 type SessionDoc = { _id: string; userId: ObjectId; createdAt: Date; expiresAt: Date };
-type AttemptDoc = { _id: string; failures: number; resetAt: Date };
+type AttemptDoc = { _id: string; count: number; resetAt: Date };
 
 export type Admin = { id: string; email: string };
 
@@ -99,38 +100,32 @@ export async function endSession() {
   store.delete(SESSION_COOKIE);
 }
 
-// Yanlış deneme sayaçlarının anahtarları (loginAttempts koleksiyonunda; süresi dolunca MongoDB siler).
+// Deneme sayaçlarının anahtarları (loginAttempts koleksiyonunda; süresi dolunca MongoDB siler).
 // Adres taklit edilebildiğinden (bkz. clientAddress) giriş için e-posta başına ikinci bir sayaç da tutulur.
 const addressKey = (email: string, address: string) => `giris|${email}|${address}`;
 const emailKey = (email: string) => `giris-eposta|${email}`;
 const passwordKey = (userId: string) => `parola|${userId}`;
 
-// Sayaç sınıra ulaştıysa kalan dakika, değilse 0.
-async function lockedMinutes(key: string, limit: number): Promise<number> {
-  const db = await getDb();
-  const attempt = await db.collection<AttemptDoc>("loginAttempts").findOne({ _id: key });
-  if (!attempt || attempt.resetAt <= new Date() || attempt.failures < limit) return 0;
-  return Math.max(1, Math.ceil((attempt.resetAt.getTime() - Date.now()) / 60000));
-}
-
-async function recordFailure(key: string) {
-  const db = await getDb();
-  const attempts = db.collection<AttemptDoc>("loginAttempts");
-  const now = new Date();
-  const updated = await attempts.updateOne({ _id: key, resetAt: { $gt: now } }, { $inc: { failures: 1 } });
-  if (updated.matchedCount === 0) {
-    // ilk hata ya da önceki pencere bitmiş: yeni pencere aç
-    await attempts.replaceOne(
-      { _id: key },
-      { failures: 1, resetAt: new Date(now.getTime() + LOCK_MINUTES * 60 * 1000) },
-      { upsert: true },
-    );
-  }
+// Deneme hakkı ayırır: hak parola denenmeden ÖNCE, tek adımda alınır (bkz. rate-limit.ts). Önce sayaca bakıp hatayı
+// sonra yazmak, aynı anda gelen onlarca denemenin hepsinin kilide takılmadan parola denemesine yol açardı.
+// Hak kalmadıysa kalan dakikayı, kaldıysa 0 verir.
+async function reserveAttempt(key: string, limit: number): Promise<number> {
+  const { allowed, resetAt } = await takeSlot("loginAttempts", key, limit, LOCK_MINUTES);
+  return allowed ? 0 : Math.max(1, Math.ceil((resetAt.getTime() - Date.now()) / 60000));
 }
 
 async function clearFailures(key: string) {
   const db = await getDb();
   await db.collection<AttemptDoc>("loginAttempts").deleteOne({ _id: key });
+}
+
+// Başarılı girişte ayrılan hakkı geri verir (sayaç yalnız başarısız denemeleri saysın); başkasının biriken
+// denemeleri silinmez, yalnız bu girişin hakkı düşülür.
+async function releaseAttempt(key: string) {
+  const db = await getDb();
+  const attempts = db.collection<AttemptDoc>("loginAttempts");
+  const removed = await attempts.deleteOne({ _id: key, count: { $lte: 1 } });
+  if (removed.deletedCount === 0) await attempts.updateOne({ _id: key, count: { $gt: 1 } }, { $inc: { count: -1 } });
 }
 
 const lockedMessage = (minutes: number) => `Çok fazla hatalı deneme. Yaklaşık ${minutes} dakika sonra tekrar deneyin.`;
@@ -146,11 +141,12 @@ export async function loginWithPassword(email: string, password: string): Promis
   await ensureIndexes();
   const byAddress = addressKey(email, await clientAddress());
   const byEmail = emailKey(email);
-  const locked = Math.max(
-    await lockedMinutes(byAddress, MAX_FAILURES),
-    await lockedMinutes(byEmail, MAX_FAILURES_PER_EMAIL),
-  );
-  if (locked > 0) return { ok: false, message: lockedMessage(locked) };
+  // Önce adresin hakkı alınır; adres kilitliyse e-posta sayacına dokunulmaz (tek bir adres, yöneticiyi e-posta
+  // sınırıyla kilitleyemesin).
+  const addressLock = await reserveAttempt(byAddress, MAX_FAILURES);
+  if (addressLock > 0) return { ok: false, message: lockedMessage(addressLock) };
+  const emailLock = await reserveAttempt(byEmail, MAX_FAILURES_PER_EMAIL);
+  if (emailLock > 0) return { ok: false, message: lockedMessage(emailLock) };
 
   const db = await getDb();
   const user = await db.collection<UserDoc>("users").findOne({ email });
@@ -161,14 +157,11 @@ export async function loginWithPassword(email: string, password: string): Promis
     await verifyAgainstDummy(password); // kayıtlı olmayan e-postada da aynı süre harcanır
   }
 
-  if (!user || !valid) {
-    await Promise.all([recordFailure(byAddress), recordFailure(byEmail)]);
-    return { ok: false, message: "E-posta ya da parola hatalı." };
-  }
+  if (!user || !valid) return { ok: false, message: "E-posta ya da parola hatalı." }; // hak zaten ayrıldı
 
-  // Başarılı girişte yalnız bu adresin sayacı sıfırlanır; e-posta sayacı kendi süresinde biter
-  // (yoksa meşru bir girişle başka birinin biriken kaba kuvvet denemeleri de silinirdi).
-  await clearFailures(byAddress);
+  // Başarılı girişte yalnız bu adresin sayacı sıfırlanır; e-posta sayacından bu girişin hakkı geri verilir, gerisi
+  // kendi süresinde biter (yoksa meşru bir girişle başka birinin biriken kaba kuvvet denemeleri de silinirdi).
+  await Promise.all([clearFailures(byAddress), releaseAttempt(byEmail)]);
   await createSession(user._id);
   return { ok: true };
 }
@@ -192,15 +185,14 @@ export async function changePassword(
 
   await ensureIndexes();
   const key = passwordKey(admin.id);
-  const locked = await lockedMinutes(key, MAX_FAILURES);
+  const locked = await reserveAttempt(key, MAX_FAILURES);
   if (locked > 0) return { ok: false, field: null, message: lockedMessage(locked) };
 
   const db = await getDb();
   const users = db.collection<UserDoc>("users");
   const user = await users.findOne({ _id: new ObjectId(admin.id) });
   if (!user || currentPassword.length > 1024 || !(await verifyPassword(currentPassword, user.passwordHash))) {
-    await recordFailure(key);
-    return { ok: false, field: "mevcut", message: "Mevcut parola yanlış." };
+    return { ok: false, field: "mevcut", message: "Mevcut parola yanlış." }; // hak zaten ayrıldı
   }
   await clearFailures(key);
 
