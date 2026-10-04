@@ -16,6 +16,7 @@ const groups = [
     links: [
       { href: "/sss", label: "Sıkça sorulan sorular" },
       { href: "/kargo-ve-iade", label: "Kargo ve iade" },
+      { href: "/siparis", label: "Sipariş sorgula" },
     ],
   },
   {

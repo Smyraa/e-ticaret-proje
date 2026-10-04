@@ -79,7 +79,11 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
       )}
       <p className="mt-4 text-sm text-muted">
         Bu sayfanın adresini kaydedin: siparişinizin durumunu buradan takip edebilirsiniz. Adresi yalnızca güvendiğiniz
-        kişilerle paylaşın.
+        kişilerle paylaşın. Kaybederseniz{" "}
+        <Link href="/siparis" className="underline transition hover:text-primary">
+          Sipariş sorgula
+        </Link>{" "}
+        sayfasından sipariş numaranız ve e-posta adresinizle yeniden açabilirsiniz.
       </p>
 
       <section aria-labelledby="urunler-baslik" className="mt-10">

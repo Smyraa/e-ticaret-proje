@@ -36,6 +36,16 @@ const questions = (shippingFee: number): { question: string; answer: ReactNode }
       "Ürün sayfasındaki “WhatsApp ile sor” düğmesiyle ürün adı ve bağlantısı hazır bir mesaj gönderebilirsiniz.",
   },
   {
+    question: "Siparişimin durumuna nasıl bakarım?",
+    answer: (
+      <>
+        Sipariş verdiğinizde size özel bir sipariş sayfası açılır; adresini kaydedin. Adresi kaybederseniz{" "}
+        <Link href="/siparis">Sipariş sorgula</Link> sayfasında sipariş numaranız ve e-posta adresinizle yeniden
+        açabilirsiniz.
+      </>
+    ),
+  },
+  {
     question: "Siparişim ne zaman teslim edilir?",
     answer: "Teslimat süresi henüz belirlenmedi.",
   },
