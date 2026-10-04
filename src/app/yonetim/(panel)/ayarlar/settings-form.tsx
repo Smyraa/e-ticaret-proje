@@ -8,11 +8,12 @@ type Props = {
   // Sunucu eylemi. Sayfa (sunucu) verir; bu bileşende `.bind` edilmez (bkz. ImageManager'daki açıklama).
   action: (state: SettingsFormState, formData: FormData) => Promise<SettingsFormState>;
   initial: SettingsValues; // kayıtlı ayarlar
+  mailNote?: string; // e-posta hizmetinin durumu (sunucu hesaplar); sipariş bildirimi kutusunun ipucuna eklenir
 };
 
-// Site ayarları formu (iletişim bilgileri ve kargo ücreti). Doğrulama sunucuda yapılır; hata varsa yazılanlar korunur,
-// ilk hatalı kutuya odaklanılır.
-export function SettingsForm({ action, initial }: Props) {
+// Site ayarları formu (iletişim bilgileri, sipariş bildirimi e-postası ve kargo ücreti). Doğrulama sunucuda yapılır;
+// hata varsa yazılanlar korunur, ilk hatalı kutuya odaklanılır.
+export function SettingsForm({ action, initial, mailNote }: Props) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const formRef = useRef<HTMLFormElement>(null);
   // Kaydedildi iletisi, kaydın ardından forma yeniden dokunulana kadar görünür.
@@ -82,6 +83,18 @@ export function SettingsForm({ action, initial }: Props) {
         value={values.hours}
         error={errors.hours}
         hint="İsteğe bağlı. Örn. Hafta içi 09:00–18:00. İletişim sayfasında görünür."
+      />
+
+      <h2 className="pt-4 font-display text-2xl">Sipariş bildirimleri</h2>
+      <Field
+        prefix="ayar"
+        name="orderEmail"
+        type="email"
+        inputMode="email"
+        label="Yeni sipariş bildirimi e-postası"
+        value={values.orderEmail}
+        error={errors.orderEmail}
+        hint={`İsteğe bağlı. Yeni bir sipariş geldiğinde bu adrese haber verilir; sitede görünmez. Boş bırakırsanız yukarıdaki e-posta kullanılır.${mailNote ? ` ${mailNote}` : ""}`}
       />
 
       <h2 className="pt-4 font-display text-2xl">Kargo</h2>

@@ -13,6 +13,7 @@ export type SettingsValues = {
   whatsapp: string;
   phone: string;
   email: string;
+  orderEmail: string;
   address: string;
   hours: string;
   shippingFee: string;
@@ -39,6 +40,7 @@ export function settingsValues(settings: SiteSettings): SettingsValues {
     whatsapp: formatPhone(settings.whatsapp),
     phone: formatPhone(settings.phone),
     email: settings.email,
+    orderEmail: settings.orderEmail,
     address: settings.address,
     hours: settings.hours,
     shippingFee: String(settings.shippingFee),
@@ -54,6 +56,7 @@ export function readSettingsForm(formData: FormData): {
     whatsapp: oneLine(formData.get("whatsapp")),
     phone: oneLine(formData.get("phone")),
     email: oneLine(formData.get("email")).toLowerCase(),
+    orderEmail: oneLine(formData.get("orderEmail")).toLowerCase(),
     address: multiLine(formData.get("address")),
     hours: oneLine(formData.get("hours")),
     shippingFee: oneLine(formData.get("shippingFee")),
@@ -66,6 +69,7 @@ export function readSettingsForm(formData: FormData): {
   if (phone === null) errors.phone = PHONE_ERROR;
 
   if (values.email && !isEmail(values.email)) errors.email = EMAIL_ERROR;
+  if (values.orderEmail && !isEmail(values.orderEmail)) errors.orderEmail = EMAIL_ERROR;
   if (charCount(values.address) > SETTINGS_LIMITS.address) errors.address = tooLong(SETTINGS_LIMITS.address, values.address);
   if (charCount(values.hours) > SETTINGS_LIMITS.hours) errors.hours = tooLong(SETTINGS_LIMITS.hours, values.hours);
 
@@ -87,6 +91,7 @@ export function readSettingsForm(formData: FormData): {
       whatsapp,
       phone,
       email: values.email,
+      orderEmail: values.orderEmail,
       address: values.address,
       hours: values.hours,
       shippingFee: fee,

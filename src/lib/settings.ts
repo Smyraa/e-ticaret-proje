@@ -5,16 +5,21 @@ export type SiteSettings = {
   heroImage?: string; // ana sayfa görselinin dosya adı (media/ klasöründe); yoksa "Fotoğraf yakında" görünür
   whatsapp: string; // ülke koduyla yalnız rakamlar (905551112233); boşsa düğme demo olarak görünür
   phone: string; // aynı biçim; boş olabilir
-  email: string;
+  email: string; // sitede gösterilen iletişim e-postası
+  orderEmail: string; // yeni sipariş bildirimlerinin gideceği e-posta (sitede görünmez); boşsa iletişim e-postası kullanılır
   address: string; // çok satırlı olabilir
   hours: string; // çalışma saatleri
   shippingFee: number; // tam lira; 0 = ücretsiz
 };
 
+// Herkese açık sayfalarda kullanılabilen ayarlar: sipariş bildirimi e-postası dışarı verilmez (türden de okunamaz).
+export type PublicSettings = Omit<SiteSettings, "orderEmail">;
+
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsapp: "",
   phone: "",
   email: "",
+  orderEmail: "",
   address: "",
   hours: "",
   shippingFee: 0, // kullanıcı kararı: şimdilik kargo ücretsiz
@@ -36,19 +41,26 @@ export async function readSettings(): Promise<SiteSettings> {
     whatsapp: text(doc?.whatsapp),
     phone: text(doc?.phone),
     email: text(doc?.email),
+    orderEmail: text(doc?.orderEmail),
     address: text(doc?.address),
     hours: text(doc?.hours),
     shippingFee: typeof fee === "number" && Number.isInteger(fee) && fee >= 0 ? fee : DEFAULT_SETTINGS.shippingFee,
   };
 }
 
+function publicOf(settings: SiteSettings): PublicSettings {
+  const { orderEmail, ...open } = settings;
+  void orderEmail; // sipariş bildirimi e-postası mağaza sayfalarına verilmez
+  return open;
+}
+
 // Mağaza sayfaları bunu kullanır: veritabanı okunamazsa sayfa yine açılır (varsayılan ayarlarla).
 // cache(): aynı istek içinde (sayfa + alt bilgi) tekrar sorgulanmasın.
-export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
+export const getSiteSettings = cache(async (): Promise<PublicSettings> => {
   try {
-    return await readSettings();
+    return publicOf(await readSettings());
   } catch (error) {
     console.error("Site ayarları okunamadı", error);
-    return DEFAULT_SETTINGS;
+    return publicOf(DEFAULT_SETTINGS);
   }
 });
