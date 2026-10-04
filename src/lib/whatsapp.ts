@@ -16,6 +16,11 @@ export function whatsappLink(configured: string, message: string): string {
   return `https://wa.me/${configured || PLACEHOLDER_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
+// Yönetimin müşteriye WhatsApp'tan yazarken kullandığı hazır mesaj (sipariş numarası + sipariş sayfasının adresi).
+export function orderMessage(firstName: string, orderNumber: string, trackUrl: string): string {
+  return `Merhaba ${firstName}, ${orderNumber} numaralı siparişiniz hakkında yazıyorum. Siparişinizin durumunu buradan takip edebilirsiniz: ${trackUrl}`;
+}
+
 // Ürün sayfasındaki "WhatsApp ile sor" mesajı. productUrl boş ise (adres henüz bilinmiyorsa) bağlantı eklenmez.
 export function questionMessage(productName: string, productUrl: string): string {
   return productUrl
