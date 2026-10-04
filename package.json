@@ -10,7 +10,10 @@
     "seed": "node scripts/seed.mjs",
     "admin:create": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin.mjs create",
     "admin:reset": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin.mjs reset",
-    "admin:list": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin.mjs list"
+    "admin:list": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin.mjs list",
+    "payment:iyzico": "node scripts/payment.mjs iyzico",
+    "payment:kapat": "node scripts/payment.mjs off",
+    "payment:durum": "node scripts/payment.mjs status"
   },
   "dependencies": {
     "mongodb": "^7.7.0",
