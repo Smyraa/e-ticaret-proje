@@ -1,8 +1,15 @@
 import "server-only";
 
 import { recordMailFailure, sendMail } from "./mail";
-import { newOrderMail, orderReceivedMail, orderShippedMail, type MailContext } from "./order-mail-text";
+import {
+  newOrderMail,
+  orderReceivedMail,
+  orderShippedMail,
+  paymentAlertMail,
+  type MailContext,
+} from "./order-mail-text";
 import { getOrderByNumber } from "./orders";
+import type { PaymentAttention } from "./payment-model";
 import { readSettings } from "./settings";
 import { siteUrl } from "./site";
 
@@ -19,9 +26,11 @@ async function load(number: string) {
   return { order, settings, context };
 }
 
-// Sipariş verilince: müşteriye "siparişiniz alındı", size "yeni sipariş geldi". Bildirim adresi ayarlarda yoksa iletişim
-// e-postası kullanılır; o da yoksa e-posta atlanır ve nedeni yönetimde sipariş sayfasında görünür.
-export async function notifyOrderPlaced(number: string): Promise<void> {
+// Sipariş kesinleşince: müşteriye "siparişiniz alındı", size "yeni sipariş geldi". Kartla ödeme açıksa bu, ÖDEME ALINDIKTAN
+// sonra çağrılır (ödenmemiş denemeler için e-posta gitmesin); değilse sipariş verilince. Bildirim adresi ayarlarda yoksa
+// iletişim e-postası kullanılır; o da yoksa e-posta atlanır ve nedeni yönetimde sipariş sayfasında görünür.
+// stockProblems: kartla ödeme alındı ama stok yetmediyse yetmeyen ürünler (size giden e-postada uyarı olarak yazılır).
+export async function notifyOrderPlaced(number: string, stockProblems: string[] = []): Promise<void> {
   try {
     const loaded = await load(number);
     if (!loaded) return;
@@ -35,7 +44,7 @@ export async function notifyOrderPlaced(number: string): Promise<void> {
       ...orderReceivedMail(order, context),
     });
 
-    const draft = newOrderMail(order, context);
+    const draft = newOrderMail(order, context, stockProblems);
     const owner = settings.orderEmail || settings.email;
     if (owner) {
       await sendMail({ kind: "order-new", orderNumber: number, to: owner, replyTo: order.customer.email, ...draft });
@@ -69,5 +78,31 @@ export async function notifyOrderShipped(number: string): Promise<void> {
     });
   } catch (error) {
     console.error(`Kargo e-postası hazırlanamadı (${number})`, error);
+  }
+}
+
+// Alınan bir ödeme siparişe işlenemedi ya da gözden geçirilmeli (tutar uyuşmuyor, ikinci ödeme, kapanmış sipariş...):
+// yalnız size haber verilir.
+export async function notifyPaymentAlert(number: string, amount: number, attention: PaymentAttention): Promise<void> {
+  try {
+    const settings = await readSettings();
+    const context: MailContext = {
+      siteUrl,
+      contact: { whatsapp: settings.whatsapp, phone: settings.phone, email: settings.email },
+    };
+    const draft = paymentAlertMail({ orderNumber: number, amount, attention }, context);
+    const owner = settings.orderEmail || settings.email;
+    if (owner) {
+      await sendMail({ kind: "payment-alert", orderNumber: number, to: owner, ...draft });
+    } else {
+      await recordMailFailure({
+        kind: "payment-alert",
+        orderNumber: number,
+        subject: draft.subject,
+        error: "Bildirim e-postası ayarlanmadı (Ayarlar → Sipariş bildirimleri).",
+      });
+    }
+  } catch (error) {
+    console.error(`Ödeme uyarısı e-postası hazırlanamadı (${number})`, error);
   }
 }

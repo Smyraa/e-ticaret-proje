@@ -1,6 +1,6 @@
 // E-posta kayıtlarının biçimi ve yönetimde gösterilen adlar. Sunucuda ve sayfalarda ortak kullanılır.
 
-export type MailKind = "order-received" | "order-shipped" | "order-new";
+export type MailKind = "order-received" | "order-shipped" | "order-new" | "payment-alert";
 
 // logged: e-posta hizmeti bağlı değil, e-posta GÖNDERİLMEDİ, yalnız kaydedildi. sent: taşıyıcıya teslim edildi.
 export type MailStatus = "logged" | "sent" | "failed";
@@ -9,6 +9,7 @@ export const MAIL_KIND_LABELS: Record<MailKind, string> = {
   "order-received": "Sipariş alındı (müşteriye)",
   "order-shipped": "Kargoya verildi (müşteriye)",
   "order-new": "Yeni sipariş (size)",
+  "payment-alert": "Ödeme uyarısı (size)",
 };
 
 export const MAIL_STATUS_LABELS: Record<MailStatus, string> = {
