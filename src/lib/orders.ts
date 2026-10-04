@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import { getDb } from "./mongodb";
 import { newOrderNumber, newTrackKey, TRACK_KEY_PATTERN } from "./order-ids";
 import type { Order } from "./order-model";
@@ -67,4 +68,16 @@ export async function getOrderByKey(key: string): Promise<Order | null> {
   if (!TRACK_KEY_PATTERN.test(key)) return null;
   const orders = await ordersOf();
   return orders.findOne({ trackKey: key }, { projection: { _id: 0 } });
+}
+
+const digest = (text: string) => createHash("sha256").update(text).digest();
+
+// Sipariş sorgulama: numara ve e-posta (küçük harfle) birlikte doğruysa siparişin gizli anahtarını verir, değilse null.
+// "Numara yok" ile "e-posta yanlış" aynı sonucu verir ve karşılaştırma her ikisinde de aynı biçimde yapılır; böylece
+// ne sonuçtan ne de süreden hangisinin yanlış olduğu anlaşılır.
+export async function findTrackKey(number: string, email: string): Promise<string | null> {
+  const orders = await ordersOf();
+  const order = await orders.findOne({ number }, { projection: { _id: 0, trackKey: 1, "customer.email": 1 } });
+  const same = timingSafeEqual(digest(order?.customer.email ?? ""), digest(email));
+  return order && same ? order.trackKey : null;
 }
