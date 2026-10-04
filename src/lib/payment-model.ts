@@ -66,6 +66,11 @@ export const PAYMENT_TOKEN_PATTERN = /^[A-Za-z0-9._-]{16,200}$/;
 export const isSessionOpen = (payment: Pick<PaymentRecord, "status" | "expiresAt">, now = new Date()) =>
   payment.status === "started" && payment.expiresAt > now;
 
+// Sonucu kuruluştan (yeniden) sorulabilir mi? Bekleyen ödeme her zaman; "olmadı" denmiş ama oturumu hâlâ açık olan da: kuruluşun
+// ödeme sayfası aynı oturumda ikinci bir deneme izin verirse ve o başarılı olursa para alınmıştır, kayıt bunu yakalayabilmeli.
+export const isCheckable = (payment: Pick<PaymentRecord, "status" | "expiresAt">, now = new Date()) =>
+  payment.status === "started" || (payment.status === "failed" && payment.expiresAt > now);
+
 // Kuruluşun bildirdiği tutar bizim kaydımızla (kuruşa kadar) aynı mı?
 export const sameAmount = (a: number, b: number) => Math.abs(a - b) < 0.005;
 

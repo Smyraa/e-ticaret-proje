@@ -16,6 +16,7 @@ import { paymentSetup } from "@/lib/payment-config";
 import {
   canRefund,
   describePaymentSetup,
+  isCheckable,
   PAYMENT_STATUS_LABELS,
   paymentConcern,
   PROVIDER_LABELS,
@@ -318,7 +319,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
             {payments.length > 0 && (
               <PaymentOps
                 action={paymentOperation.bind(null, order.number, "")}
-                ops={payments.some((payment) => payment.status === "started") ? ["check"] : []}
+                ops={payments.some((payment) => isCheckable(payment)) ? ["check"] : []}
               />
             )}
           </section>

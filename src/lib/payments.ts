@@ -7,7 +7,7 @@ import { getDb } from "./mongodb";
 import { applyPayment } from "./order-flow";
 import { notifyOrderPlaced, notifyPaymentAlert } from "./order-notify";
 import type { Order, OrderStatus } from "./order-model";
-import { canRefund, sameAmount, type PaymentAttention, type PaymentRecord } from "./payment-model";
+import { canRefund, isCheckable, sameAmount, type PaymentAttention, type PaymentRecord } from "./payment-model";
 import { activeProvider, getProvider } from "./payment-providers";
 import type { RefundResult, StartResult, VerifyResult } from "./payment-provider";
 import { siteUrl } from "./site";
@@ -146,9 +146,12 @@ async function applyClaimed(payment: PaymentDoc): Promise<ConfirmOutcome> {
   return { kind: "paid", payment: toView({ ...payment, applied: outcome.applied, ...(attention ? { attention } : {}) }) };
 }
 
-// "Başlatıldı" durumundaki bir ödemenin sonucunu kuruluştan sorar ve duruma göre işler.
+// Sonucu henüz kesinleşmemiş bir ödemenin ("başlatıldı" ya da oturumu hâlâ açık "olmadı") sonucunu kuruluştan sorar ve duruma göre
+// işler. Başka her durumdaki ödeme zaten işlenmiştir.
+const OPEN_STATUSES: PaymentRecord["status"][] = ["started", "failed"];
+
 async function settle(payment: PaymentDoc): Promise<ConfirmOutcome> {
-  if (payment.status !== "started") return { kind: "settled", payment: toView(payment) };
+  if (!isCheckable(payment)) return { kind: "settled", payment: toView(payment) };
 
   let result: VerifyResult;
   try {
@@ -168,7 +171,7 @@ async function settle(payment: PaymentDoc): Promise<ConfirmOutcome> {
 
   if (result.outcome === "failed") {
     const failed = await payments.findOneAndUpdate(
-      { _id: payment._id, status: "started" },
+      { _id: payment._id, status: { $in: OPEN_STATUSES } },
       { $set: { status: "failed", failure: result.reason, updatedAt: now, checkedAt: now } },
       { returnDocument: "after" },
     );
@@ -180,7 +183,7 @@ async function settle(payment: PaymentDoc): Promise<ConfirmOutcome> {
     !sameAmount(result.paidAmount, payment.amount) ||
     (result.orderNumber !== undefined && result.orderNumber !== payment.orderNumber);
   const claimed = await payments.findOneAndUpdate(
-    { _id: payment._id, status: "started" },
+    { _id: payment._id, status: { $in: OPEN_STATUSES } },
     {
       $set: {
         status: "paid",
@@ -211,7 +214,7 @@ export async function confirmPaymentByToken(token: string): Promise<ConfirmOutco
 export async function checkOrderPayments(orderNumber: string): Promise<ConfirmOutcome[]> {
   await ensureIndexes();
   const waiting = await (await paymentsOf())
-    .find({ orderNumber, status: "started" })
+    .find({ orderNumber, $or: [{ status: "started" }, { status: "failed", expiresAt: { $gt: new Date() } }] })
     .sort({ createdAt: -1 })
     .limit(3)
     .toArray();
