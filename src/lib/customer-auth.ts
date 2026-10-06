@@ -255,7 +255,7 @@ export async function changeCustomerPassword(customerId: string, current: string
   return { ok: true };
 }
 
-// Hesabı siler (KVKK): müşteri kaydı (adresler, favoriler, sepet içinde), tüm oturumları ve çerez. Verilmiş siparişler
+// Hesabı siler (KVKK): müşteri kaydı (adresler, favoriler, sepet içinde), yorumları, tüm oturumları ve çerez. Verilmiş siparişler
 // yasal saklama için kalır, hesapla bağı kaldırılır.
 export async function deleteCustomerAccount(customerId: string, password: string): Promise<AuthResult> {
   await ensureIndexes();
@@ -263,6 +263,7 @@ export async function deleteCustomerAccount(customerId: string, password: string
   if (isFailure(checked)) return checked;
   const db = await getDb();
   await db.collection("orders").updateMany({ customerId }, { $unset: { customerId: "" } });
+  await db.collection("reviews").deleteMany({ customerId }); // yorumlar da kişisel veridir
   await (await sessionsOf()).deleteMany({ customerId: checked._id });
   await (await customersOf()).deleteOne({ _id: checked._id });
   (await cookies()).delete(CUSTOMER_COOKIE);

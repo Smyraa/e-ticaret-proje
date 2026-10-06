@@ -29,6 +29,11 @@ const links: { href: string; label: string; exact?: boolean; also?: string[]; ic
     icon: <path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8" />,
   },
   {
+    href: "/yonetim/yorumlar",
+    label: "Yorumlar",
+    icon: <path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" />,
+  },
+  {
     href: "/yonetim/ayarlar",
     label: "Ayarlar",
     also: ["/yonetim/hesap"],

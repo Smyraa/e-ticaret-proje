@@ -19,6 +19,8 @@ import {
 import { addAddress, ADDRESSES_MAX, cleanTitle, deleteAddress } from "@/lib/customer-addresses";
 import { checkAddress, readAddressValues, type AddressErrors, type AddressValues } from "@/lib/order-form";
 import { safeReturn } from "@/lib/return-path";
+import { multiLine } from "@/lib/form-text";
+import { checkReviewInput, deleteMyReview, saveReview } from "@/lib/reviews";
 
 // Form durumu: hata iletisi, hatanın ait olduğu kutu ve (hata sonrası boşalmasın diye) yazılan ad ve e-posta.
 export type AccountFormState =
@@ -177,4 +179,40 @@ export async function deleteAccountAction(_state: ProfileState, formData: FormDa
     return { error: FAILED };
   }
   redirect("/?hesap=silindi");
+}
+
+// ---------- Yorumlar ----------
+
+export type ReviewFormState =
+  | { error?: string; field?: "puan" | "metin" | null; rating?: string; text?: string }
+  | undefined;
+
+// Yorum yaz / bekleyen yorumu düzenle. slug sayfada bağlanır (bind) ama güvenilmez: yetki sunucuda yeniden denetlenir.
+export async function saveReviewAction(slug: string, _state: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
+  const customer = await getCustomer();
+  if (!customer) redirect(`/giris?donus=/hesabim/yorum/${encodeURIComponent(String(slug))}`);
+  if (typeof slug !== "string" || !/^[a-z0-9-]{1,100}$/.test(slug)) return { error: "Ürün bulunamadı." };
+
+  const rating = String(formData.get("puan") ?? "");
+  const text = multiLine(formData.get("metin"));
+  const checked = checkReviewInput(rating, text);
+  if (!checked.ok || !checked.input) return { error: checked.ok ? FAILED : checked.message, field: checked.ok ? null : checked.field, rating, text };
+
+  try {
+    const result = await saveReview(customer, slug, checked.input);
+    if (!result.ok) return { error: result.message, field: result.field, rating, text };
+  } catch (error) {
+    console.error("Yorum kaydedilemedi", error);
+    return { error: FAILED, rating, text };
+  }
+  revalidatePath("/hesabim");
+  redirect("/hesabim?yorum=kaydedildi#yorumlar-baslik");
+}
+
+export async function deleteReviewAction(formData: FormData): Promise<void> {
+  const customer = await getCustomer();
+  if (!customer) redirect("/giris?donus=/hesabim");
+  await deleteMyReview(customer.id, String(formData.get("yorum") ?? ""));
+  revalidatePath("/", "layout"); // onaylı yorum ürün sayfasından da kalkar
+  redirect("/hesabim?yorum=silindi#yorumlar-baslik");
 }

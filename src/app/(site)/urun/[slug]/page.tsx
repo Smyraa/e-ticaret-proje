@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import { ProductActions } from "@/components/product-actions";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductJsonLd } from "@/components/product-json-ld";
+import { Stars } from "@/components/stars";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { formatPrice, stockText } from "@/lib/format";
 import { pageMetadata } from "@/lib/metadata";
 import { getProductBySlug, type Product } from "@/lib/products";
+import { approvedReviews, type ProductReviews } from "@/lib/reviews";
 import { getSiteSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +52,12 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
   }
   if (!product) notFound();
   const { whatsapp } = await getSiteSettings();
+  // Yalnız onaylı yorumlar. Okunamazsa bölüm boş görünür; sayfa yine açılır.
+  const reviews: ProductReviews = await approvedReviews(product.slug).catch((error) => {
+    console.error("Yorumlar okunamadı", error);
+    return { reviews: [], count: 0, average: null };
+  });
+  const monthYear = new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric", timeZone: "Europe/Istanbul" });
 
   // Ölçü, ağırlık ve işçilik isteğe bağlıdır; boş olanlar tabloda gösterilmez.
   const details = [
@@ -79,6 +87,14 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
           <p className="mt-4 font-display text-3xl">{formatPrice(product.price)}</p>
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
+          {reviews.count > 0 && reviews.average !== null && (
+            <a href="#degerlendirmeler" className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-muted transition hover:text-primary">
+              <Stars rating={reviews.average} />
+              <span>
+                {reviews.average.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} · {reviews.count} değerlendirme
+              </span>
+            </a>
+          )}
 
           <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
           <WhatsAppButton slug={product.slug} name={product.name} whatsapp={whatsapp} />
@@ -101,6 +117,37 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           )}
         </div>
       </div>
+
+      <section id="degerlendirmeler" aria-labelledby="degerlendirme-baslik" className="mt-16 max-w-3xl scroll-mt-6">
+        <h2 id="degerlendirme-baslik" className="font-display text-3xl">
+          Değerlendirmeler
+        </h2>
+        {reviews.count === 0 ? (
+          <p className="mt-3 text-sm text-muted">
+            Henüz değerlendirme yok. Ürünü teslim alan müşteriler Hesabım sayfasından yorum yazabilir.
+          </p>
+        ) : (
+          <>
+            <p className="mt-3 flex items-center gap-2 text-sm text-muted">
+              <Stars rating={reviews.average ?? 0} size={18} />
+              5 üzerinden {(reviews.average ?? 0).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} · {reviews.count}{" "}
+              değerlendirme
+            </p>
+            <ul className="mt-6 divide-y divide-line border-y border-line">
+              {reviews.reviews.map((review) => (
+                <li key={review.id} className="py-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Stars rating={review.rating} />
+                    <span className="text-sm font-semibold">{review.authorName}</span>
+                    <span className="text-xs text-muted">{monthYear.format(review.createdAt)}</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed break-words whitespace-pre-line">{review.text}</p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
     </div>
   );
 }

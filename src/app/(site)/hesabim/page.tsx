@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AddressBookForm } from "@/components/address-book-form";
+import { Stars } from "@/components/stars";
 import { addressLabel } from "@/lib/address-label";
 import { listAddresses, type SavedAddress } from "@/lib/customer-addresses";
 import { getCustomer } from "@/lib/customer-auth";
@@ -9,7 +10,8 @@ import { pageMetadata } from "@/lib/metadata";
 import { ORDER_STATUS_LABELS } from "@/lib/order-model";
 import { listOrdersForCustomer, type CustomerOrderSummary } from "@/lib/orders";
 import { formatPhone } from "@/lib/phone";
-import { deleteAddressAction, logout, saveAddressAction } from "./actions";
+import { myReviews, REVIEW_STATUS_LABELS, reviewableProducts, type Review, type Reviewable } from "@/lib/reviews";
+import { deleteAddressAction, deleteReviewAction, logout, saveAddressAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +22,23 @@ const linkButton =
 
 // Hesap sayfası: yalnızca giriş yapmış müşteri görür. Hesaptayken verilen siparişler listelenir (misafir siparişleri
 // bağlanmaz; kullanıcı kararı, 2026-10-06).
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: PageProps<"/hesabim">) {
+  const notice = (await searchParams).yorum;
   const customer = await getCustomer();
   if (!customer) redirect("/giris?donus=/hesabim");
 
   let orders: CustomerOrderSummary[] = [];
   let addresses: SavedAddress[] = [];
+  let reviews: Review[] = [];
+  let reviewable: Reviewable[] = [];
   let failed = false;
   try {
-    [orders, addresses] = await Promise.all([listOrdersForCustomer(customer.id), listAddresses(customer.id)]);
+    [orders, addresses, reviews, reviewable] = await Promise.all([
+      listOrdersForCustomer(customer.id),
+      listAddresses(customer.id),
+      myReviews(customer.id),
+      reviewableProducts(customer.id),
+    ]);
   } catch (error) {
     console.error("Müşteri siparişleri ya da adresleri okunamadı", error);
     failed = true;
@@ -97,6 +107,76 @@ export default async function AccountPage() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="yorumlar-baslik" className="mt-12">
+        <h2 id="yorumlar-baslik" className="font-display text-2xl">
+          Değerlendirmelerim
+        </h2>
+        <p className="mt-2 text-sm text-muted">
+          Teslim edilen siparişlerinizdeki ürünlere yorum yazabilirsiniz. Yorumlar onaydan sonra ürün sayfasında görünür.
+        </p>
+        {(notice === "kaydedildi" || notice === "silindi") && (
+          <p role="status" className="mt-3 rounded-md bg-soft p-3 text-sm">
+            {notice === "kaydedildi" ? "Yorumunuz kaydedildi; onaylanınca ürün sayfasında görünecek." : "Yorumunuz silindi."}
+          </p>
+        )}
+
+        {!failed && reviewable.some((item) => !reviews.some((review) => review.slug === item.slug)) && (
+          <ul className="mt-4 divide-y divide-line border-y border-line">
+            {reviewable
+              .filter((item) => !reviews.some((review) => review.slug === item.slug))
+              .map((item) => (
+                <li key={item.slug} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <span className="text-sm">
+                    <span className="font-semibold">{item.name}</span>
+                    <span className="block text-muted">Sipariş {item.orderNumber} · teslim edildi</span>
+                  </span>
+                  <Link href={`/hesabim/yorum/${item.slug}`} className={linkButton}>
+                    Yorum yaz<span className="sr-only">: {item.name}</span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        )}
+
+        {!failed && reviews.length > 0 && (
+          <ul className="mt-4 space-y-3">
+            {reviews.map((review) => (
+              <li key={review.id} className="rounded-md border border-line p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Link href={`/urun/${review.slug}`} className="font-semibold transition hover:text-primary">
+                    {review.productName}
+                  </Link>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${review.status === "approved" ? "border-ink" : review.status === "rejected" ? "border-danger text-danger" : "border-field text-muted"}`}>
+                    {REVIEW_STATUS_LABELS[review.status]}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <Stars rating={review.rating} />
+                </div>
+                <p className="mt-2 break-words whitespace-pre-line">{review.text}</p>
+                <div className="mt-2 flex flex-wrap gap-x-4">
+                  {review.status === "pending" && (
+                    <Link href={`/hesabim/yorum/${review.slug}`} className="inline-flex min-h-11 items-center text-xs tracking-widest uppercase underline transition hover:text-primary">
+                      Düzenle<span className="sr-only">: {review.productName}</span>
+                    </Link>
+                  )}
+                  <form action={deleteReviewAction}>
+                    <input type="hidden" name="yorum" value={review.id} />
+                    <button type="submit" className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase underline transition hover:text-danger">
+                      Sil<span className="sr-only">: {review.productName} yorumu</span>
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!failed && reviewable.length === 0 && reviews.length === 0 && (
+          <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">Henüz teslim edilmiş siparişiniz yok.</p>
         )}
       </section>
 
