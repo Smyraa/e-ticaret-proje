@@ -1,46 +1,42 @@
-import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { sweepExpiredReservations } from "@/lib/order-flow";
 import { logout } from "./actions";
-import { AdminNav } from "./admin-nav";
+import { AdminSidebar } from "./admin-nav";
 
-// Giriş gerektiren yönetim sayfalarının çerçevesi (rota grubu "(panel)": adreste görünmez).
+// Giriş gerektiren yönetim sayfalarının çerçevesi (rota grubu "(panel)": adreste görünmez): solda menü, sağda içerik.
 // Giriş sayfası bu grubun dışında. Not: yetki kontrolü yalnız burada yapılmaz; her sayfa ve her eylem
 // kendi içinde requireAdmin() çağırır (ortak düzenler sayfa geçişlerinde yeniden çalışmayabilir).
 export default async function AdminPanelLayout({ children }: LayoutProps<"/yonetim">) {
   const admin = await requireAdmin();
+  await sweepExpiredReservations(); // ödeme sayfası terk edilmiş siparişlerin ayrılmış stoğu geri konur
 
   return (
-    <>
-      <header className="border-b border-line bg-paper">
-        {/* Dar ekranda iki satır: üstte marka + çıkış, altta menü. Geniş ekranda tek satır.
-            Kaynak sırası (odak sırası) geniş ekrandaki görünüşle aynı: marka, menü, çıkış. */}
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 px-6 py-1 md:gap-x-6 md:py-2">
-          <Link href="/yonetim" className="order-1 inline-flex min-h-11 items-center gap-2 md:order-none">
-            <span className="font-display text-xl tracking-[0.16em]">TAURA</span>
-            <span className="text-[11px] tracking-[0.3em] text-muted uppercase">Yönetim</span>
-          </Link>
+    <div className="flex min-h-screen flex-1 flex-col md:flex-row">
+      {/* Klavye kullanıcıları için: Tab ile ilk gelen bağlantı, menüyü atlayıp içeriğe götürür. */}
+      <a
+        href="#icerik"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:bg-paper focus:px-4 focus:py-3 focus:text-xs focus:font-semibold focus:tracking-widest focus:text-ink focus:uppercase focus:shadow-md"
+      >
+        Ana içeriğe geç
+      </a>
 
-          <div className="order-3 w-full md:order-none md:w-auto">
-            <AdminNav />
-          </div>
+      <AdminSidebar
+        email={admin.email}
+        logout={
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex min-h-11 items-center text-xs font-semibold tracking-widest text-paper uppercase underline transition hover:text-gold"
+            >
+              Çıkış yap
+            </button>
+          </form>
+        }
+      />
 
-          <div className="order-2 ml-auto flex items-center gap-x-5 text-sm md:order-none">
-            <Link href="/yonetim/hesap" className="hidden text-muted transition hover:text-primary hover:underline lg:inline">
-              {admin.email}
-            </Link>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="min-h-11 text-xs font-semibold tracking-widest uppercase underline transition hover:text-primary"
-              >
-                Çıkış yap
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1">{children}</main>
-    </>
+      <main id="icerik" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
+        {children}
+      </main>
+    </div>
   );
 }

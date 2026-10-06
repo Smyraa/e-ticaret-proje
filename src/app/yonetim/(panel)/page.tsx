@@ -32,7 +32,7 @@ export default async function AdminHomePage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
-      <h1 className="font-display text-4xl">Yönetim paneli</h1>
+      <h1 className="font-display text-4xl">Genel Bakış</h1>
       <p className="mt-3 text-muted">
         Hoş geldiniz, <span className="text-ink">{admin.email}</span>.
       </p>
