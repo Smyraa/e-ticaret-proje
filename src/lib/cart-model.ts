@@ -4,14 +4,14 @@ import { NOTE_MAX } from "./gift-note";
 // tarayıcıya özgü bir şey içermez.
 
 export type CartItem = { slug: string; qty: number };
-export type Cart = { items: CartItem[]; gift: boolean; note: string };
+export type Cart = { items: CartItem[]; gift: boolean; note: string; coupon?: string }; // coupon: uygulanan kupon kodu
 
 export const EMPTY_CART: Cart = { items: [], gift: false, note: "" };
 
 // Saklanan veri bozuk ya da elle değiştirilmiş olabilir: geçerli olanları alır, aynı ürünü birleştirir.
 export function parseCart(raw: unknown): Cart {
   if (typeof raw !== "object" || raw === null) return EMPTY_CART;
-  const { items, gift, note } = raw as Record<string, unknown>;
+  const { items, gift, note, coupon } = raw as Record<string, unknown>;
 
   const quantities = new Map<string, number>();
   if (Array.isArray(items)) {
@@ -27,5 +27,6 @@ export function parseCart(raw: unknown): Cart {
     items: [...quantities].map(([slug, qty]) => ({ slug, qty })),
     gift: gift === true,
     note: typeof note === "string" ? note.slice(0, NOTE_MAX) : "",
+    ...(typeof coupon === "string" && /^[A-Z0-9-]{3,20}$/.test(coupon) ? { coupon } : {}),
   };
 }

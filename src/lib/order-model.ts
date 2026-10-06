@@ -1,3 +1,4 @@
+import type { OrderCoupon } from "./coupon-model";
 import { formatPhone } from "./phone";
 
 // Sipariş kaydının biçimi ve müşteriye gösterilecek yardımcılar. Sunucuda ve sayfalarda ortak kullanılır.
@@ -37,6 +38,8 @@ export type Order = {
   status: OrderStatus;
   items: OrderItem[];
   subtotal: number;
+  discount?: number; // kupon indirimi (TL; eski siparişlerde yok = 0). Toplam = ara toplam − indirim + kargo
+  coupon?: OrderCoupon; // kullanılan kupon (anlık kopya)
   shippingFee: number; // sipariş anındaki kargo ücreti
   total: number;
   gift: boolean;

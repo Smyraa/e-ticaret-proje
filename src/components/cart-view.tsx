@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CouponBox, useCouponPreview } from "@/components/coupon-box";
 import { ProductImage } from "@/components/product-image";
 import { NOTE_MAX, removeFromCart, setGift, setNote, setQuantity, useCart } from "@/lib/cart";
 import { cartLines, linesSubtotal } from "@/lib/cart-lines";
@@ -16,6 +17,10 @@ const stepButton =
 export function CartView({ products, shippingFee }: { products: Product[]; shippingFee: number }) {
   const cart = useCart();
   const ready = useReady();
+  const payload = cartLines(cart, products)
+    .filter((line) => line.qty > 0)
+    .map(({ product, qty }) => ({ slug: product.slug, qty }));
+  const coupon = useCouponPreview(cart.coupon, payload);
 
   if (!ready) {
     return <p className="mt-8 text-sm text-muted">Yükleniyor…</p>;
@@ -117,14 +122,28 @@ export function CartView({ products, shippingFee }: { products: Product[]; shipp
             <dt className="text-muted">Ara toplam</dt>
             <dd className="font-semibold">{formatPrice(subtotal)}</dd>
           </div>
+          {coupon?.ok && coupon.discount > 0 && (
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted">İndirim ({coupon.code})</dt>
+              <dd className="font-semibold text-bordo">−{formatPrice(coupon.discount)}</dd>
+            </div>
+          )}
           {cart.gift && (
             <div className="flex justify-between gap-4">
               <dt className="text-muted">Hediye paketi</dt>
               <dd>Ücretsiz</dd>
             </div>
           )}
+          {coupon?.ok && coupon.discount > 0 && (
+            <div className="flex justify-between gap-4 border-t border-line pt-2">
+              <dt className="text-muted">İndirimli tutar</dt>
+              <dd className="font-semibold">{formatPrice(subtotal - coupon.discount)}</dd>
+            </div>
+          )}
         </dl>
         <p className="mt-2 text-xs text-muted">{shippingNote(shippingFee)}</p>
+
+        <CouponBox code={cart.coupon} preview={coupon} lines={payload} />
 
         <div className="mt-6 border-t border-line pt-6">
           <label className="flex items-start gap-3 text-sm">

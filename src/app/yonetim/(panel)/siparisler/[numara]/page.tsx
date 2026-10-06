@@ -172,6 +172,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
                 <dt className="text-muted">Ara toplam</dt>
                 <dd>{formatPrice(order.subtotal)}</dd>
               </div>
+              {order.discount ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">İndirim{order.coupon ? ` (${order.coupon.code})` : ""}</dt>
+                  <dd>−{formatPrice(order.discount)}</dd>
+                </div>
+              ) : null}
               {order.gift && (
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted">Hediye paketi</dt>

@@ -10,7 +10,7 @@ type FieldProps = {
   required?: boolean;
   multiline?: boolean;
   rows?: number;
-  type?: "text" | "email" | "tel";
+  type?: "text" | "email" | "tel" | "date";
   inputMode?: "numeric" | "tel" | "email";
   list?: string;
   maxLength?: number; // sunucudaki sınırla aynı (asıl denetim sunucuda)

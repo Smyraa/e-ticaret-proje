@@ -1,5 +1,6 @@
 import "server-only";
 
+import { markCouponUsed, releaseCoupon } from "./coupons";
 import { getDb } from "./mongodb";
 import { ORDER_STATUS_LABELS, type Order, type OrderItem, type OrderShipment, type OrderStatus } from "./order-model";
 import { availableCommands, targetStatus, type OrderCommand } from "./order-status";
@@ -178,6 +179,7 @@ export async function releaseReservation(number: string): Promise<boolean> {
   );
   if (!released) return false;
   await returnStock(released.items, "order-release", number);
+  await releaseCoupon(number); // ödeme olmadı: ayrılan kupon hakkı da geri döner (yeniden ödemede yeniden ayrılır)
   return true;
 }
 
@@ -202,7 +204,10 @@ export async function sweepExpiredReservations(force = false): Promise<void> {
         { $set: { stockDeducted: false, updatedAt: new Date() }, $unset: { reservedUntil: "" } },
         { projection: { _id: 0, items: 1 } },
       );
-      if (released) await returnStock(released.items, "order-release", number);
+      if (released) {
+        await returnStock(released.items, "order-release", number);
+        await releaseCoupon(number);
+      }
     }
   } catch (error) {
     lastSweep = 0; // bir sonraki istekte yeniden denensin
@@ -221,6 +226,7 @@ export type ApplyPaymentResult =
 export async function applyPayment(number: string): Promise<ApplyPaymentResult> {
   const paid = await setStatus(number, ["pending"], "paid");
   if (paid?.reservedUntil) await (await ordersOf()).updateOne({ number }, { $unset: { reservedUntil: "" } });
+  if (paid) await markCouponUsed(number);
   if (!paid) {
     const orders = await ordersOf();
     const current = await orders.findOne({ number }, { projection: { status: 1 } });
@@ -252,6 +258,7 @@ export async function runOrderCommand(number: string, command: OrderCommand, shi
         );
         return { ok: false, error: "Stok yetmediği için sipariş ödendi olarak işaretlenemedi.", problems };
       }
+      await markCouponUsed(number);
       return { ok: true, message: "Sipariş ödendi olarak işaretlendi; ürünlerin stoğu düşüldü." };
     }
 
@@ -270,6 +277,7 @@ export async function runOrderCommand(number: string, command: OrderCommand, shi
     case "cancel": {
       const cancelled = await setStatus(number, ["pending", "paid", "preparing"], "cancelled");
       if (!cancelled) return { ok: false, error: CHANGED };
+      await releaseCoupon(number, true); // iptal edilen siparişin kupon hakkı geri döner
       if (!cancelled.stockDeducted) return { ok: true, message: "Sipariş iptal edildi." };
       if (cancelled.reservedUntil) {
         // Ödenmemiş siparişin stoğu yalnız kartla ödeme için ayrılmıştı.

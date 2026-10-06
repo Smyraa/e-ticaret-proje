@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { after } from "next/server";
 import { formatPrice } from "./format";
 import { getDb } from "./mongodb";
+import { ensureCouponHeld } from "./coupons";
 import { applyPayment, releaseReservation, reserveOrderStock } from "./order-flow";
 import { notifyOrderPlaced, notifyPaymentAlert } from "./order-notify";
 import type { Order, OrderStatus } from "./order-model";
@@ -70,6 +71,11 @@ export async function startPayment(order: Order, ip: string): Promise<StartOutco
     await ensureIndexes();
     const reserved = await reserveOrderStock(order.number);
     if (!reserved.ok) return { ok: false, error: stockError(reserved.problems), stock: reserved.problems };
+    const held = await ensureCouponHeld(order);
+    if (!held.ok) {
+      await releaseReservation(order.number);
+      return { ok: false, error: `Ödeme başlatılmadı: ${held.message}` };
+    }
 
     const payments = await paymentsOf();
     const now = new Date();

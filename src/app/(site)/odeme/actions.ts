@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { clientAddress } from "@/lib/client-address";
+import { normalizeCode, type OrderCoupon } from "@/lib/coupon-model";
+import { checkCoupon, holdCoupon } from "@/lib/coupons";
 import { addAddress, cleanTitle } from "@/lib/customer-addresses";
 import { getCustomer } from "@/lib/customer-auth";
 import { buildOrderItems } from "@/lib/order-build";
@@ -56,11 +58,26 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
       };
     }
 
+    // Kupon: sepetteki kod sunucuda yeniden denetlenir, indirim burada hesaplanır (tarayıcının söylediği tutara güvenilmez).
+    const couponCode = normalizeCode(String(formData.get("kupon") ?? "")).slice(0, 20);
+    const buyer = { customerId: customer?.id ?? null, email: data.customer.email };
+    let coupon: OrderCoupon | undefined;
+    let discount = 0;
+    if (couponCode) {
+      const checked = /^[A-Z0-9-]{3,20}$/.test(couponCode)
+        ? await checkCoupon(couponCode, built.subtotal, buyer)
+        : ({ ok: false, message: "Bu kupon kodu geçerli değil." } as const);
+      if (!checked.ok) return { values, message: `Kupon: ${checked.message} Kuponu sepetten kaldırıp yeniden deneyin.` };
+      coupon = { code: checked.coupon.code, type: checked.coupon.type, amount: checked.coupon.amount };
+      discount = checked.discount;
+    }
+
     const created = await createOrder({
       items: built.items,
       subtotal: built.subtotal,
+      ...(coupon ? { coupon, discount } : {}),
       shippingFee: settings.shippingFee,
-      total: built.subtotal + settings.shippingFee,
+      total: built.subtotal - discount + settings.shippingFee,
       gift: cart.gift,
       giftNote: cart.giftNote,
       note: data.note,
@@ -72,6 +89,16 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
     });
     trackKey = created.trackKey;
     number = created.number;
+
+    // Kupon hakkı ayrılır (sınır ve müşteri başına tek kullanım burada kesin olarak denetlenir). Bu arada başkası son hakkı
+    // aldıysa hiç ödenmemiş sipariş silinir ve müşteri forma döner.
+    if (coupon) {
+      const held = await holdCoupon(coupon, number, buyer);
+      if (!held.ok) {
+        await deleteUnstartedOrder(number);
+        return { values, message: `Kupon: ${held.message} Kuponu sepetten kaldırıp yeniden deneyin.` };
+      }
+    }
 
     // Giriş yapılmışsa ve "Adresi kaydet" işaretliyse adres hesabın adres defterine eklenir (aynısı varsa eklenmez).
     // Kayıt olmasa da sipariş geçerlidir.

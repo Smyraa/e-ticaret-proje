@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
+import { useCouponPreview } from "@/components/coupon-box";
 import { ProductImage } from "@/components/product-image";
 import { useCart } from "@/lib/cart";
 import { cartLines, linesSubtotal } from "@/lib/cart-lines";
@@ -46,6 +47,9 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
   const visible = ready && payable.length > 0;
 
   const subtotal = linesSubtotal(payable);
+  const couponLines = payable.map(({ product, qty }) => ({ slug: product.slug, qty }));
+  const coupon = useCouponPreview(cart.coupon, couponLines);
+  const discount = coupon?.ok ? coupon.discount : 0;
   const note = cart.note.trim();
   const values = state?.values;
   const errors = state?.errors ?? {};
@@ -81,6 +85,7 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
             name="sepet"
             value={JSON.stringify(payable.map(({ product, qty }) => ({ slug: product.slug, qty })))}
           />
+          {coupon?.ok && <input type="hidden" name="kupon" value={coupon.code} />}
           {cart.gift && <input type="hidden" name="hediye" value="evet" />}
           {cart.gift && <input type="hidden" name="hediye-notu" value={note} />}
 
@@ -204,6 +209,12 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
               <dt className="text-muted">Ara toplam</dt>
               <dd>{formatPrice(subtotal)}</dd>
             </div>
+            {coupon?.ok && discount > 0 && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted">İndirim ({coupon.code})</dt>
+                <dd className="font-semibold text-bordo">−{formatPrice(discount)}</dd>
+              </div>
+            )}
             {cart.gift && (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">Hediye paketi</dt>
@@ -216,9 +227,17 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
               <dt className="font-semibold">Toplam</dt>
-              <dd className="font-display text-2xl">{formatPrice(subtotal + shippingFee)}</dd>
+              <dd className="font-display text-2xl">{formatPrice(subtotal - discount + shippingFee)}</dd>
             </div>
           </dl>
+          {coupon && !coupon.ok && (
+            <p role="alert" className="mt-3 text-sm font-semibold text-danger">
+              Kupon ({coupon.code}) uygulanmadı: {coupon.message}{" "}
+              <Link href="/sepet" className="underline transition hover:text-primary">
+                Sepete dön
+              </Link>
+            </p>
+          )}
           {cart.gift && note && <p className="mt-3 text-xs break-words text-muted">Not kartı: {note}</p>}
 
           {state?.message && (

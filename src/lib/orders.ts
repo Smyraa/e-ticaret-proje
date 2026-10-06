@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash, timingSafeEqual } from "node:crypto";
+import { releaseCoupon } from "./coupons";
 import { getDb } from "./mongodb";
 import { newOrderNumber, newTrackKey, TRACK_KEY_PATTERN } from "./order-ids";
 import type { Order } from "./order-model";
@@ -100,7 +101,8 @@ export async function listOrdersForCustomer(customerId: string): Promise<Custome
 // ve stoğu ayrılmamış sipariş silinir; ödeme kaydı yoktur.
 export async function deleteUnstartedOrder(number: string): Promise<void> {
   const orders = await ordersOf();
-  await orders.deleteOne({ number, status: "pending", stockDeducted: false });
+  const removed = await orders.deleteOne({ number, status: "pending", stockDeducted: false });
+  if (removed.deletedCount === 1) await releaseCoupon(number); // ayrılan kupon hakkı geri döner
 }
 
 const digest = (text: string) => createHash("sha256").update(text).digest();

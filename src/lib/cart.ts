@@ -66,3 +66,12 @@ export function setNote(note: string) {
 export function cartCount(cart: Cart): number {
   return cart.items.reduce((sum, item) => sum + item.qty, 0);
 }
+
+// Kupon kodu sepette tutulur; indirim her seferinde sunucuda hesaplanır (sepet yalnız kodu saklar). null: kuponu kaldır.
+export function setCoupon(code: string | null) {
+  update((cart) => {
+    const { coupon, ...rest } = cart;
+    void coupon;
+    return code ? { ...rest, coupon: code } : rest;
+  });
+}

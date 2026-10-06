@@ -27,6 +27,7 @@ const itemLines = (order: Order) =>
 
 const totalLines = (order: Order) => [
   `Ara toplam: ${money(order.subtotal)}`,
+  ...(order.discount ? [`İndirim${order.coupon ? ` (${order.coupon.code})` : ""}: −${money(order.discount)}`] : []),
   ...(order.gift ? ["Hediye paketi: Ücretsiz"] : []),
   `Kargo: ${plain(shippingLabel(order.shippingFee))}`,
   `Toplam: ${money(order.total)}`,
