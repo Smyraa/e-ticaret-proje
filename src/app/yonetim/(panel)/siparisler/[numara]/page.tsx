@@ -10,7 +10,7 @@ import { mediaUrl } from "@/lib/media";
 import { ADMIN_LIMITS } from "@/lib/order-admin-form";
 import { ORDER_NUMBER_PATTERN } from "@/lib/order-ids";
 import { ORDER_STATUS_LABELS } from "@/lib/order-model";
-import { availableCommands, HOLDS_STOCK } from "@/lib/order-status";
+import { availableCommands, HOLDS_STOCK, isReserved } from "@/lib/order-status";
 import { getOrderForAdmin } from "@/lib/orders-admin";
 import { paymentSetup } from "@/lib/payment-config";
 import {
@@ -102,7 +102,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
           Ödeme: {concern.text}
         </p>
       ))}
-      {!holdsStock && order.stockDeducted && (
+      {!holdsStock && order.stockDeducted && !isReserved(order) && (
         <p role="alert" className="mt-6 rounded-md border border-danger p-4 text-sm font-semibold text-danger">
           Bu sipariş ödenmemiş ya da iptal edilmiş ama düşülen stok iade edilmemiş. İşlemler bölümündeki “Stoğu şimdi iade
           et” düğmesini kullanın.
@@ -116,7 +116,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/yonetim/sip
         <p className="mt-2 text-sm text-muted">
           Durum: <span className="font-semibold text-ink">{ORDER_STATUS_LABELS[order.status]}</span>
           {" · "}
-          {order.stockDeducted ? "Stok düşüldü" : "Stok düşülmedi"}
+          {isReserved(order) && order.reservedUntil
+            ? `Stok kartla ödeme için ayrıldı (${formatDateTime(order.reservedUntil)}'e kadar; ödenmezse geri konur)`
+            : order.stockDeducted
+              ? "Stok düşüldü"
+              : "Stok düşülmedi"}
         </p>
         {order.shipment && (
           <p className="mt-1 text-sm text-muted">

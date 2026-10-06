@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getCustomer } from "@/lib/customer-auth";
+import { sweepExpiredReservations } from "@/lib/order-flow";
 import { AccountSync } from "./account-sync";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
@@ -9,6 +10,8 @@ import { SiteHeader } from "./site-header";
 export async function SiteShell({ children }: { children: ReactNode }) {
   // Veritabanına ulaşılamazsa site misafir gibi açılır.
   const customer = await getCustomer().catch(() => null);
+  // Ödeme sayfası terk edilmiş siparişlerin ayrılmış stoğu süre dolunca geri konur (en çok 30 sn'de bir çalışır).
+  await sweepExpiredReservations();
 
   return (
     <>

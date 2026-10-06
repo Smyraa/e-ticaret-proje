@@ -96,6 +96,13 @@ export async function listOrdersForCustomer(customerId: string): Promise<Custome
   return docs.map(({ items, ...rest }) => ({ ...rest, itemCount: items.reduce((sum, item) => sum + item.qty, 0) }));
 }
 
+// Az önce açılmış ama ödemesi hiç başlatılamamış siparişi siler (ödeme başlarken stok yetmedi). Yalnız "ödeme bekleniyor"
+// ve stoğu ayrılmamış sipariş silinir; ödeme kaydı yoktur.
+export async function deleteUnstartedOrder(number: string): Promise<void> {
+  const orders = await ordersOf();
+  await orders.deleteOne({ number, status: "pending", stockDeducted: false });
+}
+
 const digest = (text: string) => createHash("sha256").update(text).digest();
 
 // Sipariş sorgulama: numara ve e-posta (küçük harfle) birlikte doğruysa siparişin gizli anahtarını verir, değilse null.

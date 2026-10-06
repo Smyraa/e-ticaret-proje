@@ -6,7 +6,7 @@ import { parseLira } from "./money";
 import { formatPhone, normalizePhone, PHONE_ERROR } from "./phone";
 import type { SiteSettings } from "./settings";
 
-export const SETTINGS_LIMITS = { email: EMAIL_MAX, address: 300, hours: 120, shippingMax: 10_000 } as const;
+export const SETTINGS_LIMITS = { email: EMAIL_MAX, address: 300, hours: 120, shippingMax: 10_000, lowStockMax: 1000 } as const;
 
 // Formdaki alanlar; kullanıcının yazdığı gibi (metin) tutulur ki hata sonrası yazdıkları geri gelsin.
 export type SettingsValues = {
@@ -17,6 +17,7 @@ export type SettingsValues = {
   address: string;
   hours: string;
   shippingFee: string;
+  lowStockThreshold: string;
 };
 
 export type SettingsField = keyof SettingsValues;
@@ -44,6 +45,7 @@ export function settingsValues(settings: SiteSettings): SettingsValues {
     address: settings.address,
     hours: settings.hours,
     shippingFee: String(settings.shippingFee),
+    lowStockThreshold: String(settings.lowStockThreshold),
   };
 }
 
@@ -60,6 +62,7 @@ export function readSettingsForm(formData: FormData): {
     address: multiLine(formData.get("address")),
     hours: oneLine(formData.get("hours")),
     shippingFee: oneLine(formData.get("shippingFee")),
+    lowStockThreshold: oneLine(formData.get("lowStockThreshold")),
   };
   const errors: SettingsErrors = {};
 
@@ -80,7 +83,12 @@ export function readSettingsForm(formData: FormData): {
     errors.shippingFee = `Kargo ücreti en çok ${SETTINGS_LIMITS.shippingMax.toLocaleString("tr-TR")} TL olabilir.`;
   }
 
-  if (Object.keys(errors).length > 0 || whatsapp === null || phone === null || fee === null) {
+  const low = /^\d{1,4}$/.test(values.lowStockThreshold) ? Number(values.lowStockThreshold) : null;
+  if (!values.lowStockThreshold) errors.lowStockThreshold = "Düşük stok eşiğini yazın (uyarı istemiyorsanız 0).";
+  else if (low === null) errors.lowStockThreshold = "Eşiği yalnız rakamla, tam sayı olarak yazın (örn. 2).";
+  else if (low > SETTINGS_LIMITS.lowStockMax) errors.lowStockThreshold = `Eşik en çok ${SETTINGS_LIMITS.lowStockMax} olabilir.`;
+
+  if (Object.keys(errors).length > 0 || whatsapp === null || phone === null || fee === null || low === null) {
     return { values, errors };
   }
 
@@ -95,6 +103,7 @@ export function readSettingsForm(formData: FormData): {
       address: values.address,
       hours: values.hours,
       shippingFee: fee,
+      lowStockThreshold: low,
     },
   };
 }

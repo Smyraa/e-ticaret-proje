@@ -3,6 +3,7 @@ import "server-only";
 import { getDb } from "./mongodb";
 import { ORDER_STATUS_LABELS, type Order, type OrderItem, type OrderShipment, type OrderStatus } from "./order-model";
 import { availableCommands, targetStatus, type OrderCommand } from "./order-status";
+import { recordStockMoves, type StockMoveKind } from "./stock-moves";
 
 // Siparişin durumunu değiştiren ve stoğu düşüp iade eden işlemler. Çağıranın yetkisi kendi işidir: yönetim eylemleri
 // requireAdmin() geçtikten sonra, ödeme (applyPayment) ise sonucu kuruluşa sorularak doğrulandıktan sonra çağırır.
@@ -15,6 +16,16 @@ import { availableCommands, targetStatus, type OrderCommand } from "./order-stat
 //     Çökerse bayrak false kalır (sayfada uyarı + "stoğu düş" düğmesi çıkar).
 //   - İade: önce bayrak false olur, sonra stok iade edilir. İki kez iade edilemez; çökerse stok eksik kalır.
 // Durum geçişleri "durum hâlâ beklediğimiz gibiyse" koşuluyla yapılır: aynı anda gelen iki istekten biri kazanır.
+//
+// Kartla ödemede stok ödeme BAŞLARKEN ayrılır (reserveOrderStock): müşteri ödeme sayfasına gitmeden stok tek adımda düşer,
+// sipariş `reservedUntil` alır. Stok yetmezse ödeme sayfası açılmaz. Ödeme olmazsa ayrılan stok hemen (releaseReservation),
+// ödeme sayfası terk edilirse süre dolunca (sweepExpiredReservations) geri konur. Ödeme alınınca ayrılan stok zaten
+// düşülmüş olduğundan ikinci kez düşülmez (stockDeducted). Süre dolup stok geri konduktan sonra gelen ödemede stok yeniden
+// düşülmeye çalışılır; yetmezse mevcut "ödendi ama stok yok" uyarısı ve iade yolu devreye girer.
+//
+// Her stok değişimi stok hareket geçmişine yazılır (stock-moves.ts).
+
+export const RESERVATION_MINUTES = 20; // kullanıcı kararı (2026-10-07)
 
 // notify: işlemin ardından müşteriye e-posta gitmesi gerekiyorsa hangisi (yalnız durum gerçekten değiştiğinde).
 export type FlowResult =
@@ -26,7 +37,7 @@ const NOT_ALLOWED = "Bu işlem siparişin şu anki durumunda yapılamaz. Sayfay�
 const CHANGED = "Siparişin durumu bu arada değişmiş. Sayfayı yenileyip yeniden deneyin.";
 
 const ordersOf = async () => (await getDb()).collection<Order>("orders");
-const productsOf = async () => (await getDb()).collection<{ slug: string; stock: number }>("products");
+const productsOf = async () => (await getDb()).collection<{ slug: string; stock: number; name: string }>("products");
 
 // Durumu `from` listesindeki bir durumdan `to`'ya geçirir (durum hâlâ oradaysa) ve geçmişe yazar. Yeni kaydı döndürür;
 // durum bu arada değiştiyse ya da sipariş yoksa null.
@@ -41,15 +52,19 @@ async function setStatus(number: string, from: OrderStatus[], to: OrderStatus, e
 }
 
 // Her ürünün stoğundan sipariş adedini düşer; yeterli stok yoksa HİÇBİR şey değişmez. Dönüş: sorunlar (boşsa tamam).
-async function deductStock(items: OrderItem[]): Promise<string[]> {
+async function deductStock(items: OrderItem[], kind: StockMoveKind, orderNumber: string): Promise<string[]> {
   const products = await productsOf();
-  const done: OrderItem[] = [];
+  const done: { item: OrderItem; after: number }[] = [];
   const problems: string[] = [];
 
   for (const item of items) {
-    const result = await products.updateOne({ slug: item.slug, stock: { $gte: item.qty } }, { $inc: { stock: -item.qty } });
-    if (result.modifiedCount === 1) {
-      done.push(item);
+    const result = await products.findOneAndUpdate(
+      { slug: item.slug, stock: { $gte: item.qty } },
+      { $inc: { stock: -item.qty } },
+      { returnDocument: "after", projection: { stock: 1 } },
+    );
+    if (result) {
+      done.push({ item, after: result.stock });
       continue;
     }
     const current = await products.findOne({ slug: item.slug }, { projection: { stock: 1 } });
@@ -60,23 +75,36 @@ async function deductStock(items: OrderItem[]): Promise<string[]> {
     );
   }
 
-  // Bir satır yetmediyse, düşülenler geri konur: ya hepsi düşer ya hiçbiri.
+  // Bir satır yetmediyse, düşülenler geri konur: ya hepsi düşer ya hiçbiri (geçmişe de yazılmaz; net değişim yok).
   if (problems.length > 0) {
-    for (const item of done) await products.updateOne({ slug: item.slug }, { $inc: { stock: item.qty } });
+    for (const { item } of done) await products.updateOne({ slug: item.slug }, { $inc: { stock: item.qty } });
+    return problems;
   }
+  await recordStockMoves(
+    done.map(({ item, after }) => ({ slug: item.slug, name: item.name, delta: -item.qty, after, kind, orderNumber })),
+  );
   return problems;
 }
 
-async function returnStock(items: OrderItem[]): Promise<void> {
+async function returnStock(items: OrderItem[], kind: StockMoveKind, orderNumber: string): Promise<void> {
   const products = await productsOf();
-  // Ürün silinmişse eşleşme olmaz; sorun değil.
-  for (const item of items) await products.updateOne({ slug: item.slug }, { $inc: { stock: item.qty } });
+  const moves = [];
+  // Ürün silinmişse eşleşme olmaz; sorun değil (geçmişe sonraki stok boş olarak yazılır).
+  for (const item of items) {
+    const result = await products.findOneAndUpdate(
+      { slug: item.slug },
+      { $inc: { stock: item.qty } },
+      { returnDocument: "after", projection: { stock: 1 } },
+    );
+    moves.push({ slug: item.slug, name: item.name, delta: item.qty, after: result?.stock ?? null, kind, orderNumber });
+  }
+  await recordStockMoves(moves);
 }
 
 // Siparişin stoğunu düşer (zaten düşülmüşse bir şey yapmaz). Dönüş: stok yetmeyen satırların açıklamaları.
 async function deductOrderStock(order: Order): Promise<string[]> {
   if (order.stockDeducted) return [];
-  const problems = await deductStock(order.items);
+  const problems = await deductStock(order.items, "order-deduct", order.number);
   if (problems.length === 0) {
     const orders = await ordersOf();
     await orders.updateOne({ number: order.number, stockDeducted: false }, { $set: { stockDeducted: true, updatedAt: new Date() } });
@@ -85,13 +113,101 @@ async function deductOrderStock(order: Order): Promise<string[]> {
 }
 
 // Düşülmüş stoğu iade eder. Bayrak önce kapatılır: aynı sipariş için iki kez iade edilemez.
-export async function releaseOrderStock(order: Order): Promise<void> {
+export async function releaseOrderStock(order: Order, kind: StockMoveKind = "order-return"): Promise<void> {
   const orders = await ordersOf();
   const flipped = await orders.updateOne(
     { number: order.number, stockDeducted: true },
-    { $set: { stockDeducted: false, updatedAt: new Date() } },
+    { $set: { stockDeducted: false, updatedAt: new Date() }, $unset: { reservedUntil: "" } },
   );
-  if (flipped.modifiedCount === 1) await returnStock(order.items);
+  if (flipped.modifiedCount === 1) await returnStock(order.items, kind, order.number);
+}
+
+export type ReserveResult = { ok: true } | { ok: false; problems: string[] };
+
+// Kartla ödeme başlamadan hemen önce siparişin stoğunu ayırır (düşer) ve RESERVATION_MINUTES süre tanır. Stok zaten
+// ayrılmışsa süre yenilenir. Yetmeyen ürün varsa hiçbir stok değişmez ve sorunlar döner (ödeme başlatılmamalı).
+export async function reserveOrderStock(number: string): Promise<ReserveResult> {
+  const orders = await ordersOf();
+  const until = () => new Date(Date.now() + RESERVATION_MINUTES * 60_000);
+  const order = await orders.findOne({ number, status: "pending" }, { projection: { _id: 0 } });
+  if (!order) return { ok: false, problems: ["Bu sipariş için ödeme beklenmiyor."] };
+
+  if (order.stockDeducted) {
+    await orders.updateOne({ number, status: "pending", stockDeducted: true }, { $set: { reservedUntil: until() } });
+    return { ok: true };
+  }
+
+  const problems = await deductStock(order.items, "order-reserve", number);
+  if (problems.length > 0) return { ok: false, problems: await shortageForCustomer(order.items) };
+
+  // Stok düştü; sipariş bu arada değişmediyse ayrıldı olarak işaretlenir. Değiştiyse (başka istek ayırdı ya da iptal
+  // edildi) düşülen stok geri konur: aynı sipariş için stok iki kez düşülmez.
+  const marked = await orders.updateOne(
+    { number, status: "pending", stockDeducted: false },
+    { $set: { stockDeducted: true, reservedUntil: until(), updatedAt: new Date() } },
+  );
+  if (marked.modifiedCount === 1) return { ok: true };
+  await returnStock(order.items, "order-release", number);
+  const current = await orders.findOne({ number }, { projection: { status: 1, stockDeducted: 1 } });
+  return current?.status === "pending" && current.stockDeducted
+    ? { ok: true }
+    : { ok: false, problems: ["Bu sipariş için ödeme beklenmiyor."] };
+}
+
+// Müşteriye gösterilecek eksik listesi: "X tükendi." ya da "X için stokta yalnız N adet kaldı."
+async function shortageForCustomer(items: OrderItem[]): Promise<string[]> {
+  const products = await productsOf();
+  const lines: string[] = [];
+  for (const item of items) {
+    const current = await products.findOne({ slug: item.slug }, { projection: { stock: 1 } });
+    const stock = current?.stock ?? 0;
+    if (stock >= item.qty) continue;
+    lines.push(stock <= 0 ? `${item.name} tükendi.` : `${item.name} için stokta yalnız ${stock} adet kaldı.`);
+  }
+  return lines.length > 0 ? lines : ["Sepetinizdeki bazı ürünler stokta yetmiyor."];
+}
+
+// Ayrılmış stoğu geri koyar (ödeme olmadı). Yalnız hâlâ "ödeme bekleniyor" ve ayrılmış durumdaki siparişte çalışır;
+// ödenmiş ya da yönetimde elle işlenmiş siparişe dokunmaz.
+export async function releaseReservation(number: string): Promise<boolean> {
+  const orders = await ordersOf();
+  const released = await orders.findOneAndUpdate(
+    { number, status: "pending", stockDeducted: true, reservedUntil: { $exists: true } },
+    { $set: { stockDeducted: false, updatedAt: new Date() }, $unset: { reservedUntil: "" } },
+    { projection: { _id: 0, items: 1 } },
+  );
+  if (!released) return false;
+  await returnStock(released.items, "order-release", number);
+  return true;
+}
+
+// Süresi dolan ayırmaları geri koyar. Mağaza ve yönetim sayfaları sık çağırır; en çok 30 saniyede bir çalışır ve süresi
+// dolan yoksa tek bir sorgudur. force: sınamalar ve stok sayfası beklemeden çalıştırır.
+const SWEEP_EVERY_MS = 30_000;
+let lastSweep = 0;
+export async function sweepExpiredReservations(force = false): Promise<void> {
+  const now = Date.now();
+  if (!force && now - lastSweep < SWEEP_EVERY_MS) return;
+  lastSweep = now;
+  try {
+    const orders = await ordersOf();
+    const expired = await orders
+      .find({ status: "pending", stockDeducted: true, reservedUntil: { $lt: new Date(now) } }, { projection: { number: 1 } })
+      .limit(50)
+      .toArray();
+    for (const { number } of expired) {
+      // Koşul yeniden denetlenir: bu arada ödendiyse ya da süre yenilendiyse dokunulmaz.
+      const released = await orders.findOneAndUpdate(
+        { number, status: "pending", stockDeducted: true, reservedUntil: { $lt: new Date() } },
+        { $set: { stockDeducted: false, updatedAt: new Date() }, $unset: { reservedUntil: "" } },
+        { projection: { _id: 0, items: 1 } },
+      );
+      if (released) await returnStock(released.items, "order-release", number);
+    }
+  } catch (error) {
+    lastSweep = 0; // bir sonraki istekte yeniden denensin
+    console.error("Süresi dolan stok ayırmaları geri konamadı", error);
+  }
 }
 
 // Kartla ödeme alındı (sonuç kuruluştan sorularak doğrulanmış): sipariş "ödendi" olur ve stok düşer. Elle "ödendi"den
@@ -104,6 +220,7 @@ export type ApplyPaymentResult =
 
 export async function applyPayment(number: string): Promise<ApplyPaymentResult> {
   const paid = await setStatus(number, ["pending"], "paid");
+  if (paid?.reservedUntil) await (await ordersOf()).updateOne({ number }, { $unset: { reservedUntil: "" } });
   if (!paid) {
     const orders = await ordersOf();
     const current = await orders.findOne({ number }, { projection: { status: 1 } });
@@ -154,6 +271,11 @@ export async function runOrderCommand(number: string, command: OrderCommand, shi
       const cancelled = await setStatus(number, ["pending", "paid", "preparing"], "cancelled");
       if (!cancelled) return { ok: false, error: CHANGED };
       if (!cancelled.stockDeducted) return { ok: true, message: "Sipariş iptal edildi." };
+      if (cancelled.reservedUntil) {
+        // Ödenmemiş siparişin stoğu yalnız kartla ödeme için ayrılmıştı.
+        await releaseOrderStock(cancelled, "order-release");
+        return { ok: true, message: "Sipariş iptal edildi; ödeme için ayrılan stok geri kondu." };
+      }
       await releaseOrderStock(cancelled);
       return { ok: true, message: "Sipariş iptal edildi; düşülen stok iade edildi." };
     }

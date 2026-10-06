@@ -45,7 +45,8 @@ export type Order = {
   customer: OrderCustomer;
   address: OrderAddress;
   test: boolean; // yalnız örnek ürünlerden oluşan sipariş (demo denemesi)
-  stockDeducted: boolean; // stok, ödeme alınınca düşülür
+  stockDeducted: boolean; // stok, ödeme alınınca düşülür (kartla ödemede ödeme başlarken ayrılır: bkz. reservedUntil)
+  reservedUntil?: Date; // kartla ödeme başlarken stok ayrıldıysa: bu zamana kadar ödenmezse stok geri konur
   consentAt: Date; // ön bilgilendirme ve satış sözleşmesi onayı
   customerId?: string; // giriş yapmış müşterinin hesabı (misafir siparişte yok)
   createdAt: Date;

@@ -10,10 +10,11 @@ export type SiteSettings = {
   address: string; // çok satırlı olabilir
   hours: string; // çalışma saatleri
   shippingFee: number; // tam lira; 0 = ücretsiz
+  lowStockThreshold: number; // stok bu sayıya ya da altına inince "düşük stok" sayılır (yönetimde; sitede görünmez)
 };
 
 // Herkese açık sayfalarda kullanılabilen ayarlar: sipariş bildirimi e-postası dışarı verilmez (türden de okunamaz).
-export type PublicSettings = Omit<SiteSettings, "orderEmail">;
+export type PublicSettings = Omit<SiteSettings, "orderEmail" | "lowStockThreshold">;
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsapp: "",
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   address: "",
   hours: "",
   shippingFee: 0, // kullanıcı kararı: şimdilik kargo ücretsiz
+  lowStockThreshold: 2, // kullanıcı kararı (2026-10-07): ortak eşik, Ayarlar'dan değişir
 };
 
 type SettingsDoc = Partial<Record<keyof SiteSettings, unknown>>;
@@ -36,6 +38,7 @@ export async function readSettings(): Promise<SiteSettings> {
   const db = await getDb();
   const doc = await db.collection<SettingsDoc & { _id: string }>("settings").findOne({ _id: "site" });
   const fee = doc?.shippingFee;
+  const low = doc?.lowStockThreshold;
   return {
     heroImage: text(doc?.heroImage) || undefined,
     whatsapp: text(doc?.whatsapp),
@@ -45,12 +48,15 @@ export async function readSettings(): Promise<SiteSettings> {
     address: text(doc?.address),
     hours: text(doc?.hours),
     shippingFee: typeof fee === "number" && Number.isInteger(fee) && fee >= 0 ? fee : DEFAULT_SETTINGS.shippingFee,
+    lowStockThreshold:
+      typeof low === "number" && Number.isInteger(low) && low >= 0 ? low : DEFAULT_SETTINGS.lowStockThreshold,
   };
 }
 
 function publicOf(settings: SiteSettings): PublicSettings {
-  const { orderEmail, ...open } = settings;
+  const { orderEmail, lowStockThreshold, ...open } = settings;
   void orderEmail; // sipariş bildirimi e-postası mağaza sayfalarına verilmez
+  void lowStockThreshold; // yalnız yönetim kullanır
   return open;
 }
 

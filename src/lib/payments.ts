@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { after } from "next/server";
 import { formatPrice } from "./format";
 import { getDb } from "./mongodb";
-import { applyPayment } from "./order-flow";
+import { applyPayment, releaseReservation, reserveOrderStock } from "./order-flow";
 import { notifyOrderPlaced, notifyPaymentAlert } from "./order-notify";
 import type { Order, OrderStatus } from "./order-model";
 import { canRefund, isCheckable, sameAmount, type PaymentAttention, type PaymentRecord } from "./payment-model";
@@ -48,10 +48,16 @@ function ensureIndexes(): Promise<void> {
 // oturum açılmaz); daha azsa yenisi açılır.
 const REUSE_MARGIN_MS = 3 * 60_000;
 
-export type StartOutcome = { ok: true; url: string } | { ok: false; error: string };
+// stock: stok yetmediği için ödeme başlatılmadıysa yetmeyen ürünlerin açıklamaları.
+export type StartOutcome = { ok: true; url: string } | { ok: false; error: string; stock?: string[] };
+
+const stockError = (problems: string[]) =>
+  `Ödeme başlatılmadı, çünkü bazı ürünler stokta yetmiyor: ${problems.join(" ")}`;
 
 // Siparişin ödemesini başlatır: kuruluşta oturum açar ve müşterinin gönderileceği ödeme sayfasının adresini verir.
 // Açık bir oturum varsa onu yeniden kullanır. Yalnız "ödeme bekleniyor" durumundaki sipariş için çalışır.
+// Ödeme sayfası açılmadan ÖNCE siparişin stoğu ayrılır (order-flow.ts → reserveOrderStock); stok yetmezse ödeme
+// başlatılmaz ve yetmeyen ürünler söylenir. Oturum açılamazsa ayrılan stok hemen geri konur.
 export async function startPayment(order: Order, ip: string): Promise<StartOutcome> {
   const provider = activeProvider();
   if (!provider) return { ok: false, error: "Kartla ödeme şu an alınamıyor." };
@@ -62,6 +68,9 @@ export async function startPayment(order: Order, ip: string): Promise<StartOutco
 
   try {
     await ensureIndexes();
+    const reserved = await reserveOrderStock(order.number);
+    if (!reserved.ok) return { ok: false, error: stockError(reserved.problems), stock: reserved.problems };
+
     const payments = await paymentsOf();
     const now = new Date();
 
@@ -77,12 +86,13 @@ export async function startPayment(order: Order, ip: string): Promise<StartOutco
     if (open) return { ok: true, url: open.redirectUrl };
 
     const conversationId = randomBytes(12).toString("hex");
-    const session: StartResult = await provider.start({
-      order,
-      conversationId,
-      callbackUrl: `${siteUrl}/odeme/geri-donus`,
-      ip,
-    });
+    let session: StartResult;
+    try {
+      session = await provider.start({ order, conversationId, callbackUrl: `${siteUrl}/odeme/geri-donus`, ip });
+    } catch (error) {
+      await releaseReservation(order.number).catch(() => false); // açık oturum yok: ayrılan stok beklemesin
+      throw error;
+    }
     await payments.insertOne({
       _id: newId(),
       orderNumber: order.number,
@@ -175,7 +185,16 @@ async function settle(payment: PaymentDoc): Promise<ConfirmOutcome> {
       { $set: { status: "failed", failure: result.reason, updatedAt: now, checkedAt: now } },
       { returnDocument: "after" },
     );
-    return failed ? { kind: "failed", payment: toView(failed) } : { kind: "settled", payment: toView(payment) };
+    if (!failed) return { kind: "settled", payment: toView(payment) };
+    // Ödeme olmadı: siparişin açık başka bir ödeme oturumu yoksa ayrılan stok hemen geri konur.
+    const stillOpen = await payments.countDocuments({
+      orderNumber: payment.orderNumber,
+      status: "started",
+      expiresAt: { $gt: now },
+      _id: { $ne: payment._id },
+    });
+    if (stillOpen === 0) await releaseReservation(payment.orderNumber);
+    return { kind: "failed", payment: toView(failed) };
   }
 
   // Para alınmış. Tutar ve sipariş kuruluşun bildirdiğiyle kendi kaydımızdaki ile aynı olmalı.

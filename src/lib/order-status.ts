@@ -48,13 +48,18 @@ const FROM: Record<Exclude<OrderCommand, "stock-deduct" | "stock-return">, Order
   back: ["paid", "preparing", "shipped", "delivered"],
 };
 
-export function availableCommands(order: { status: OrderStatus; stockDeducted: boolean }): OrderCommand[] {
+// Kartla ödeme başlarken stok siparişe ayrılır: "ödeme bekleniyor" + stok düşülmüş + ayırma süresi var. Bu durum
+// tutarsızlık değildir (süre dolunca ya da ödeme olmayınca stok kendiliğinden geri konur).
+export const isReserved = (order: { status: OrderStatus; stockDeducted: boolean; reservedUntil?: Date }) =>
+  order.status === "pending" && order.stockDeducted && Boolean(order.reservedUntil);
+
+export function availableCommands(order: { status: OrderStatus; stockDeducted: boolean; reservedUntil?: Date }): OrderCommand[] {
   const commands: OrderCommand[] = (Object.keys(FROM) as (keyof typeof FROM)[]).filter((command) =>
     FROM[command].includes(order.status),
   );
   const holds = HOLDS_STOCK.includes(order.status);
   if (holds && !order.stockDeducted) commands.push("stock-deduct");
-  if (!holds && order.stockDeducted) commands.push("stock-return");
+  if (!holds && order.stockDeducted && !isReserved(order)) commands.push("stock-return");
   return commands;
 }
 

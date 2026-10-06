@@ -116,6 +116,19 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
         hint="Tam lira. Ücretsiz için 0 yazın. Sepet ve ödeme özetinde, SSS ve Kargo ve iade sayfalarında bu ücret görünür."
       />
 
+      <h2 className="pt-4 font-display text-2xl">Stok</h2>
+      <Field
+        prefix="ayar"
+        name="lowStockThreshold"
+        maxLength={4}
+        label="Düşük stok eşiği (adet)"
+        required
+        inputMode="numeric"
+        value={values.lowStockThreshold}
+        error={errors.lowStockThreshold}
+        hint="Stoğu bu sayıya ya da altına inen ürünler Stok Takibi sayfasında “Düşük stok” olarak listelenir. Uyarı istemiyorsanız 0 yazın (yalnız tükenenler listelenir)."
+      />
+
       <div className="pt-2">
         <button
           type="submit"

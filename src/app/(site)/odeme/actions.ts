@@ -8,7 +8,7 @@ import { getCustomer } from "@/lib/customer-auth";
 import { buildOrderItems } from "@/lib/order-build";
 import { readCartPayload, readCheckoutForm, type CheckoutState } from "@/lib/order-form";
 import { notifyOrderPlaced } from "@/lib/order-notify";
-import { createOrder, getOrderByNumber } from "@/lib/orders";
+import { createOrder, deleteUnstartedOrder, getOrderByNumber } from "@/lib/orders";
 import { paymentSetup } from "@/lib/payment-config";
 import { paymentsActive } from "@/lib/payment-model";
 import { startPayment } from "@/lib/payments";
@@ -97,6 +97,12 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
         if (order) {
           const started = await startPayment(order, address);
           if (started.ok) payUrl = started.url;
+          else if (started.stock) {
+            // Sipariş verilirken stok vardı ama ödeme başlarken (aynı anda başka biri aldı) yetmedi: ödeme sayfası açılmaz,
+            // hiç ödenmemiş sipariş silinir ve müşteri sepetiyle birlikte forma döner.
+            await deleteUnstartedOrder(number);
+            return { values, message: `${started.error} Sepetinizi güncelleyip yeniden deneyin.` };
+          }
         }
       } catch (error) {
         // Sipariş kaydedildi; yalnız ödeme sayfası açılamadı. Müşteri hata görmez, sipariş sayfasından yeniden dener.
