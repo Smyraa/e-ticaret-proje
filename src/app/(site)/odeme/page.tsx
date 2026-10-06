@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckoutView } from "@/components/checkout-view";
+import { getCustomer } from "@/lib/customer-auth";
 import { pageMetadata } from "@/lib/metadata";
 import { paymentSetup } from "@/lib/payment-config";
 import { checkoutPaymentText, paymentsActive } from "@/lib/payment-model";
@@ -18,6 +19,7 @@ export const metadata = pageMetadata(
 
 export default async function CheckoutPage() {
   const { shippingFee } = await getSiteSettings();
+  const customer = await getCustomer().catch(() => null);
   const setup = paymentSetup();
   const payment = checkoutPaymentText(setup);
   let products: Product[] = [];
@@ -52,6 +54,7 @@ export default async function CheckoutPage() {
           shippingFee={shippingFee}
           paymentNote={payment.note}
           submitLabel={payment.button}
+          defaults={customer ? { name: customer.name, email: customer.email } : undefined}
           action={placeOrder}
         />
       )}

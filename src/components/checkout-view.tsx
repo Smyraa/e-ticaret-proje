@@ -63,6 +63,7 @@ type Props = {
   shippingFee: number;
   paymentNote: string; // "Ödeme" bölümünde müşteriye söylenen (ödeme ayarına göre sunucu belirler)
   submitLabel: string; // gönder düğmesinin yazısı
+  defaults?: { name: string; email: string }; // giriş yapmış müşterinin adı ve e-postası (form ilk açılınca)
   // Sunucu eylemi (sipariş verme). Sayfa (sunucu) verir; bu bileşende `.bind` edilmez.
   action: (state: CheckoutState, formData: FormData) => Promise<CheckoutState>;
 };
@@ -71,7 +72,7 @@ type Props = {
 // müşteriyi ödeme kuruluşunun sayfasına, değilse sipariş sayfasına götürür. Kart alanı hiç yok: kart bilgisini yalnız ödeme
 // kuruluşunun kendi güvenli sayfası alır. Sepet tarayıcıda durur, bu yüzden form sunucuda çizilir ama sepet hazır olana kadar
 // gizli kalır (gizli alanlar sunucuda çizilen biçimle gelir; sepet içeriği tarayıcıda forma yazılır).
-export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, action }: Props) {
+export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, defaults, action }: Props) {
   const cart = useCart();
   const ready = useReady();
   const [state, formAction, pending] = useActionState(action, undefined);
@@ -129,7 +130,7 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
                 name="ad-soyad"
                 field="name"
                 errors={errors}
-                value={values?.name ?? ""}
+                value={values?.name ?? defaults?.name ?? ""}
                 autoComplete="name"
                 className="sm:col-span-2"
               />
@@ -148,7 +149,7 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
                 name="eposta"
                 field="email"
                 errors={errors}
-                value={values?.email ?? ""}
+                value={values?.email ?? defaults?.email ?? ""}
                 type="email"
                 autoComplete="email"
                 inputMode="email"
