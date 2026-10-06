@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   endCustomerSession,
@@ -12,6 +13,8 @@ import {
   type AccountData,
   type AuthResult,
 } from "@/lib/customer-auth";
+import { addAddress, ADDRESSES_MAX, cleanTitle, deleteAddress } from "@/lib/customer-addresses";
+import { checkAddress, readAddressValues, type AddressErrors, type AddressValues } from "@/lib/order-form";
 import { safeReturn } from "@/lib/return-path";
 
 // Form durumu: hata iletisi, hatanın ait olduğu kutu ve (hata sonrası boşalmasın diye) yazılan ad ve e-posta.
@@ -68,4 +71,49 @@ export async function mergeAccount(local: { favorites: unknown; cart: unknown })
 export async function saveAccount(data: { favorites: unknown; cart: unknown }): Promise<void> {
   const customer = await getCustomer();
   if (customer) await saveAccountData(customer.id, data);
+}
+
+// Adres defteri formu ("Hesabım"). Başarıda form boşalsın diye `saved` artar (form bu sayıyla yeniden kurulur).
+export type AddressFormState = {
+  values?: AddressValues & { title: string };
+  errors?: AddressErrors;
+  message?: string;
+  saved: number;
+};
+
+export async function saveAddressAction(state: AddressFormState, formData: FormData): Promise<AddressFormState> {
+  const customer = await getCustomer();
+  if (!customer) redirect("/giris?donus=/hesabim");
+
+  const values = { ...readAddressValues(formData), title: cleanTitle(formData.get("adres-basligi")) };
+  const { errors, phone } = checkAddress(values);
+  if (!phone) return { ...state, values, errors };
+
+  let result;
+  try {
+    result = await addAddress(customer.id, {
+      title: values.title,
+      name: values.name,
+      phone,
+      line: values.address,
+      city: values.city,
+      district: values.district,
+      postalCode: values.postalCode,
+    });
+  } catch (error) {
+    console.error("Adres kaydedilemedi", error);
+    return { ...state, values, message: "Adres şu an kaydedilemedi. Biraz sonra yeniden deneyin." };
+  }
+  if (result === "full") return { ...state, values, message: `En çok ${ADDRESSES_MAX} adres kaydedilebilir. Önce birini silin.` };
+  if (result === "exists") return { ...state, values, message: "Bu adres zaten kayıtlı." };
+  revalidatePath("/hesabim");
+  return { saved: state.saved + 1 };
+}
+
+export async function deleteAddressAction(formData: FormData): Promise<void> {
+  const customer = await getCustomer();
+  if (!customer) redirect("/giris?donus=/hesabim");
+  const id = String(formData.get("adres") ?? "");
+  if (/^[0-9a-f]{16}$/.test(id)) await deleteAddress(customer.id, id);
+  revalidatePath("/hesabim");
 }

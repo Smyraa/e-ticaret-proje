@@ -6,57 +6,13 @@ import { ProductImage } from "@/components/product-image";
 import { useCart } from "@/lib/cart";
 import { cartLines, linesSubtotal } from "@/lib/cart-lines";
 import { formatPrice } from "@/lib/format";
-import type { CheckoutErrors, CheckoutField, CheckoutState } from "@/lib/order-form";
+import type { SavedAddress } from "@/lib/customer-addresses";
+import type { CheckoutState } from "@/lib/order-form";
 import type { Product } from "@/lib/products";
 import { shippingLabel } from "@/lib/shipping";
 import { useReady } from "@/lib/use-ready";
-
-const inputClass = "mt-2 w-full rounded-md border bg-paper p-3 text-sm";
-
-type FieldProps = {
-  label: string;
-  name: string; // formdaki alan adı (ve kutunun kimliği)
-  field: CheckoutField; // hata iletisinin anahtarı
-  errors: CheckoutErrors;
-  value: string; // kutuda başlangıçta görünen değer (hata sonrası müşterinin yazdığı)
-  type?: string;
-  autoComplete?: string;
-  inputMode?: "text" | "numeric" | "tel" | "email";
-  multiline?: boolean;
-  rows?: number;
-  optional?: boolean;
-  className?: string;
-};
-
-// Etiket + kutu + hata iletisi. Hata kutuya aria-describedby ile bağlanır.
-function Field({ label, name, field, errors, value, multiline, rows = 3, optional, className = "", ...input }: FieldProps) {
-  const error = errors[field];
-  const errorId = `${name}-hata`;
-  const shared = {
-    id: name,
-    name,
-    defaultValue: value,
-    required: !optional,
-    "aria-invalid": error ? true : undefined,
-    "aria-describedby": error ? errorId : undefined,
-    className: `${inputClass} ${error ? "border-danger" : "border-field"}${multiline ? " resize-y" : ""}`,
-  };
-
-  return (
-    <div className={className}>
-      <label htmlFor={name} className="text-sm">
-        {label}
-        {optional && <span className="text-muted"> (isteğe bağlı)</span>}
-      </label>
-      {multiline ? <textarea {...shared} rows={rows} /> : <input {...shared} {...input} />}
-      {error && (
-        <p id={errorId} className="mt-1 text-sm font-semibold text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
+import { DeliveryFields } from "./delivery-fields";
+import { Field, submitKeepingValues } from "./form-field";
 
 type Props = {
   products: Product[];
@@ -64,6 +20,7 @@ type Props = {
   paymentNote: string; // "Ödeme" bölümünde müşteriye söylenen (ödeme ayarına göre sunucu belirler)
   submitLabel: string; // gönder düğmesinin yazısı
   defaults?: { name: string; email: string }; // giriş yapmış müşterinin adı ve e-postası (form ilk açılınca)
+  savedAddresses?: SavedAddress[]; // giriş yapmış müşterinin kayıtlı adresleri
   // Sunucu eylemi (sipariş verme). Sayfa (sunucu) verir; bu bileşende `.bind` edilmez.
   action: (state: CheckoutState, formData: FormData) => Promise<CheckoutState>;
 };
@@ -72,7 +29,7 @@ type Props = {
 // müşteriyi ödeme kuruluşunun sayfasına, değilse sipariş sayfasına götürür. Kart alanı hiç yok: kart bilgisini yalnız ödeme
 // kuruluşunun kendi güvenli sayfası alır. Sepet tarayıcıda durur, bu yüzden form sunucuda çizilir ama sepet hazır olana kadar
 // gizli kalır (gizli alanlar sunucuda çizilen biçimle gelir; sepet içeriği tarayıcıda forma yazılır).
-export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, defaults, action }: Props) {
+export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, defaults, savedAddresses = [], action }: Props) {
   const cart = useCart();
   const ready = useReady();
   const [state, formAction, pending] = useActionState(action, undefined);
@@ -111,7 +68,14 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
       )}
 
       <div className={visible ? "mt-8 grid gap-10 lg:grid-cols-[1fr_24rem] lg:items-start" : "hidden"}>
-        <form id="odeme-formu" ref={formRef} action={formAction} noValidate className="space-y-10">
+        <form
+          id="odeme-formu"
+          ref={formRef}
+          action={formAction}
+          onSubmit={submitKeepingValues(formAction)}
+          noValidate
+          className="space-y-10"
+        >
           <input
             type="hidden"
             name="sepet"
@@ -120,91 +84,38 @@ export function CheckoutView({ products, shippingFee, paymentNote, submitLabel, 
           {cart.gift && <input type="hidden" name="hediye" value="evet" />}
           {cart.gift && <input type="hidden" name="hediye-notu" value={note} />}
 
+          <DeliveryFields
+            saved={savedAddresses}
+            signedIn={Boolean(defaults)}
+            defaultName={defaults?.name ?? ""}
+            state={state}
+            errors={errors}
+          />
+
           <section aria-labelledby="iletisim-baslik">
             <h2 id="iletisim-baslik" className="font-display text-2xl">
               İletişim
             </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field
-                label="Ad soyad"
-                name="ad-soyad"
-                field="name"
-                errors={errors}
-                value={values?.name ?? defaults?.name ?? ""}
-                autoComplete="name"
-                className="sm:col-span-2"
-              />
-              <Field
-                label="Telefon"
-                name="telefon"
-                field="phone"
-                errors={errors}
-                value={values?.phone ?? ""}
-                type="tel"
-                autoComplete="tel"
-                inputMode="tel"
-              />
-              <Field
                 label="E-posta"
                 name="eposta"
-                field="email"
-                errors={errors}
+                error={errors.email}
                 value={values?.email ?? defaults?.email ?? ""}
                 type="email"
                 autoComplete="email"
                 inputMode="email"
-              />
-            </div>
-          </section>
-
-          <section aria-labelledby="teslimat-baslik">
-            <h2 id="teslimat-baslik" className="font-display text-2xl">
-              Teslimat adresi
-            </h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Adres"
-                name="adres"
-                field="address"
-                errors={errors}
-                value={values?.address ?? ""}
-                multiline
-                autoComplete="street-address"
+                maxLength={120}
                 className="sm:col-span-2"
-              />
-              <Field
-                label="İl"
-                name="il"
-                field="city"
-                errors={errors}
-                value={values?.city ?? ""}
-                autoComplete="address-level1"
-              />
-              <Field
-                label="İlçe"
-                name="ilce"
-                field="district"
-                errors={errors}
-                value={values?.district ?? ""}
-                autoComplete="address-level2"
-              />
-              <Field
-                label="Posta kodu"
-                name="posta-kodu"
-                field="postalCode"
-                errors={errors}
-                value={values?.postalCode ?? ""}
-                autoComplete="postal-code"
-                inputMode="numeric"
               />
               <Field
                 label="Sipariş notu"
                 name="siparis-notu"
-                field="note"
-                errors={errors}
+                error={errors.note}
                 value={values?.note ?? ""}
                 multiline
                 rows={2}
+                maxLength={300}
                 optional
                 className="sm:col-span-2"
               />

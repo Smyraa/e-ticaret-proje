@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AddressBookForm } from "@/components/address-book-form";
+import { addressLabel } from "@/lib/address-label";
+import { listAddresses, type SavedAddress } from "@/lib/customer-addresses";
 import { getCustomer } from "@/lib/customer-auth";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { pageMetadata } from "@/lib/metadata";
 import { ORDER_STATUS_LABELS } from "@/lib/order-model";
 import { listOrdersForCustomer, type CustomerOrderSummary } from "@/lib/orders";
-import { logout } from "./actions";
+import { formatPhone } from "@/lib/phone";
+import { deleteAddressAction, logout, saveAddressAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +25,12 @@ export default async function AccountPage() {
   if (!customer) redirect("/giris?donus=/hesabim");
 
   let orders: CustomerOrderSummary[] = [];
+  let addresses: SavedAddress[] = [];
   let failed = false;
   try {
-    orders = await listOrdersForCustomer(customer.id);
+    [orders, addresses] = await Promise.all([listOrdersForCustomer(customer.id), listAddresses(customer.id)]);
   } catch (error) {
-    console.error("Müşteri siparişleri okunamadı", error);
+    console.error("Müşteri siparişleri ya da adresleri okunamadı", error);
     failed = true;
   }
 
@@ -89,6 +94,46 @@ export default async function AccountPage() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="adresler-baslik" className="mt-12">
+        <h2 id="adresler-baslik" className="font-display text-2xl">
+          Adreslerim
+        </h2>
+        <p className="mt-2 text-sm text-muted">Ödeme sayfasında kayıtlı adreslerinizden birini seçebilirsiniz.</p>
+
+        {!failed && addresses.length > 0 && (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {addresses.map((address) => (
+              <li key={address.id} className="flex flex-col rounded-md border border-line p-4 text-sm">
+                <p className="font-semibold">{addressLabel(address)}</p>
+                <p className="mt-1 text-muted">
+                  {address.name} · <span className="whitespace-nowrap">{formatPhone(address.phone)}</span>
+                </p>
+                <p className="break-words text-muted">{address.line}</p>
+                <p className="text-muted">
+                  {address.district} / {address.city} · {address.postalCode}
+                </p>
+                <form action={deleteAddressAction} className="mt-auto pt-2">
+                  <input type="hidden" name="adres" value={address.id} />
+                  <button
+                    type="submit"
+                    aria-label={`Adresi sil: ${addressLabel(address)}`}
+                    className="-ml-2 inline-flex min-h-11 items-center px-2 text-xs tracking-widest text-muted uppercase underline transition hover:text-danger"
+                  >
+                    Sil
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!failed && (
+          <div className="mt-4">
+            <AddressBookForm action={saveAddressAction} defaultName={customer.name} />
+          </div>
         )}
       </section>
     </div>

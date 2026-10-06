@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckoutView } from "@/components/checkout-view";
+import { listAddresses, type SavedAddress } from "@/lib/customer-addresses";
 import { getCustomer } from "@/lib/customer-auth";
 import { pageMetadata } from "@/lib/metadata";
 import { paymentSetup } from "@/lib/payment-config";
@@ -20,6 +21,14 @@ export const metadata = pageMetadata(
 export default async function CheckoutPage() {
   const { shippingFee } = await getSiteSettings();
   const customer = await getCustomer().catch(() => null);
+  let savedAddresses: SavedAddress[] = [];
+  if (customer) {
+    try {
+      savedAddresses = await listAddresses(customer.id);
+    } catch (error) {
+      console.error("Kayıtlı adresler okunamadı", error); // form yine açılır; adres elle yazılır
+    }
+  }
   const setup = paymentSetup();
   const payment = checkoutPaymentText(setup);
   let products: Product[] = [];
@@ -55,6 +64,7 @@ export default async function CheckoutPage() {
           paymentNote={payment.note}
           submitLabel={payment.button}
           defaults={customer ? { name: customer.name, email: customer.email } : undefined}
+          savedAddresses={savedAddresses}
           action={placeOrder}
         />
       )}

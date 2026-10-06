@@ -4,7 +4,8 @@ import { EMAIL_ERROR, isEmail } from "./email";
 import { charCount, multiLine, oneLine, tooLong } from "./form-text";
 import { NOTE_MAX } from "./gift-note";
 import type { OrderAddress, OrderCustomer } from "./order-model";
-import { normalizePhone, PHONE_ERROR } from "./phone";
+import { normalizePhone } from "./phone";
+import { findProvince, isDistrictOf, postalCodeMatches } from "./tr-places";
 
 export const ORDER_LIMITS = {
   nameMin: 2,
@@ -18,21 +19,77 @@ export const ORDER_LIMITS = {
   maxQty: 99, // bir üründen en çok adet
 } as const;
 
-// Formdaki alanlar; müşterinin yazdığı gibi (temizlenmiş metin) tutulur ki hata sonrası yazdıkları geri gelsin.
-export type CheckoutValues = {
+// Adres alanları (ödeme formu ve hesaptaki adres defteri ortak kullanır): alıcının adı ve telefonu da adresin parçası.
+export type AddressValues = {
   name: string;
   phone: string;
-  email: string;
   address: string;
   city: string;
   district: string;
   postalCode: string;
+};
+
+// Formdaki alanlar; müşterinin yazdığı gibi (temizlenmiş metin) tutulur ki hata sonrası yazdıkları geri gelsin.
+export type CheckoutValues = AddressValues & {
+  email: string;
   note: string;
   consent: boolean;
+  saveAddress: boolean; // girişliyken "Adresi kaydet" (yalnız hata sonrası formu geri doldurmak için)
+  addressTitle: string;
 };
 
 export type CheckoutField = keyof CheckoutValues;
 export type CheckoutErrors = Partial<Record<CheckoutField, string>>;
+export type AddressErrors = Partial<Record<keyof AddressValues, string>>;
+
+// Telefon yalnız Türkiye numarası olabilir (kargo yurt içi; formda maske de bu biçimi kullanır).
+export const PHONE_TR_ERROR = "Türkiye'de geçerli bir telefon numarası yazın (örn. 0555 111 22 33).";
+const isTurkishPhone = (digits: string | null): digits is string => digits !== null && /^90[2-5]\d{9}$/.test(digits);
+
+export function readAddressValues(formData: FormData): AddressValues {
+  return {
+    name: oneLine(formData.get("ad-soyad")),
+    phone: oneLine(formData.get("telefon")),
+    address: multiLine(formData.get("adres")),
+    city: oneLine(formData.get("il")),
+    district: oneLine(formData.get("ilce")),
+    postalCode: oneLine(formData.get("posta-kodu")),
+  };
+}
+
+// Adres alanlarını denetler. Hatasızsa telefonu tek biçimde (905551112233) verir.
+export function checkAddress(values: AddressValues): { errors: AddressErrors; phone: string | null } {
+  const errors: AddressErrors = {};
+  const L = ORDER_LIMITS;
+
+  if (!values.name) errors.name = "Ad soyad yazın.";
+  else if (charCount(values.name) < L.nameMin) errors.name = `Ad soyad en az ${L.nameMin} karakter olmalı.`;
+  else if (charCount(values.name) > L.nameMax) errors.name = tooLong(L.nameMax, values.name);
+
+  const phone = normalizePhone(values.phone);
+  if (!values.phone) errors.phone = "Telefon numarası yazın.";
+  else if (!isTurkishPhone(phone)) errors.phone = PHONE_TR_ERROR;
+
+  if (!values.address) errors.address = "Adresi yazın.";
+  else if (charCount(values.address) < L.addressMin) {
+    errors.address = `Adresi mahalle, sokak ve kapı numarasıyla yazın (en az ${L.addressMin} karakter).`;
+  } else if (charCount(values.address) > L.addressMax) errors.address = tooLong(L.addressMax, values.address);
+
+  const province = findProvince(values.city);
+  if (!values.city) errors.city = "İl seçin.";
+  else if (!province) errors.city = "Listeden bir il seçin.";
+
+  if (!values.district) errors.district = "İlçe seçin.";
+  else if (province && !isDistrictOf(values.city, values.district)) errors.district = "Seçtiğiniz ilin bir ilçesini seçin.";
+
+  if (!values.postalCode) errors.postalCode = "Posta kodunu yazın.";
+  else if (!/^\d{5}$/.test(values.postalCode)) errors.postalCode = "Posta kodu 5 haneli olmalı (örn. 34000).";
+  else if (province && !postalCodeMatches(values.city, values.postalCode)) {
+    errors.postalCode = `${province.name} için posta kodu ${String(province.plate).padStart(2, "0")} ile başlar.`;
+  }
+
+  return { errors, phone: Object.keys(errors).length === 0 && isTurkishPhone(phone) ? phone : null };
+}
 
 export type CheckoutState =
   | {
@@ -51,45 +108,20 @@ export function readCheckoutForm(formData: FormData): {
   data?: CheckoutData;
 } {
   const values: CheckoutValues = {
-    name: oneLine(formData.get("ad-soyad")),
-    phone: oneLine(formData.get("telefon")),
+    ...readAddressValues(formData),
     email: oneLine(formData.get("eposta")).toLowerCase(),
-    address: multiLine(formData.get("adres")),
-    city: oneLine(formData.get("il")),
-    district: oneLine(formData.get("ilce")),
-    postalCode: oneLine(formData.get("posta-kodu")),
     note: multiLine(formData.get("siparis-notu")),
     consent: oneLine(formData.get("onay")) === "evet",
+    saveAddress: oneLine(formData.get("adresi-kaydet")) === "evet",
+    addressTitle: [...oneLine(formData.get("adres-basligi"))].slice(0, 30).join(""),
   };
-  const errors: CheckoutErrors = {};
+  const address = checkAddress(values);
+  const errors: CheckoutErrors = { ...address.errors };
+  const phone = address.phone;
   const L = ORDER_LIMITS;
-
-  if (!values.name) errors.name = "Ad soyad yazın.";
-  else if (charCount(values.name) < L.nameMin) errors.name = `Ad soyad en az ${L.nameMin} karakter olmalı.`;
-  else if (charCount(values.name) > L.nameMax) errors.name = tooLong(L.nameMax, values.name);
-
-  const phone = normalizePhone(values.phone);
-  if (!values.phone) errors.phone = "Telefon numarası yazın.";
-  else if (phone === null) errors.phone = PHONE_ERROR;
 
   if (!values.email) errors.email = "E-posta adresi yazın.";
   else if (!isEmail(values.email)) errors.email = EMAIL_ERROR;
-
-  if (!values.address) errors.address = "Adresi yazın.";
-  else if (charCount(values.address) < L.addressMin) {
-    errors.address = `Adresi mahalle, sokak ve kapı numarasıyla yazın (en az ${L.addressMin} karakter).`;
-  } else if (charCount(values.address) > L.addressMax) errors.address = tooLong(L.addressMax, values.address);
-
-  if (!values.city) errors.city = "İl yazın.";
-  else if (charCount(values.city) < L.placeMin) errors.city = `İl en az ${L.placeMin} karakter olmalı.`;
-  else if (charCount(values.city) > L.placeMax) errors.city = tooLong(L.placeMax, values.city);
-
-  if (!values.district) errors.district = "İlçe yazın.";
-  else if (charCount(values.district) < L.placeMin) errors.district = `İlçe en az ${L.placeMin} karakter olmalı.`;
-  else if (charCount(values.district) > L.placeMax) errors.district = tooLong(L.placeMax, values.district);
-
-  if (!values.postalCode) errors.postalCode = "Posta kodunu yazın.";
-  else if (!/^\d{5}$/.test(values.postalCode)) errors.postalCode = "Posta kodu 5 haneli olmalı (örn. 34000).";
 
   if (charCount(values.note) > L.noteMax) errors.note = tooLong(L.noteMax, values.note);
   if (!values.consent) errors.consent = "Devam etmek için ön bilgilendirmeyi ve satış sözleşmesini okuyup kabul etmelisiniz.";

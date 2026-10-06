@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { clientAddress } from "@/lib/client-address";
+import { addAddress, cleanTitle } from "@/lib/customer-addresses";
 import { getCustomer } from "@/lib/customer-auth";
 import { buildOrderItems } from "@/lib/order-build";
 import { readCartPayload, readCheckoutForm, type CheckoutState } from "@/lib/order-form";
@@ -71,6 +72,21 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
     });
     trackKey = created.trackKey;
     number = created.number;
+
+    // Giriş yapılmışsa ve "Adresi kaydet" işaretliyse adres hesabın adres defterine eklenir (aynısı varsa eklenmez).
+    // Kayıt olmasa da sipariş geçerlidir.
+    if (customer && formData.get("adresi-kaydet") === "evet") {
+      try {
+        await addAddress(customer.id, {
+          title: cleanTitle(formData.get("adres-basligi")),
+          name: data.customer.name,
+          phone: data.customer.phone,
+          ...data.address,
+        });
+      } catch (error) {
+        console.error(`Adres kaydedilemedi (${number})`, error);
+      }
+    }
 
     // Kartla ödeme açıksa ödeme oturumu şimdi açılır. Açılamazsa sipariş yine de kayıtlıdır: müşteri sipariş sayfasından
     // "Kartla öde" ile yeniden dener.
