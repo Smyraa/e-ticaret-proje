@@ -1,18 +1,12 @@
+import { EMPTY_FAVORITES, parseFavorites } from "./favorites-model";
 import { createLocalStore } from "./local-store";
 
-// Favoriler: ürün adreslerinin (slug) listesi, eklenme sırasıyla. Giriş gerekmez, başka cihaza taşınmaz.
+// Favoriler: ürün adreslerinin (slug) listesi, eklenme sırasıyla. Giriş gerekmez; giriş yapılınca hesapla eşitlenir.
 // Kartlardaki kalpler, üst menüdeki sayı ve favoriler sayfası aynı listeyi paylaşır.
-const EMPTY: string[] = [];
-
-// Saklanan veri bozuk olabilir: yalnızca metinleri alır, tekrarları atar.
-function parseFavorites(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return EMPTY;
-  return [...new Set(raw.filter((item): item is string => typeof item === "string"))];
-}
-
-const store = createLocalStore("taura-favorites", EMPTY, parseFavorites);
+const store = createLocalStore("taura-favorites", EMPTY_FAVORITES, parseFavorites);
 
 export const useFavorites = store.useStore;
+export const favoritesStore = store; // hesap eşitlemesi için (account-sync.tsx)
 
 export function toggleFavorite(slug: string) {
   const current = store.get();

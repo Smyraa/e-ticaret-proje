@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 // Değeri tarayıcıda (localStorage) tutan küçük bir "depo" üretir; favoriler ve sepet bunu kullanır.
 // Değer değişince onu kullanan tüm bileşenler güncellenir; başka açık sekmelerde de eşitlenir.
-// Giriş gerekmez, ama veri başka cihaza ya da tarayıcıya taşınmaz.
+// Giriş yapılmamışsa veri yalnız bu tarayıcıda kalır; giriş yapılınca hesapla eşitlenir (bkz. account-sync.tsx).
 // Yalnızca tarayıcı bileşenlerinden (use client) çağrılmalıdır.
 export function createLocalStore<T>(key: string, empty: T, parse: (raw: unknown) => T) {
   let loaded = false;
@@ -64,5 +64,5 @@ export function createLocalStore<T>(key: string, empty: T, parse: (raw: unknown)
     return useSyncExternalStore(subscribe, get, () => empty);
   }
 
-  return { get, set, useStore };
+  return { get, set, subscribe, useStore };
 }

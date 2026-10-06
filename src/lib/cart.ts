@@ -1,42 +1,18 @@
 import { NOTE_MAX } from "./gift-note";
+import { EMPTY_CART, parseCart, type Cart } from "./cart-model";
 import { createLocalStore } from "./local-store";
 
 export { NOTE_MAX };
+export type { Cart, CartItem } from "./cart-model";
 
-// Sepet tarayıcıda tutulur (favorilerle aynı yöntem). Yalnızca ürün adresi (slug) ve adet saklanır;
+// Sepet tarayıcıda tutulur (favorilerle aynı yöntem); giriş yapılınca hesapla eşitlenir. Yalnızca ürün adresi (slug) ve adet saklanır;
 // fiyat saklanmaz, böylece fiyat değişirse sepet güncel fiyatı gösterir.
 // Hediye paketi ve not kartı tüm sipariş için tek seçenektir; not yalnızca hediye paketi işaretliyken geçerlidir.
-
-export type CartItem = { slug: string; qty: number };
-export type Cart = { items: CartItem[]; gift: boolean; note: string };
-
-const EMPTY_CART: Cart = { items: [], gift: false, note: "" };
-
-// Saklanan veri bozuk ya da elle değiştirilmiş olabilir: geçerli olanları alır, aynı ürünü birleştirir.
-function parseCart(raw: unknown): Cart {
-  if (typeof raw !== "object" || raw === null) return EMPTY_CART;
-  const { items, gift, note } = raw as Record<string, unknown>;
-
-  const quantities = new Map<string, number>();
-  if (Array.isArray(items)) {
-    for (const item of items) {
-      if (typeof item !== "object" || item === null) continue;
-      const { slug, qty } = item as Record<string, unknown>;
-      if (typeof slug !== "string" || typeof qty !== "number" || !Number.isInteger(qty) || qty < 1) continue;
-      quantities.set(slug, (quantities.get(slug) ?? 0) + qty);
-    }
-  }
-
-  return {
-    items: [...quantities].map(([slug, qty]) => ({ slug, qty })),
-    gift: gift === true,
-    note: typeof note === "string" ? note.slice(0, NOTE_MAX) : "",
-  };
-}
 
 const store = createLocalStore("taura-cart", EMPTY_CART, parseCart);
 
 export const useCart = store.useStore;
+export const cartStore = store; // hesap eşitlemesi için (account-sync.tsx)
 
 function update(change: (cart: Cart) => Cart) {
   store.set(change(store.get()));
