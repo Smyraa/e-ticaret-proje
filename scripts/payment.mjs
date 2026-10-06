@@ -1,16 +1,16 @@
-// iyzico DENEME (sandbox) anahtarlarını bu bilgisayardaki `.env.local` dosyasına yazar (git'e girmez):
+// iyzico DENEME (sandbox) anahtarlarını bu bilgisayardaki `.env` dosyasına yazar (git'e girmez; dosyayı elle de doldurabilirsiniz):
 //   npm run payment:iyzico   anahtarları sorar (yazarken görünmez), kartla ödemeyi iyzico deneme ortamına açar
-//   npm run payment:kapat    kartla ödemeyi kapatır (anahtarları ve PAYMENT_PROVIDER satırını siler)
+//   npm run payment:kapat    kartla ödemeyi kapatır (PAYMENT_PROVIDER ve iyzico anahtarlarının değerlerini boşaltır)
 //   npm run payment:durum    ayarın durumunu gösterir (anahtarların kendisini GÖSTERMEZ)
 // Anahtarlar sohbete yazılmaz, ekranda gösterilmez, hiçbir yere kopyalanmaz. Değişiklikten sonra geliştirme sunucusu yeniden başlatılır.
 // Canlı anahtarlar bu betikle yazılamaz (yalnız sunucunun ortam ayarlarına konur).
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { describeEnv, keyProblem, removeEnvVars, setEnvVars } from "./payment-env.mjs";
+import { clearEnvVars, describeEnv, keyProblem, setEnvVars } from "./payment-env.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
-const envFile = path.join(root, ".env.local");
+const envFile = path.join(root, ".env");
 const command = process.argv[2];
 
 function fail(message) {
@@ -18,11 +18,11 @@ function fail(message) {
   process.exit(1);
 }
 
-// .env.local git'e girmemeli: girebiliyorsa anahtar yazılmaz.
+// .env git'e girmemeli: girebiliyorsa anahtar yazılmaz.
 function assertIgnored() {
-  const result = spawnSync("git", ["check-ignore", "-q", ".env.local"], { cwd: root });
+  const result = spawnSync("git", ["check-ignore", "-q", ".env"], { cwd: root });
   if (result.error) return; // git yok: .gitignore'a güvenilir
-  if (result.status !== 0) fail(".env.local dosyası git tarafından yok sayılmıyor; anahtar yazılmadı. .gitignore dosyasını kontrol edin.");
+  if (result.status !== 0) fail(".env dosyası git tarafından yok sayılmıyor; anahtar yazılmadı. .gitignore dosyasını kontrol edin.");
 }
 
 // Yazarken ekranda göstermeden okur (yapıştırma da çalışır).
@@ -64,7 +64,7 @@ const current = () => (existsSync(envFile) ? readFileSync(envFile, "utf8") : "")
 async function main() {
   if (command === "status") {
     const info = describeEnv(current());
-    console.log(`Kartla ödeme (.env.local): ${info.provider ? `PAYMENT_PROVIDER=${info.provider}` : "kapalı (PAYMENT_PROVIDER yok)"}`);
+    console.log(`Kartla ödeme (.env): ${info.provider ? `PAYMENT_PROVIDER=${info.provider}` : "kapalı (PAYMENT_PROVIDER boş)"}`);
     console.log(`iyzico API anahtarı: ${info.hasApiKey ? (info.sandboxKey ? "tanımlı (deneme/sandbox)" : "tanımlı (CANLI görünüyor!)") : "tanımlı değil"}`);
     console.log(`iyzico gizli anahtar: ${info.hasSecretKey ? "tanımlı" : "tanımlı değil"}`);
     return;
@@ -72,9 +72,9 @@ async function main() {
 
   if (command === "off") {
     assertIgnored();
-    if (!existsSync(envFile)) return console.log("Zaten kapalı: .env.local dosyası yok.");
-    writeFileSync(envFile, removeEnvVars(current(), ["PAYMENT_PROVIDER", "IYZICO_API_KEY", "IYZICO_SECRET_KEY", "IYZICO_BASE_URL"]));
-    return console.log("Kartla ödeme kapatıldı (.env.local'daki iyzico ayarları silindi). Geliştirme sunucusunu yeniden başlatın.");
+    if (!existsSync(envFile)) return console.log("Zaten kapalı: .env dosyası yok.");
+    writeFileSync(envFile, clearEnvVars(current(), ["PAYMENT_PROVIDER", "IYZICO_API_KEY", "IYZICO_SECRET_KEY", "IYZICO_BASE_URL"]));
+    return console.log("Kartla ödeme kapatıldı (.env'deki ödeme ayarları boşaltıldı). Geliştirme sunucusunu yeniden başlatın.");
   }
 
   if (command === "iyzico") {
@@ -86,7 +86,7 @@ async function main() {
     const problem = keyProblem(apiKey, secretKey);
     if (problem) fail(`${problem} Hiçbir şey kaydedilmedi.`);
     writeFileSync(envFile, setEnvVars(current(), { PAYMENT_PROVIDER: "iyzico", IYZICO_API_KEY: apiKey, IYZICO_SECRET_KEY: secretKey }));
-    console.log("\nKaydedildi (.env.local; git'e girmez). Kartla ödeme iyzico deneme ortamına açıldı.");
+    console.log("\nKaydedildi (.env; git'e girmez). Kartla ödeme iyzico deneme ortamına açıldı.");
     console.log("Geliştirme sunucusunu yeniden başlatın. Kapatmak için: npm run payment:kapat");
     return;
   }

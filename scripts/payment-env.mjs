@@ -1,4 +1,4 @@
-// `.env.local` metnini okuyup değiştiren SAF yardımcılar (dosyaya ve ekrana dokunmaz; scripts/payment.mjs bunları kullanır).
+// `.env` metnini okuyup değiştiren SAF yardımcılar (dosyaya ve ekrana dokunmaz; scripts/payment.mjs bunları kullanır).
 
 const NAME = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/;
 
@@ -22,21 +22,29 @@ export function setEnvVars(text, vars) {
   return out.join("\n") + "\n";
 }
 
-// Verilen değişkenlerin tanımlarını siler.
-export function removeEnvVars(text, names) {
+// Verilen değişkenlerin değerini boşaltır; satırlar ve yorumlar yerinde kalır (dosya elle yeniden doldurulabilir).
+export function clearEnvVars(text, names) {
   const lines = text.split(/\r?\n/);
   if (lines.at(-1) === "") lines.pop();
-  const kept = lines.filter((line) => !names.includes(NAME.exec(line)?.[1] ?? ""));
-  return kept.length === 0 ? "" : kept.join("\n") + "\n";
+  const cleared = lines.map((line) => {
+    const name = NAME.exec(line)?.[1];
+    return name && names.includes(name) ? `${name}=` : line;
+  });
+  return cleared.length === 0 ? "" : cleared.join("\n") + "\n";
 }
 
-// Değişkenin değeri (yoksa undefined). Tırnaklar ve satır sonu yorumları ele alınmaz: bu dosyayı yalnız bu betik yazar.
+// Değişkenin değeri (yoksa undefined). Dosya elle de doldurulduğu için dotenv gibi okunur: tırnaklar atılır, tırnaksız
+// değerde " #" ile başlayan satır sonu yorumu yok sayılır, aynı değişken birden çok kez varsa sonuncusu geçerlidir.
 export function readEnvVar(text, name) {
+  let value;
   for (const line of text.split(/\r?\n/)) {
     const match = NAME.exec(line);
-    if (match?.[1] === name) return line.slice(match[0].length).trim();
+    if (match?.[1] !== name) continue;
+    const raw = line.slice(match[0].length).trim();
+    const quoted = /^(["'`])(.*?)\1/.exec(raw);
+    value = quoted ? quoted[2] : raw.replace(/\s+#.*$/, "").trim();
   }
-  return undefined;
+  return value;
 }
 
 // Ekrana yazılacak durum özeti: anahtarların kendisi ASLA yazılmaz.
