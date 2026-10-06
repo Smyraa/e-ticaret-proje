@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { listCategories } from "@/lib/catalog";
 import { valuesOf } from "@/lib/product-form";
 import { getProductForAdmin, listMaterials } from "@/lib/products-admin";
 import { changeImage, removeProduct, saveProduct } from "../actions";
@@ -19,7 +20,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
   const product = await getProductForAdmin(slug);
   if (!product) notFound();
-  const materials = await listMaterials();
+  const [materials, categories] = await Promise.all([listMaterials(), listCategories()]);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -71,6 +72,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         action={saveProduct.bind(null, product.slug)}
         initial={valuesOf(product)}
         materials={materials}
+        categories={categories}
         submitLabel="Kaydet"
         showSample={product.sample}
       />

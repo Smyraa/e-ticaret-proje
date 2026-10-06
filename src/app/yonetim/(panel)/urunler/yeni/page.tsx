@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { listCategories } from "@/lib/catalog";
 import { EMPTY_VALUES } from "@/lib/product-form";
 import { listMaterials } from "@/lib/products-admin";
 import { createProduct } from "../actions";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Yeni ürün · Yönetim · TAURA" };
 
 export default async function NewProductPage() {
   await requireAdmin();
-  const materials = await listMaterials();
+  const [materials, categories] = await Promise.all([listMaterials(), listCategories()]);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -25,7 +26,8 @@ export default async function NewProductPage() {
         Ürün önce taslak olarak kaydedilir. Hazır olunca “Yayında” kutusunu işaretleyin; o zaman sitede görünür. Fotoğrafları formun sonunda seçebilirsiniz.
       </p>
 
-      <ProductForm action={createProduct} initial={EMPTY_VALUES} materials={materials} submitLabel="Ürünü ekle" pickImages />
+      <ProductForm action={createProduct} initial={EMPTY_VALUES} materials={materials}
+        categories={categories} submitLabel="Ürünü ekle" pickImages />
     </div>
   );
 }

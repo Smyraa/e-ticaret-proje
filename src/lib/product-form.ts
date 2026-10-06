@@ -27,6 +27,7 @@ export type ProductFormValues = {
   price: string;
   stock: string;
   barcode: string; // boşsa kayıtta sistem üretir
+  category: string; // kategorinin adresi; boş = kategorisiz
   published: boolean;
   sample: boolean;
 };
@@ -42,6 +43,7 @@ export const EMPTY_VALUES: ProductFormValues = {
   price: "",
   stock: "",
   barcode: "",
+  category: "",
   published: false,
   sample: false,
 };
@@ -58,6 +60,7 @@ export function valuesOf(product: Product): ProductFormValues {
     price: String(product.price),
     stock: String(product.stock),
     barcode: product.barcode,
+    category: product.category,
     published: product.published,
     sample: product.sample,
   };
@@ -90,6 +93,7 @@ export type ProductData = {
   price: number;
   stock: number;
   barcode: string; // boşsa kayıtta sistem üretir
+  category: string; // var olduğu sunucu eyleminde denetlenir
   published: boolean;
 };
 
@@ -113,6 +117,7 @@ export function readProductForm(formData: FormData): {
     price: oneLine(formData.get("price")),
     stock: oneLine(formData.get("stock")),
     barcode: normalizeBarcode(oneLine(formData.get("barcode"))),
+    category: oneLine(formData.get("category")).slice(0, 80),
     published: formData.get("published") === "on",
     sample: formData.get("sample") === "on",
   };
@@ -162,6 +167,7 @@ export function readProductForm(formData: FormData): {
       price,
       stock,
       barcode: values.barcode,
+      category: values.category,
       published: values.published,
     },
   };

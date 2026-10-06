@@ -14,6 +14,7 @@ type Props = {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   initial: ProductFormValues; // boş form ya da var olan ürünün değerleri
   materials: string[]; // kayıtlı malzemeler: yazarken öneri olarak çıkar
+  categories: { slug: string; name: string }[]; // kategori seçimi (Site Görünümü'nden yönetilir)
   submitLabel: string;
   showSample?: boolean; // yalnız örnek ürünlerde: "Örnek ürün" işaretini kaldırma kutusu
   pickImages?: boolean; // yeni ürün formunda: fotoğraf seçici (ürün kaydedilince yüklenir)
@@ -21,7 +22,7 @@ type Props = {
 
 // Ürün ekleme ve düzenleme formu (ikisinde de aynı). Doğrulama sunucuda yapılır; hata varsa yazılanlar korunur,
 // ilk hatalı kutuya odaklanılır.
-export function ProductForm({ action, initial, materials, submitLabel, showSample, pickImages }: Props) {
+export function ProductForm({ action, initial, materials, categories, submitLabel, showSample, pickImages }: Props) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(action, undefined);
   const [files, setFiles] = useState<File[]>([]);
@@ -92,6 +93,37 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
             <option key={material} value={material} />
           ))}
         </datalist>
+      </div>
+
+      <div>
+        <label htmlFor="urun-category" className="text-sm">
+          Kategori
+        </label>
+        <select
+          id="urun-category"
+          name="category"
+          defaultValue={values.category}
+          aria-invalid={errors.category ? true : undefined}
+          aria-describedby={`urun-category-ipucu${errors.category ? " urun-category-hata" : ""}`}
+          className={`mt-2 w-full rounded-md border bg-paper p-3 text-sm ${errors.category ? "border-danger" : "border-field"}`}
+        >
+          <option value="">Kategorisiz</option>
+          {categories.map((category) => (
+            <option key={category.slug} value={category.slug}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <p id="urun-category-ipucu" className="mt-1 text-xs text-muted">
+          {categories.length === 0
+            ? "Henüz kategori yok. Kategorileri Site Görünümü sayfasından ekleyebilirsiniz."
+            : "Ürün, ana sayfadaki kategori düğmesinin sayfasında listelenir."}
+        </p>
+        {errors.category && (
+          <p id="urun-category-hata" className="mt-1 text-sm font-semibold text-danger">
+            {errors.category}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">

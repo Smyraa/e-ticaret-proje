@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { listCategories } from "@/lib/catalog";
 import { isSafeMediaName, type ImageActionState } from "@/lib/images";
 import { deleteMediaFile, deleteMediaFiles } from "@/lib/media-files";
 import { readProductForm, valuesOf, type DeleteState, type ProductFormState } from "@/lib/product-form";
@@ -20,6 +21,10 @@ import {
 
 const SAVE_FAILED = "Kaydedilemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
 const BARCODE_TAKEN = "Bu barkod başka bir üründe kayıtlı.";
+const CATEGORY_MISSING = "Seçilen kategori bulunamadı; silinmiş olabilir. Sayfayı yenileyip yeniden seçin.";
+
+// Formdan gelen kategori adresi gerçekten var mı (boş = kategorisiz)?
+const categoryExists = async (slug: string) => !slug || (await listCategories()).some((category) => category.slug === slug);
 const NOT_FOUND = "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün.";
 const DELETE_FAILED = "Silinemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
 const NOT_CONFIRMED = "Silme onaylanmadı. Sayfa tam yüklenince yeniden deneyin.";
@@ -31,6 +36,7 @@ export async function createProduct(_state: ProductFormState, formData: FormData
 
   const { values, errors, data } = readProductForm(formData);
   if (!data) return { values, errors };
+  if (!(await categoryExists(data.category))) return { values, errors: { category: CATEGORY_MISSING } };
 
   let slug: string;
   try {
@@ -59,6 +65,7 @@ export async function saveProduct(
   const { values, errors, data } = readProductForm(formData);
   if (!data) return { values, errors };
   if (typeof slug !== "string" || slug === "") return { values, message: NOT_FOUND };
+  if (!(await categoryExists(data.category))) return { values, errors: { category: CATEGORY_MISSING } };
 
   try {
     const existing = await getProductForAdmin(slug);
