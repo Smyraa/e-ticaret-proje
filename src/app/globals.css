@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-/* Renkler ve yazı tipleri tasarım taslağından alındı. */
+/* Renkler: sıcak nötr zemin (tasarım taslağından) + bordo marka vurgusu + ölçülü gold süs (kullanıcı kararı, 2026-10-07).
+   Kontrastlar ölçüldü (paper zemine karşı): bordo 9.8:1, gold 3.4:1 (yalnız çizgi/ikon/süs; metin değil), koyu gold
+   4.9:1, danger 6.4:1. Gold, espresso zemin üzerinde 4.9:1'dir; orada küçük yazı olabilir. */
 @theme inline {
   --color-paper: #fffcf8;
   --color-soft: #f3ece3;
@@ -9,11 +11,17 @@
   --color-ink: #2d261f;
   --color-muted: #6f6459;
   --color-espresso: #201a16;
-  --color-primary: #705833;
+  /* Marka vurgusu: bordo (şarap tonu). Bağlantı/düğme vurgusu, odak çerçevesi ve seçili durumlar bunu kullanır. */
+  --color-bordo: #7a2232;
+  --color-primary: #7a2232;
+  /* Gold: ince çizgi, ikon, süs (açık zeminde metin için kullanılmaz; gerekirse gold-deep). */
+  --color-gold: #a8842f;
+  --color-gold-deep: #8a6a26;
   /* Form kutularının kenarlığı: zemine karşı en az 3:1 kontrast (line rengi yalnızca süs çizgileri için) */
   --color-field: #8f8170;
-  /* Hata iletileri (paper üzerinde ≈ 7:1 kontrast) */
-  --color-danger: #9b2c2c;
+  /* Hata iletileri (paper üzerinde 6.4:1). Bordodan ayırt edilsin diye daha parlak, turuncuya yakın kırmızı;
+     hatalar her zaman yazıyla da söylenir (yalnız renkle değil). */
+  --color-danger: #b42318;
 
   --font-display: var(--font-eb-garamond), Georgia, serif;
   --font-body: var(--font-manrope), system-ui, sans-serif;
