@@ -14,7 +14,8 @@ export const metadata: Metadata = { title: "Ürünü düzenle · Yönetim · TAU
 export default async function EditProductPage({ params, searchParams }: PageProps<"/yonetim/urunler/[slug]">) {
   await requireAdmin();
   const { slug } = await params;
-  const { eklendi } = await searchParams;
+  const { eklendi, eklenemedi } = await searchParams;
+  const failedImages = Number(eklenemedi) > 0 ? Math.min(Number(eklenemedi), 8) : 0;
 
   const product = await getProductForAdmin(slug);
   if (!product) notFound();
@@ -50,8 +51,16 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
       {eklendi && (
         <p role="status" className="mt-6 rounded-md bg-paper p-4 text-sm">
-          Ürün eklendi. Fotoğrafları aşağıdaki “Görseller” bölümünden ekleyebilirsiniz.
+          {product.images.length > 0
+            ? `Ürün ve ${product.images.length} fotoğrafı eklendi.`
+            : "Ürün eklendi. Fotoğrafları aşağıdaki “Görseller” bölümünden ekleyebilirsiniz."}
           {!product.published && " Ürün taslak olarak duruyor; hazır olunca “Yayında” kutusunu işaretleyip kaydedin."}
+        </p>
+      )}
+      {eklendi && failedImages > 0 && (
+        <p role="alert" className="mt-3 rounded-md bg-paper p-4 text-sm font-semibold text-danger">
+          Seçtiğiniz fotoğraflardan {failedImages} tanesi eklenemedi. Aşağıdaki “Görseller” bölümünden yeniden
+          ekleyebilirsiniz.
         </p>
       )}
 

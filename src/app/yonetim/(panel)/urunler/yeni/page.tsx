@@ -22,10 +22,10 @@ export default async function NewProductPage() {
       </Link>
       <h1 className="mt-4 font-display text-4xl">Yeni ürün</h1>
       <p className="mt-3 text-sm text-muted">
-        Ürün önce taslak olarak kaydedilir. Hazır olunca “Yayında” kutusunu işaretleyin; o zaman sitede görünür.
+        Ürün önce taslak olarak kaydedilir. Hazır olunca “Yayında” kutusunu işaretleyin; o zaman sitede görünür. Fotoğrafları formun sonunda seçebilirsiniz.
       </p>
 
-      <ProductForm action={createProduct} initial={EMPTY_VALUES} materials={materials} submitLabel="Ürünü ekle" />
+      <ProductForm action={createProduct} initial={EMPTY_VALUES} materials={materials} submitLabel="Ürünü ekle" pickImages />
     </div>
   );
 }

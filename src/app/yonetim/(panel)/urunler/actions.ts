@@ -39,6 +39,8 @@ export async function createProduct(_state: ProductFormState, formData: FormData
   }
 
   revalidatePath("/", "layout"); // katalog değişti: tüm sayfalar yeniden okunsun
+  // Formda fotoğraf seçildiyse yönlendirme tarayıcıya bırakılır: önce fotoğraflar bu ürüne yüklenir (bkz. edit-form).
+  if (Number(formData.get("gorsel-sayisi")) > 0) return { values, created: slug };
   redirect(`/yonetim/urunler/${slug}?eklendi=1`);
 }
 

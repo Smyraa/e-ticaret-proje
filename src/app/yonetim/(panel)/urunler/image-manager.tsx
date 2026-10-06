@@ -3,23 +3,16 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { checkImageFile, IMAGE_ACCEPT, IMAGE_LIMITS, MAX_MB, type ImageActionState } from "@/lib/images";
+import { IMAGE_ACCEPT, IMAGE_LIMITS, MAX_MB, type ImageActionState } from "@/lib/images";
 import { mediaUrl } from "@/lib/media";
+import { UPLOAD_STATE_TEXT, uploadImages, uploadSummary, type Upload } from "./upload-images";
+
 type Props = {
   slug: string;
   images: string[]; // dosya adları; ilki ana görsel
   // Liste işlemlerinin sunucu eylemi. Sayfa (sunucu) bağlar ve buraya verir: eylem bu bileşende `.bind` edilirse her
   // çizimde yeni bir işlev olur ve JavaScript'siz gönderimde sunucu çizimi sonsuz döngüye girer.
   action: (state: ImageActionState, formData: FormData) => Promise<ImageActionState>;
-};
-
-type Upload = { name: string; state: "waiting" | "working" | "done" | "error"; message?: string };
-
-const STATE_TEXT: Record<Upload["state"], string> = {
-  waiting: "Sırada",
-  working: "Yükleniyor…",
-  done: "Eklendi",
-  error: "Eklenemedi",
 };
 
 const linkButton =
@@ -65,47 +58,8 @@ export function ImageManager({ slug, images, action }: Props) {
     setBusy(true);
     setDismissed(state);
     setSummary("");
-    const items: Upload[] = files.map((file) => ({ name: file.name, state: "waiting" }));
-    setUploads(items);
-    const update = (index: number, patch: Partial<Upload>) => {
-      items[index] = { ...items[index], ...patch };
-      setUploads([...items]);
-    };
-
-    let free = remaining;
-    let added = 0;
-    for (const [index, file] of files.entries()) {
-      update(index, { state: "working" });
-      const problem = checkImageFile(file) ?? (free <= 0 ? `Bir ürüne en çok ${IMAGE_LIMITS.maxCount} görsel eklenebilir.` : null);
-      if (problem) {
-        update(index, { state: "error", message: problem });
-        continue;
-      }
-      try {
-        const body = new FormData();
-        body.append("dosya", file);
-        const response = await fetch(`/yonetim/urunler/${encodeURIComponent(slug)}/gorseller`, { method: "POST", body });
-        const data: { ok?: boolean; error?: string } | null = await response.json().catch(() => null);
-        if (response.ok && data?.ok) {
-          update(index, { state: "done" });
-          free -= 1;
-          added += 1;
-        } else {
-          update(index, { state: "error", message: data?.error ?? `Yüklenemedi (HTTP ${response.status}).` });
-        }
-      } catch {
-        update(index, { state: "error", message: "Bağlantı kurulamadı." });
-      }
-    }
-
-    const failed = files.length - added;
-    setSummary(
-      added === 0
-        ? "Hiçbir görsel eklenemedi."
-        : failed === 0
-          ? `${added} görsel eklendi.`
-          : `${added} görsel eklendi, ${failed} dosya eklenemedi.`,
-    );
+    const { added, failed } = await uploadImages(slug, files, remaining, setUploads);
+    setSummary(uploadSummary(added, failed));
     setBusy(false);
     router.refresh(); // yeni görseller listede görünsün
   }
@@ -236,7 +190,7 @@ export function ImageManager({ slug, images, action }: Props) {
         <ul aria-label="Yükleme durumu" className="mt-3 space-y-1 text-sm">
           {uploads.map((upload, index) => (
             <li key={index} className={upload.state === "error" ? "text-danger" : "text-muted"}>
-              <span className="break-all text-ink">{upload.name}</span>: {STATE_TEXT[upload.state]}
+              <span className="break-all text-ink">{upload.name}</span>: {UPLOAD_STATE_TEXT[upload.state]}
               {upload.message ? ` — ${upload.message}` : ""}
             </li>
           ))}

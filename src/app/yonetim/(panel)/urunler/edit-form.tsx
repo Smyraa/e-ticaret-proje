@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { checkImageFile } from "@/lib/images";
 import type { ProductFormState, ProductFormValues } from "@/lib/product-form";
 import { Check, Field } from "../form-fields";
+import { NewImagePicker } from "./new-image-picker";
+import { uploadImages, type Upload } from "./upload-images";
 
 type Props = {
   action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -11,12 +15,19 @@ type Props = {
   materials: string[]; // kayıtlı malzemeler: yazarken öneri olarak çıkar
   submitLabel: string;
   showSample?: boolean; // yalnız örnek ürünlerde: "Örnek ürün" işaretini kaldırma kutusu
+  pickImages?: boolean; // yeni ürün formunda: fotoğraf seçici (ürün kaydedilince yüklenir)
 };
 
 // Ürün ekleme ve düzenleme formu (ikisinde de aynı). Doğrulama sunucuda yapılır; hata varsa yazılanlar korunur,
 // ilk hatalı kutuya odaklanılır.
-export function ProductForm({ action, initial, materials, submitLabel, showSample }: Props) {
+export function ProductForm({ action, initial, materials, submitLabel, showSample, pickImages }: Props) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(action, undefined);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploads, setUploads] = useState<Upload[]>([]);
+  const started = useRef<string | null>(null);
+  const uploadable = files.filter((file) => !checkImageFile(file));
+  const uploading = Boolean(state?.created);
   const formRef = useRef<HTMLFormElement>(null);
   // Kaydedildi iletisi, kaydın ardından forma yeniden dokunulana kadar görünür.
   const [editedAfter, setEditedAfter] = useState<ProductFormState>(undefined);
@@ -30,6 +41,19 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
     if (state?.errors) formRef.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
   }, [state]);
 
+  // Ürün kaydedildi: seçilen (uygun) fotoğraflar sırayla yüklenir, sonra düzenleme sayfasına geçilir. Yüklenemeyen
+  // fotoğraf olursa ürün yine kayıtlıdır; düzenleme sayfası kaç tanesinin eklenemediğini söyler.
+  useEffect(() => {
+    const slug = state?.created;
+    if (!slug || started.current === slug) return;
+    started.current = slug;
+    void (async () => {
+      const { failed } = await uploadImages(slug, uploadable, uploadable.length, setUploads);
+      const skipped = files.length - uploadable.length;
+      router.push(`/yonetim/urunler/${slug}?eklendi=1${failed + skipped > 0 ? `&eklenemedi=${failed + skipped}` : ""}`);
+    })();
+  }, [state, files, uploadable, router]);
+
   return (
     <form
       ref={formRef}
@@ -38,6 +62,8 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       onChange={() => setEditedAfter(state)}
       className="mt-8 space-y-6"
     >
+      {pickImages && <input type="hidden" name="gorsel-sayisi" value={uploadable.length} />}
+
       <Field prefix="urun" name="name" label="Ürün adı" required value={values.name} error={errors.name} />
 
       <div>
@@ -137,13 +163,22 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
         />
       )}
 
+      {pickImages && (
+        <NewImagePicker
+          files={files}
+          onChange={setFiles}
+          uploads={uploads.length > 0 ? mapUploads(files, uploads) : []}
+          disabled={pending || uploading}
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="min-h-11 bg-espresso px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-primary disabled:opacity-60"
         >
-          {pending ? "Kaydediliyor…" : submitLabel}
+          {uploading ? "Fotoğraflar yükleniyor…" : pending ? "Kaydediliyor…" : submitLabel}
         </button>
         <Link
           href="/yonetim/urunler"
@@ -168,4 +203,11 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       )}
     </form>
   );
+}
+
+// Yükleme listesi yalnız uygun dosyaları içerir; seçici ise tüm seçilen dosyaları gösterir. Uygun olmayan dosyaların
+// satırında yükleme durumu yoktur (zaten "yüklenmez" yazar).
+function mapUploads(files: File[], uploads: Upload[]): Upload[] {
+  let next = 0;
+  return files.map((file) => (checkImageFile(file) ? { name: file.name, state: "error" as const } : uploads[next++]));
 }

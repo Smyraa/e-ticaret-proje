@@ -68,6 +68,7 @@ export type ProductFormState =
       errors?: ProductFormErrors; // alan başına hata iletisi
       message?: string; // genel hata (ör. veritabanına yazılamadı)
       saved?: boolean; // değişiklikler kaydedildi
+      created?: string; // yeni ürün kaydedildi, seçilen fotoğraflar yüklenecek (ürünün adresi)
     }
   | undefined;
 
