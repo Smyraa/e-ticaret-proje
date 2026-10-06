@@ -4,14 +4,18 @@ import { formatPrice } from "@/lib/format";
 import { countByStatus } from "@/lib/orders-admin";
 import { listPaymentsNeedingAttention } from "@/lib/payments";
 import { getAllProducts } from "@/lib/products-admin";
+import { countPendingReviews } from "@/lib/reviews";
+import { readSettings } from "@/lib/settings";
 
 // Yönetim ana sayfası: ürünlerin ve siparişlerin kısa özeti, ürün ve sipariş listelerine geçiş.
 export default async function AdminHomePage() {
   const admin = await requireAdmin();
-  const [products, orderCounts, attention] = await Promise.all([
+  const [products, orderCounts, attention, pendingReviews, settings] = await Promise.all([
     getAllProducts(),
     countByStatus(),
     listPaymentsNeedingAttention(),
+    countPendingReviews(),
+    readSettings(),
   ]);
 
   const published = products.filter((product) => product.published).length;
@@ -23,6 +27,12 @@ export default async function AdminHomePage() {
     { label: "Tükenen", value: soldOut },
     { label: "Örnek ürün", value: samples },
   ];
+  // Yapılacaklar: yalnız sayısı olanlar, ilgili sayfaya bağlantıyla.
+  const lowStock = products.filter((product) => product.stock <= settings.lowStockThreshold).length;
+  const todo = [
+    pendingReviews > 0 && { href: "/yonetim/yorumlar", text: `${pendingReviews} yorum onay bekliyor` },
+    lowStock > 0 && { href: "/yonetim/stok#dusuk-baslik", text: `${lowStock} ürünün stoğu düşük ya da tükendi` },
+  ].filter((item): item is { href: string; text: string } => Boolean(item));
   // Hazırlanacak: ödemesi alınmış, henüz kargoya verilmemiş siparişler (yapılacak iş).
   const orderStats = [
     { label: "Ödeme bekleyen", value: orderCounts.pending },
@@ -51,6 +61,23 @@ export default async function AdminHomePage() {
           Sitede {samples} örnek ürün var. Bunlar demo içindir; gerçek ürünler eklenince canlıya çıkmadan önce
           kaldırılmalıdır. Ürünler sayfasından tek seferde silebilirsiniz.
         </p>
+      )}
+
+      {todo.length > 0 && (
+        <section aria-labelledby="yapilacak-baslik" className="mt-8 rounded-lg border-l-2 border-gold bg-paper p-5 shadow-sm">
+          <h2 id="yapilacak-baslik" className="text-sm font-semibold tracking-widest uppercase">
+            Yapılacaklar
+          </h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {todo.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="inline-flex min-h-11 items-center underline transition hover:text-primary">
+                  {item.text}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <h2 className="mt-10 font-display text-2xl">Siparişler</h2>

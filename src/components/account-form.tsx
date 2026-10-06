@@ -52,6 +52,7 @@ export function AccountForm({ mode, returnTo, passwordMin, action }: Props) {
           name="eposta"
           type="email"
           required
+          maxLength={120}
           autoComplete={signup ? "email" : "username"}
           defaultValue={state?.email ?? ""}
           aria-invalid={invalid("eposta")}
@@ -68,6 +69,7 @@ export function AccountForm({ mode, returnTo, passwordMin, action }: Props) {
           name="parola"
           type="password"
           required
+          maxLength={128}
           minLength={signup ? passwordMin : undefined}
           autoComplete={signup ? "new-password" : "current-password"}
           aria-invalid={invalid("parola")}
