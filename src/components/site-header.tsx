@@ -7,6 +7,7 @@ import { cartCount, useCart } from "@/lib/cart";
 import { useFavorites } from "@/lib/favorites";
 import { BagIcon } from "./bag-icon";
 import { HeartIcon } from "./heart-icon";
+import { UserIcon } from "./user-icon";
 
 // Atölye, iletişim ve bilgi sayfalarının bağlantıları alt bilgide durur (kullanıcı kararı); üst menüde yalnızca alışveriş bağlantıları var.
 const links = [
@@ -21,13 +22,32 @@ const linkClass =
 const dotClass =
   "absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-paper";
 
-export function SiteHeader() {
+// signedIn: müşteri giriş yapmış mı (sunucu söyler). Hesap simgesi girişliyse "Hesabım"a, değilse giriş sayfasına götürür.
+export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   // Mobil menünün açık/kapalı durumu tarayıcıda tutulur.
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const favoriteCount = useFavorites().length;
   const cart = useCart();
   const cartQuantity = cartCount(cart);
+  const accountHref = signedIn ? "/hesabim" : "/giris";
+  const onAccount = ["/hesabim", "/giris", "/kayit"].includes(pathname);
+
+  // Hesap simgesi: geniş ekranda kalp ve sepetin yanında; telefonda menü düğmesinin yanında (sağda üç simge sığmıyor,
+  // dokunma alanları 44 pikselin altına düşüyordu; iki yan eşit kalınca logo da ortada kalır).
+  const accountLink = (
+    <Link
+      href={accountHref}
+      aria-label={signedIn ? "Hesabım" : "Giriş yap"}
+      aria-current={pathname === accountHref ? "page" : undefined}
+      onClick={() => setOpen(false)}
+      className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
+        onAccount ? "text-primary" : "text-ink"
+      }`}
+    >
+      <UserIcon filled={signedIn} />
+    </Link>
+  );
 
   return (
     <header className="border-b border-line">
@@ -49,31 +69,34 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <button
-            type="button"
-            className="-ml-2.5 p-2.5 md:hidden"
-            aria-expanded={open}
-            aria-controls="mobil-menu"
-            aria-label={open ? "Menüyü kapat" : "Menüyü aç"}
-            onClick={() => setOpen((value) => !value)}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              aria-hidden="true"
+          <div className="-ml-2.5 flex items-center md:hidden">
+            <button
+              type="button"
+              className="p-2.5"
+              aria-expanded={open}
+              aria-controls="mobil-menu"
+              aria-label={open ? "Menüyü kapat" : "Menüyü aç"}
+              onClick={() => setOpen((value) => !value)}
             >
-              {open ? (
-                <path d="M6 6l12 12M18 6L6 18" />
-              ) : (
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              )}
-            </svg>
-          </button>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                {open ? (
+                  <path d="M6 6l12 12M18 6L6 18" />
+                ) : (
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                )}
+              </svg>
+            </button>
+            {accountLink}
+          </div>
         </div>
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
@@ -83,8 +106,9 @@ export function SiteHeader() {
           </p>
         </Link>
 
-        {/* Sağ taraf: favoriler ve sepet; doluyken simgenin üstünde nokta görünür */}
+        {/* Sağ taraf: hesap, favoriler ve sepet; favori ve sepet doluyken simgenin üstünde nokta görünür */}
         <div className="-mr-2.5 flex items-center justify-end">
+          <div className="hidden md:flex">{accountLink}</div>
           <Link
             href="/favoriler"
             aria-label={

@@ -20,6 +20,7 @@ function ensureOrderIndexes(): Promise<void> {
       orders.createIndex({ trackKey: 1 }, { unique: true }),
       orders.createIndex({ createdAt: -1 }),
       orders.createIndex({ status: 1, createdAt: -1 }),
+      orders.createIndex({ customerId: 1, createdAt: -1 }),
     ]);
   })().catch((error) => {
     indexesReady = undefined;
@@ -74,6 +75,25 @@ export async function getOrderByKey(key: string): Promise<Order | null> {
 export async function getOrderByNumber(number: string): Promise<Order | null> {
   const orders = await ordersOf();
   return orders.findOne({ number }, { projection: { _id: 0 } });
+}
+
+export type CustomerOrderSummary = Pick<Order, "number" | "trackKey" | "status" | "total" | "createdAt"> & {
+  itemCount: number;
+};
+
+// Müşterinin hesabındayken verdiği siparişler, yeniden eskiye (hesap sayfası için; en çok 50).
+export async function listOrdersForCustomer(customerId: string): Promise<CustomerOrderSummary[]> {
+  await ensureOrderIndexes();
+  const orders = await ordersOf();
+  const docs = await orders
+    .find(
+      { customerId },
+      { projection: { _id: 0, number: 1, trackKey: 1, status: 1, total: 1, createdAt: 1, "items.qty": 1 } },
+    )
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .toArray();
+  return docs.map(({ items, ...rest }) => ({ ...rest, itemCount: items.reduce((sum, item) => sum + item.qty, 0) }));
 }
 
 const digest = (text: string) => createHash("sha256").update(text).digest();

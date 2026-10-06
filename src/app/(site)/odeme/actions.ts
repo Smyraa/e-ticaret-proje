@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { clientAddress } from "@/lib/client-address";
+import { getCustomer } from "@/lib/customer-auth";
 import { buildOrderItems } from "@/lib/order-build";
 import { readCartPayload, readCheckoutForm, type CheckoutState } from "@/lib/order-form";
 import { notifyOrderPlaced } from "@/lib/order-notify";
@@ -19,7 +20,7 @@ const ORDERS_PER_WINDOW = 5;
 const WINDOW_MINUTES = 30;
 
 // "Siparişi tamamla": sepet ve form sunucuda doğrulanır, ürün bilgisi ve fiyatlar veritabanından yeniden okunur,
-// sipariş "ödeme bekleniyor" durumunda kaydedilir. Giriş gerekmez (misafir alışveriş); stok burada düşmez, ödeme
+// sipariş "ödeme bekleniyor" durumunda kaydedilir. Giriş gerekmez (misafir alışveriş; giriş yapılmışsa sipariş hesaba bağlanır); stok burada düşmez, ödeme
 // alınınca düşer. Kartla ödeme açıksa müşteri ödeme sayfasına yönlenir (sonuç siteye dönünce işlenir, bkz.
 // odeme/geri-donus); değilse sipariş sayfasına yönlenir ve sipariş e-postaları hemen hazırlanır.
 export async function placeOrder(_state: CheckoutState, formData: FormData): Promise<CheckoutState> {
@@ -41,9 +42,10 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
     }
 
     // Kargo ücreti readSettings ile okunur: okunamazsa hata verir (varsayılan ücrete düşüp yanlış toplamla sipariş açılmasın).
-    const [products, settings] = await Promise.all([
+    const [products, settings, customer] = await Promise.all([
       getProductsBySlugs(cart.lines.map((line) => line.slug)),
       readSettings(),
+      getCustomer(),
     ]);
     const built = buildOrderItems(products, cart.lines);
     if (!built.ok) {
@@ -65,6 +67,7 @@ export async function placeOrder(_state: CheckoutState, formData: FormData): Pro
       address: data.address,
       test: built.items.every((item) => item.sample),
       consentAt: new Date(),
+      ...(customer ? { customerId: customer.id } : {}),
     });
     trackKey = created.trackKey;
     number = created.number;

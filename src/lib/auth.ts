@@ -25,7 +25,7 @@ type AttemptDoc = { _id: string; count: number; resetAt: Date };
 
 export type Admin = { id: string; email: string };
 
-const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
+export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 // Çerez ayarları: JavaScript okuyamaz (httpOnly), başka sitelerden gelen isteklerde gönderilmez (sameSite),
 // canlıda yalnızca HTTPS üzerinden gider (secure).
@@ -106,29 +106,29 @@ const addressKey = (email: string, address: string) => `giris|${email}|${address
 const emailKey = (email: string) => `giris-eposta|${email}`;
 const passwordKey = (userId: string) => `parola|${userId}`;
 
-// Deneme hakkı ayırır: hak parola denenmeden ÖNCE, tek adımda alınır (bkz. rate-limit.ts). Önce sayaca bakıp hatayı
+// Deneme hakkı ayırır (müşteri girişi de kullanır, bkz. customer-auth.ts): hak parola denenmeden ÖNCE, tek adımda alınır (bkz. rate-limit.ts). Önce sayaca bakıp hatayı
 // sonra yazmak, aynı anda gelen onlarca denemenin hepsinin kilide takılmadan parola denemesine yol açardı.
 // Hak kalmadıysa kalan dakikayı, kaldıysa 0 verir.
-async function reserveAttempt(key: string, limit: number): Promise<number> {
+export async function reserveAttempt(key: string, limit: number): Promise<number> {
   const { allowed, resetAt } = await takeSlot("loginAttempts", key, limit, LOCK_MINUTES);
   return allowed ? 0 : Math.max(1, Math.ceil((resetAt.getTime() - Date.now()) / 60000));
 }
 
-async function clearFailures(key: string) {
+export async function clearFailures(key: string) {
   const db = await getDb();
   await db.collection<AttemptDoc>("loginAttempts").deleteOne({ _id: key });
 }
 
 // Başarılı girişte ayrılan hakkı geri verir (sayaç yalnız başarısız denemeleri saysın); başkasının biriken
 // denemeleri silinmez, yalnız bu girişin hakkı düşülür.
-async function releaseAttempt(key: string) {
+export async function releaseAttempt(key: string) {
   const db = await getDb();
   const attempts = db.collection<AttemptDoc>("loginAttempts");
   const removed = await attempts.deleteOne({ _id: key, count: { $lte: 1 } });
   if (removed.deletedCount === 0) await attempts.updateOne({ _id: key, count: { $gt: 1 } }, { $inc: { count: -1 } });
 }
 
-const lockedMessage = (minutes: number) => `Çok fazla hatalı deneme. Yaklaşık ${minutes} dakika sonra tekrar deneyin.`;
+export const lockedMessage = (minutes: number) => `Çok fazla hatalı deneme. Yaklaşık ${minutes} dakika sonra tekrar deneyin.`;
 
 export type LoginResult = { ok: true } | { ok: false; message: string };
 

@@ -1,12 +1,19 @@
 import type { ReactNode } from "react";
+import { getCustomer } from "@/lib/customer-auth";
+import { AccountSync } from "./account-sync";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 
 // Mağaza sayfalarının ortak çerçevesi: atlama bağlantısı, demo şeridi, üst menü, içerik ve alt bilgi.
 // Yönetim sayfaları bunu kullanmaz (kendi sade çerçevesi var).
-export function SiteShell({ children }: { children: ReactNode }) {
+export async function SiteShell({ children }: { children: ReactNode }) {
+  // Veritabanına ulaşılamazsa site misafir gibi açılır.
+  const customer = await getCustomer().catch(() => null);
+
   return (
     <>
+      <AccountSync customerId={customer?.id ?? null} />
+
       {/* Klavye kullanıcıları için: Tab ile ilk gelen bağlantı, menüyü atlayıp içeriğe götürür. */}
       <a
         href="#icerik"
@@ -19,7 +26,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         Demo sürümü · Ürünler ve fiyatlar örnek içeriktir
       </div>
 
-      <SiteHeader />
+      <SiteHeader signedIn={customer !== null} />
 
       <main id="icerik" tabIndex={-1} className="flex-1 focus:outline-none">
         {children}

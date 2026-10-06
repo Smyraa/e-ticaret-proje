@@ -3,7 +3,8 @@
 // (scripts/admin.mjs) kullanılır, bu yüzden yalnızca düz TypeScript içerir (Node doğrudan çalıştırabilsin diye).
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-export const PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_MIN_LENGTH = 12; // yönetici
+export const CUSTOMER_PASSWORD_MIN_LENGTH = 8; // müşteri hesabı
 export const PASSWORD_MAX_LENGTH = 128;
 
 // Maliyet ayarları: her deneme ~0,1 sn ve 32 MB bellek harcar; kaba kuvvet denemelerini pahalılaştırır.
@@ -14,9 +15,9 @@ const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
 // Parola kurallarında sorun varsa Türkçe açıklamayı, yoksa null döndürür.
-export function passwordProblem(password: string): string | null {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Parola en az ${PASSWORD_MIN_LENGTH} karakter olmalı.`;
+export function passwordProblem(password: string, minLength = PASSWORD_MIN_LENGTH): string | null {
+  if (password.length < minLength) {
+    return `Parola en az ${minLength} karakter olmalı.`;
   }
   if (password.length > PASSWORD_MAX_LENGTH) {
     return `Parola en çok ${PASSWORD_MAX_LENGTH} karakter olabilir.`;

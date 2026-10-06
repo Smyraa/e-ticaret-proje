@@ -47,6 +47,7 @@ export type Order = {
   test: boolean; // yalnız örnek ürünlerden oluşan sipariş (demo denemesi)
   stockDeducted: boolean; // stok, ödeme alınınca düşülür
   consentAt: Date; // ön bilgilendirme ve satış sözleşmesi onayı
+  customerId?: string; // giriş yapmış müşterinin hesabı (misafir siparişte yok)
   createdAt: Date;
   updatedAt: Date;
   // Yönetimin ekledikleri (sipariş verilirken yoktur):
