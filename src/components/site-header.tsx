@@ -13,6 +13,7 @@ import { UserIcon } from "./user-icon";
 const links = [
   { href: "/koleksiyon", label: "Koleksiyon" },
   { href: "/koleksiyon#q", label: "Ara" }, // koleksiyon sayfasındaki arama kutusuna götürür
+  { href: "/siparis", label: "Sipariş sorgula" }, // misafir müşteri siparişini numara + e-postayla bulur
 ];
 
 const linkClass =
@@ -33,7 +34,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   const accountHref = signedIn ? "/hesabim" : "/giris";
   const onAccount = ["/hesabim", "/giris", "/kayit"].includes(pathname);
 
-  // Hesap simgesi: geniş ekranda kalp ve sepetin yanında; telefonda menü düğmesinin yanında (sağda üç simge sığmıyor,
+  // Hesap simgesi: geniş ekranda (≥ 1024 px) kalp ve sepetin yanında; telefon ve tablette menü düğmesinin yanında (sağda üç simge sığmıyor,
   // dokunma alanları 44 pikselin altına düşüyordu; iki yan eşit kalınca logo da ortada kalır).
   const accountLink = (
     <Link
@@ -53,7 +54,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
     <header className="border-b border-line">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 py-6">
         <div>
-          <nav className="hidden items-center gap-8 md:flex" aria-label="Ana menü">
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Ana menü">
             {links.map((link) => {
               const active = !link.href.includes("#") && pathname === link.href;
               return (
@@ -69,7 +70,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
             })}
           </nav>
 
-          <div className="-ml-2.5 flex items-center md:hidden">
+          <div className="-ml-2.5 flex items-center lg:hidden">
             <button
               type="button"
               className="p-2.5"
@@ -108,7 +109,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
 
         {/* Sağ taraf: hesap, favoriler ve sepet; favori ve sepet doluyken simgenin üstünde nokta görünür */}
         <div className="-mr-2.5 flex items-center justify-end">
-          <div className="hidden md:flex">{accountLink}</div>
+          <div className="hidden lg:flex">{accountLink}</div>
           <Link
             href="/favoriler"
             aria-label={
@@ -142,7 +143,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
       {open && (
         <nav
           id="mobil-menu"
-          className="border-t border-line md:hidden"
+          className="border-t border-line lg:hidden"
           aria-label="Mobil menü"
         >
           <ul>
