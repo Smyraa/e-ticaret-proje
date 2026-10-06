@@ -20,12 +20,18 @@ async function loadProducts(): Promise<{ products: Product[]; failed: boolean }>
   }
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const deleted = (await searchParams).hesap === "silindi"; // müşteri hesabını sildi
   // Ayarlar okunamazsa getSiteSettings varsayılanları döner; sayfa yine açılır, görsel yerine yer tutucu görünür.
   const [{ products, failed }, settings] = await Promise.all([loadProducts(), getSiteSettings()]);
 
   return (
     <>
+      {deleted && (
+        <p role="status" className="mx-auto mt-6 max-w-6xl px-6 text-sm">
+          <span className="block rounded-md bg-soft p-4">Hesabınız ve kayıtlı bilgileriniz silindi.</span>
+        </p>
+      )}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:grid-cols-2">
         <div className="space-y-6">
           <h1 className="font-display text-5xl leading-tight">

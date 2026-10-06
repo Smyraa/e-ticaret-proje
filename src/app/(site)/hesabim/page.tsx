@@ -48,6 +48,9 @@ export default async function AccountPage() {
         <Link href="/sepet" className={linkButton}>
           Sepetim
         </Link>
+        <Link href="/hesabim/profil" className={linkButton}>
+          Profil ve güvenlik
+        </Link>
         <form action={logout}>
           <button type="submit" className={linkButton}>
             Çıkış yap

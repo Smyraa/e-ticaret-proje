@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  changeCustomerPassword,
+  deleteCustomerAccount,
   endCustomerSession,
   getAccountData,
   getCustomer,
@@ -10,6 +12,7 @@ import {
   mergeAccountData,
   registerCustomer,
   saveAccountData,
+  updateCustomerName,
   type AccountData,
   type AuthResult,
 } from "@/lib/customer-auth";
@@ -116,4 +119,62 @@ export async function deleteAddressAction(formData: FormData): Promise<void> {
   const id = String(formData.get("adres") ?? "");
   if (/^[0-9a-f]{16}$/.test(id)) await deleteAddress(customer.id, id);
   revalidatePath("/hesabim");
+}
+
+// ---------- Profil ve güvenlik ----------
+
+export type ProfileState = { message?: string; error?: string; field?: "ad" | "parola" | "yeni" | "onay" | null; name?: string } | undefined;
+
+async function signedIn() {
+  const customer = await getCustomer();
+  if (!customer) redirect("/giris?donus=/hesabim/profil");
+  return customer;
+}
+
+const FAILED = "Şu an işlem yapılamıyor. Biraz sonra yeniden deneyin.";
+
+export async function updateNameAction(_state: ProfileState, formData: FormData): Promise<ProfileState> {
+  const customer = await signedIn();
+  const name = String(formData.get("ad") ?? "").trim().replace(/\s+/g, " ");
+  try {
+    const result = await updateCustomerName(customer.id, name);
+    if (!result.ok) return { error: result.message, field: "ad", name };
+  } catch (error) {
+    console.error("Ad kaydedilemedi", error);
+    return { error: FAILED, name };
+  }
+  revalidatePath("/", "layout");
+  return { message: "Adınız kaydedildi.", name };
+}
+
+export async function changePasswordAction(_state: ProfileState, formData: FormData): Promise<ProfileState> {
+  const customer = await signedIn();
+  const current = String(formData.get("mevcut-parola") ?? "");
+  const next = String(formData.get("yeni-parola") ?? "");
+  const repeat = String(formData.get("yeni-parola-tekrar") ?? "");
+  if (!current) return { error: "Mevcut parolanızı yazın.", field: "parola" };
+  if (next !== repeat) return { error: "Yeni parola ile tekrarı aynı değil.", field: "yeni" };
+  try {
+    const result = await changeCustomerPassword(customer.id, current, next);
+    if (!result.ok) return { error: result.message, field: result.field === "parola" ? "parola" : "yeni" };
+  } catch (error) {
+    console.error("Parola değiştirilemedi", error);
+    return { error: FAILED };
+  }
+  return { message: "Parolanız değiştirildi. Diğer cihazlardaki oturumlar kapatıldı." };
+}
+
+export async function deleteAccountAction(_state: ProfileState, formData: FormData): Promise<ProfileState> {
+  const customer = await signedIn();
+  if (formData.get("onay") !== "evet") return { error: "Hesabınızı silmek için onay kutusunu işaretleyin.", field: "onay" };
+  const password = String(formData.get("parola") ?? "");
+  if (!password) return { error: "Parolanızı yazın.", field: "parola" };
+  try {
+    const result = await deleteCustomerAccount(customer.id, password);
+    if (!result.ok) return { error: result.message, field: "parola" };
+  } catch (error) {
+    console.error("Hesap silinemedi", error);
+    return { error: FAILED };
+  }
+  redirect("/?hesap=silindi");
 }

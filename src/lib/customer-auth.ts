@@ -210,3 +210,61 @@ export async function mergeAccountData(
   await saveAccountData(customerId, { favorites, cart });
   return getAccountData(customerId);
 }
+
+// ---------- Profil ve güvenlik (Hesabım → Profil ve güvenlik) ----------
+
+export async function updateCustomerName(customerId: string, name: string): Promise<AuthResult> {
+  if (!name) return { ok: false, field: "ad", message: "Adınızı yazın." };
+  if ([...name].length > NAME_MAX) return { ok: false, field: "ad", message: `Ad en çok ${NAME_MAX} karakter olabilir.` };
+  await (await customersOf()).updateOne({ _id: new ObjectId(customerId) }, { $set: { name, updatedAt: new Date() } });
+  return { ok: true };
+}
+
+const passwordKey = (customerId: string) => `musteri-parola|${customerId}`;
+
+// Parolayı doğrular (yanlış denemeler sınırlı). Doğruysa müşteri kaydını, değilse hatayı döndürür.
+async function checkOwnPassword(customerId: string, password: string): Promise<CustomerDoc | AuthResult> {
+  const locked = await reserveAttempt(passwordKey(customerId), MAX_FAILURES);
+  if (locked > 0) return { ok: false, field: null, message: lockedMessage(locked) };
+  const customer = await (await customersOf()).findOne({ _id: new ObjectId(customerId) });
+  if (!customer || password.length > 1024 || !(await verifyPassword(password, customer.passwordHash))) {
+    return { ok: false, field: "parola", message: "Parola yanlış." };
+  }
+  await clearFailures(passwordKey(customerId));
+  return customer;
+}
+const isFailure = (value: CustomerDoc | AuthResult): value is AuthResult => "ok" in value;
+
+// Parola değişince bu müşterinin TÜM oturumları kapanır, bu tarayıcıya yeni oturum verilir.
+export async function changeCustomerPassword(customerId: string, current: string, next: string): Promise<AuthResult> {
+  const problem = passwordProblem(next, CUSTOMER_PASSWORD_MIN_LENGTH);
+  if (problem) return { ok: false, field: null, message: problem };
+  if (next === current) return { ok: false, field: null, message: "Yeni parola mevcut parolayla aynı olamaz." };
+  await ensureIndexes();
+  const checked = await checkOwnPassword(customerId, current);
+  if (isFailure(checked)) return checked;
+  const changed = await (await customersOf()).updateOne(
+    { _id: checked._id, passwordHash: checked.passwordHash },
+    { $set: { passwordHash: await hashPassword(next), updatedAt: new Date() } },
+  );
+  if (changed.modifiedCount === 0) {
+    return { ok: false, field: null, message: "Parola başka bir yerden değiştirilmiş görünüyor. Sayfayı yenileyip yeniden deneyin." };
+  }
+  await (await sessionsOf()).deleteMany({ customerId: checked._id });
+  await createSession(checked._id);
+  return { ok: true };
+}
+
+// Hesabı siler (KVKK): müşteri kaydı (adresler, favoriler, sepet içinde), tüm oturumları ve çerez. Verilmiş siparişler
+// yasal saklama için kalır, hesapla bağı kaldırılır.
+export async function deleteCustomerAccount(customerId: string, password: string): Promise<AuthResult> {
+  await ensureIndexes();
+  const checked = await checkOwnPassword(customerId, password);
+  if (isFailure(checked)) return checked;
+  const db = await getDb();
+  await db.collection("orders").updateMany({ customerId }, { $unset: { customerId: "" } });
+  await (await sessionsOf()).deleteMany({ customerId: checked._id });
+  await (await customersOf()).deleteOne({ _id: checked._id });
+  (await cookies()).delete(CUSTOMER_COOKIE);
+  return { ok: true };
+}
