@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import type { SettingsFormState, SettingsValues } from "@/lib/settings-form";
+import { SETTINGS_LIMITS, type SettingsFormState, type SettingsValues } from "@/lib/settings-form";
 import { Field } from "../form-fields";
 
 type Props = {
@@ -39,6 +39,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="whatsapp"
+        maxLength={24}
         type="tel"
         inputMode="tel"
         label="WhatsApp numarası"
@@ -49,6 +50,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="phone"
+        maxLength={24}
         type="tel"
         inputMode="tel"
         label="Telefon"
@@ -59,6 +61,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="email"
+        maxLength={SETTINGS_LIMITS.email}
         type="email"
         inputMode="email"
         label="E-posta"
@@ -69,6 +72,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="address"
+        maxLength={SETTINGS_LIMITS.address}
         label="Adres"
         multiline
         rows={3}
@@ -79,6 +83,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="hours"
+        maxLength={SETTINGS_LIMITS.hours}
         label="Çalışma saatleri"
         value={values.hours}
         error={errors.hours}
@@ -89,6 +94,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="orderEmail"
+        maxLength={SETTINGS_LIMITS.email}
         type="email"
         inputMode="email"
         label="Yeni sipariş bildirimi e-postası"
@@ -101,6 +107,7 @@ export function SettingsForm({ action, initial, mailNote }: Props) {
       <Field
         prefix="ayar"
         name="shippingFee"
+        maxLength={6}
         label="Kargo ücreti (TL)"
         required
         inputMode="numeric"

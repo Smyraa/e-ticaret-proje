@@ -1,4 +1,5 @@
 import "server-only";
+import { internalBarcode } from "./barcode";
 import { getDb } from "./mongodb";
 import { IMAGE_LIMITS } from "./images";
 import type { ProductData } from "./product-form";
@@ -11,6 +12,56 @@ import { slugify } from "./slug";
 type StoredProduct = ProductDoc & { createdAt?: Date; updatedAt?: Date };
 
 const productsOf = async () => (await getDb()).collection<StoredProduct>("products");
+
+// Barkod iki üründe aynı olamaz (yalnız barkodu olan ürünler dizine girer). Adres de benzersizdir.
+let indexesReady: Promise<void> | undefined;
+function ensureIndexes(): Promise<void> {
+  indexesReady ??= (async () => {
+    const products = await productsOf();
+    await Promise.all([
+      products.createIndex({ slug: 1 }, { unique: true }),
+      products.createIndex({ barcode: 1 }, { unique: true, partialFilterExpression: { barcode: { $type: "string" } } }),
+    ]);
+  })().catch((error) => {
+    indexesReady = undefined;
+    throw error;
+  });
+  return indexesReady;
+}
+
+// Barkod başka bir üründe kayıtlı (yönetim formunda barkod kutusunun hatası olarak gösterilir).
+export class BarcodeTakenError extends Error {}
+const isDuplicate = (error: unknown, field: string) =>
+  (error as { code?: number }).code === 11000 && Boolean((error as { keyPattern?: Record<string, unknown> }).keyPattern?.[field]);
+
+// Sistemin üreteceği sıradaki barkod. Sıra sayacı tek adımda artar (aynı anda iki ürün aynı kodu alamaz).
+async function nextBarcode(): Promise<string> {
+  const counters = (await getDb()).collection<{ _id: string; seq: number }>("counters");
+  const counter = await counters.findOneAndUpdate(
+    { _id: "barcode" },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: "after" },
+  );
+  return internalBarcode(counter?.seq ?? 1);
+}
+
+// Barkodu olmayan (eski) ürünlere barkod verir. Yönetimde ürün listesi ve stok sayfası açılınca çağrılır; hepsinde
+// barkod varsa tek bir sorgudan ibarettir.
+export async function ensureBarcodes(): Promise<void> {
+  await ensureIndexes();
+  const products = await productsOf();
+  const missing = await products.find({ barcode: { $not: { $type: "string" } } }, { projection: { slug: 1 } }).toArray();
+  for (const { slug } of missing) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await products.updateOne({ slug, barcode: { $not: { $type: "string" } } }, { $set: { barcode: await nextBarcode() } });
+        break;
+      } catch (error) {
+        if (!isDuplicate(error, "barcode")) throw error; // elle yazılmış bir kodla çakıştı: sıradakini dene
+      }
+    }
+  }
+}
 
 export async function getAllProducts(): Promise<Product[]> {
   const docs = await (await productsOf())
@@ -39,8 +90,10 @@ const MAX_SLUG_TRIES = 50;
 // Yeni ürünü ekler ve adresini (slug) döndürür. Adres addan üretilir; aynısı varsa -2, -3 ... eklenir.
 // Benzersizliği veritabanı sağlar (slug üzerinde benzersiz dizin), böylece aynı anda iki kayıt çakışmaz.
 export async function insertProduct(data: ProductData): Promise<string> {
+  await ensureIndexes();
   const products = await productsOf();
-  await products.createIndex({ slug: 1 }, { unique: true });
+  let barcode = data.barcode || (await nextBarcode());
+  let barcodeTries = 0;
 
   const base = slugify(data.name);
   const now = new Date();
@@ -48,9 +101,16 @@ export async function insertProduct(data: ProductData): Promise<string> {
     const slug = attempt === 1 ? base : `${base}-${attempt}`;
     if (RESERVED_SLUGS.has(slug)) continue;
     try {
-      await products.insertOne({ ...data, slug, images: [], sample: false, createdAt: now, updatedAt: now });
+      await products.insertOne({ ...data, barcode, slug, images: [], sample: false, createdAt: now, updatedAt: now });
       return slug;
     } catch (error) {
+      if (isDuplicate(error, "barcode")) {
+        if (data.barcode) throw new BarcodeTakenError(); // elle yazılan kod başka üründe
+        if (++barcodeTries > 5) throw error;
+        barcode = await nextBarcode(); // üretilen kod elle yazılmış bir kodla çakıştı: sıradaki
+        attempt -= 1; // aynı adresle yeniden dene
+        continue;
+      }
       if ((error as { code?: number }).code !== 11000) throw error; // 11000: bu adres zaten var
     }
   }
@@ -59,10 +119,18 @@ export async function insertProduct(data: ProductData): Promise<string> {
 
 // Ürünün bilgilerini günceller; adres (slug), görseller ve oluşturulma tarihi değişmez.
 // Ürün bulunamazsa false döner.
+// Barkod kutusu boşaltıldıysa yeni kod üretilir. Barkod başka üründeyse BarcodeTakenError fırlatır.
 export async function updateProduct(slug: string, data: ProductData, sample: boolean): Promise<boolean> {
+  await ensureIndexes();
   const products = await productsOf();
-  const result = await products.updateOne({ slug }, { $set: { ...data, sample, updatedAt: new Date() } });
-  return result.matchedCount === 1;
+  const barcode = data.barcode || (await nextBarcode());
+  try {
+    const result = await products.updateOne({ slug }, { $set: { ...data, barcode, sample, updatedAt: new Date() } });
+    return result.matchedCount === 1;
+  } catch (error) {
+    if (isDuplicate(error, "barcode")) throw new BarcodeTakenError();
+    throw error;
+  }
 }
 
 export type AddImageResult = "added" | "duplicate" | "full" | "missing";

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { checkImageFile } from "@/lib/images";
-import type { ProductFormState, ProductFormValues } from "@/lib/product-form";
+import { BARCODE_MAX } from "@/lib/barcode";
+import { LIMITS, type ProductFormState, type ProductFormValues } from "@/lib/product-form";
 import { Check, Field } from "../form-fields";
 import { NewImagePicker } from "./new-image-picker";
 import { uploadImages, type Upload } from "./upload-images";
@@ -64,12 +65,21 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
     >
       {pickImages && <input type="hidden" name="gorsel-sayisi" value={uploadable.length} />}
 
-      <Field prefix="urun" name="name" label="Ürün adı" required value={values.name} error={errors.name} />
+      <Field
+        prefix="urun"
+        name="name"
+        maxLength={LIMITS.name}
+        label="Ürün adı"
+        required
+        value={values.name}
+        error={errors.name}
+      />
 
       <div>
         <Field
           prefix="urun"
           name="material"
+          maxLength={LIMITS.material}
           label="Malzeme"
           required
           list="urun-malzemeler"
@@ -88,6 +98,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
         <Field
           prefix="urun"
           name="size"
+          maxLength={LIMITS.size}
           label="Ölçü"
           value={values.size}
           error={errors.size}
@@ -96,6 +107,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
         <Field
           prefix="urun"
           name="weight"
+          maxLength={LIMITS.weight}
           label="Ağırlık"
           value={values.weight}
           error={errors.weight}
@@ -107,6 +119,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
         <Field
           prefix="urun"
           name="price"
+          maxLength={12}
           label="Fiyat (TL)"
           required
           inputMode="numeric"
@@ -117,6 +130,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
         <Field
           prefix="urun"
           name="stock"
+          maxLength={7}
           label="Stok (adet)"
           required
           inputMode="numeric"
@@ -128,7 +142,18 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
 
       <Field
         prefix="urun"
+        name="barcode"
+        maxLength={BARCODE_MAX}
+        label="Barkod"
+        value={values.barcode}
+        error={errors.barcode}
+        hint="Boş bırakırsanız sistem 29 ile başlayan 13 haneli bir barkod üretir. Ürünün kendi barkodu varsa okutun ya da yazın."
+      />
+
+      <Field
+        prefix="urun"
         name="craft"
+        maxLength={LIMITS.craft}
         label="İşçilik"
         value={values.craft}
         error={errors.craft}
@@ -138,6 +163,7 @@ export function ProductForm({ action, initial, materials, submitLabel, showSampl
       <Field
         prefix="urun"
         name="story"
+        maxLength={LIMITS.story}
         label="Hikâye"
         multiline
         value={values.story}

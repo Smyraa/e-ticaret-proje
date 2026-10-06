@@ -13,12 +13,13 @@ export type Product = {
   images: string[]; // media/ klasöründeki dosya adları (ilki ana görsel)
   price: number; // TL
   stock: number;
+  barcode: string; // ürün başına tek barkod (bkz. barcode.ts); eski kayıtlarda henüz yoksa ""
   sample: boolean; // örnek (temsili) içerik
   published: boolean; // yayında: sitede görünür; değilse taslak (yalnız yönetimde görünür)
 };
 
 // Veritabanındaki belge. Eski kayıtlarda published alanı yoktur; yoksa yayında sayılır.
-export type ProductDoc = Omit<Product, "published"> & { published?: boolean };
+export type ProductDoc = Omit<Product, "published" | "barcode"> & { published?: boolean; barcode?: string };
 
 // Belgeden yalnız bilinen alanlar alınır (tarihler gibi iç alanlar sayfalara ve tarayıcıya gitmez).
 export const toProduct = (doc: ProductDoc): Product => ({
@@ -32,6 +33,7 @@ export const toProduct = (doc: ProductDoc): Product => ({
   images: doc.images ?? [],
   price: doc.price,
   stock: doc.stock,
+  barcode: doc.barcode ?? "",
   sample: doc.sample === true,
   published: doc.published !== false,
 });

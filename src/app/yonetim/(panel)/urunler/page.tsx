@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice, stockText } from "@/lib/format";
-import { getAllProducts } from "@/lib/products-admin";
+import { ensureBarcodes, getAllProducts } from "@/lib/products-admin";
 import { removeSampleProducts } from "./actions";
 import { DeleteButton } from "./delete-button";
 
@@ -27,6 +27,7 @@ function noticeFor(deleted: string | string[] | undefined, samples: string | str
 export default async function AdminProductsPage({ searchParams }: PageProps<"/yonetim/urunler">) {
   await requireAdmin();
   const { silindi, ornekler } = await searchParams;
+  await ensureBarcodes(); // barkodu olmayan eski ürünlere barkod verilir
   const products = await getAllProducts();
   const sampleCount = products.filter((product) => product.sample).length;
   const notice = noticeFor(silindi, ornekler);
@@ -91,7 +92,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps<"/yo
                     {product.sample && <span className={`${badgeClass} bg-espresso text-paper`}>Örnek</span>}
                     {!product.published && <span className={`${badgeClass} border border-ink`}>Taslak</span>}
                   </p>
-                  <p className="text-[11px] tracking-widest text-muted uppercase">{product.material}</p>
+                  <p className="text-[11px] tracking-widest text-muted uppercase">
+                    {product.material}
+                    {product.barcode && <span className="tracking-normal normal-case"> · Barkod {product.barcode}</span>}
+                  </p>
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-0 md:mt-0 md:shrink-0">

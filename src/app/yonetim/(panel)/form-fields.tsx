@@ -13,6 +13,7 @@ type FieldProps = {
   type?: "text" | "email" | "tel";
   inputMode?: "numeric" | "tel" | "email";
   list?: string;
+  maxLength?: number; // sunucudaki sınırla aynı (asıl denetim sunucuda)
 };
 
 const controlClass = "mt-2 w-full rounded-md border bg-paper p-3 text-sm";
@@ -31,6 +32,7 @@ export function Field({
   type = "text",
   inputMode,
   list,
+  maxLength,
 }: FieldProps) {
   const id = `${prefix}-${name}`;
   const describedBy = [hint && `${id}-ipucu`, error && `${id}-hata`].filter(Boolean).join(" ") || undefined;
@@ -39,6 +41,7 @@ export function Field({
     name,
     defaultValue: value,
     autoComplete: "off",
+    maxLength,
     "aria-required": required || undefined,
     "aria-invalid": error ? true : undefined,
     "aria-describedby": describedBy,

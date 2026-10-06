@@ -1,5 +1,6 @@
 // Ürün formunun alanları, doğrulaması ve durum türleri. Hem sunucu eylemlerinde hem formda kullanılır
 // (tarayıcıya yalnızca türler gider). Doğrulama sunucuda yapılır; tarayıcıdaki kontrole güvenilmez.
+import { barcodeProblem, normalizeBarcode } from "./barcode";
 import { charCount, multiLine, oneLine, tooLong } from "./form-text";
 import { parseLira } from "./money";
 import type { Product } from "./products";
@@ -25,6 +26,7 @@ export type ProductFormValues = {
   story: string;
   price: string;
   stock: string;
+  barcode: string; // boşsa kayıtta sistem üretir
   published: boolean;
   sample: boolean;
 };
@@ -39,6 +41,7 @@ export const EMPTY_VALUES: ProductFormValues = {
   story: "",
   price: "",
   stock: "",
+  barcode: "",
   published: false,
   sample: false,
 };
@@ -54,6 +57,7 @@ export function valuesOf(product: Product): ProductFormValues {
     story: product.story,
     price: String(product.price),
     stock: String(product.stock),
+    barcode: product.barcode,
     published: product.published,
     sample: product.sample,
   };
@@ -85,6 +89,7 @@ export type ProductData = {
   story: string;
   price: number;
   stock: number;
+  barcode: string; // boşsa kayıtta sistem üretir
   published: boolean;
 };
 
@@ -107,6 +112,7 @@ export function readProductForm(formData: FormData): {
     story: multiLine(formData.get("story")),
     price: oneLine(formData.get("price")),
     stock: oneLine(formData.get("stock")),
+    barcode: normalizeBarcode(oneLine(formData.get("barcode"))),
     published: formData.get("published") === "on",
     sample: formData.get("sample") === "on",
   };
@@ -138,6 +144,9 @@ export function readProductForm(formData: FormData): {
     errors.stock = `Stok en çok ${LIMITS.stockMax.toLocaleString("tr-TR")} olabilir.`;
   }
 
+  const barcode = barcodeProblem(values.barcode);
+  if (barcode) errors.barcode = barcode;
+
   if (Object.keys(errors).length > 0 || price === null || stock === null) return { values, errors };
 
   return {
@@ -152,6 +161,7 @@ export function readProductForm(formData: FormData): {
       story: values.story,
       price,
       stock,
+      barcode: values.barcode,
       published: values.published,
     },
   };

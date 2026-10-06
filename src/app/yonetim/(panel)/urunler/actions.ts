@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { isSafeMediaName, type ImageActionState } from "@/lib/images";
 import { deleteMediaFile, deleteMediaFiles } from "@/lib/media-files";
-import { readProductForm, type DeleteState, type ProductFormState } from "@/lib/product-form";
+import { readProductForm, valuesOf, type DeleteState, type ProductFormState } from "@/lib/product-form";
 import {
+  BarcodeTakenError,
   deleteProduct,
   deleteSampleProducts,
   getProductForAdmin,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/products-admin";
 
 const SAVE_FAILED = "Kaydedilemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
+const BARCODE_TAKEN = "Bu barkod başka bir üründe kayıtlı.";
 const NOT_FOUND = "Bu ürün bulunamadı; silinmiş olabilir. Ürün listesine dönün.";
 const DELETE_FAILED = "Silinemedi. Veritabanına ulaşılamıyor olabilir; biraz sonra yeniden deneyin.";
 const NOT_CONFIRMED = "Silme onaylanmadı. Sayfa tam yüklenince yeniden deneyin.";
@@ -34,6 +36,7 @@ export async function createProduct(_state: ProductFormState, formData: FormData
   try {
     slug = await insertProduct(data);
   } catch (error) {
+    if (error instanceof BarcodeTakenError) return { values, errors: { barcode: BARCODE_TAKEN } };
     console.error("Ürün eklenemedi", error);
     return { values, message: SAVE_FAILED };
   }
@@ -64,12 +67,15 @@ export async function saveProduct(
     // "Örnek" işareti yalnız kaldırılabilir; formdan hiçbir ürün örnek yapılamaz.
     await updateProduct(slug, data, existing.sample && values.sample);
   } catch (error) {
+    if (error instanceof BarcodeTakenError) return { values, errors: { barcode: BARCODE_TAKEN } };
     console.error("Ürün kaydedilemedi", error);
     return { values, message: SAVE_FAILED };
   }
 
   revalidatePath("/", "layout");
-  return { values, saved: true };
+  // Barkod boş bırakıldıysa sistem yenisini üretti: form kayıtlı değerleri göstersin.
+  const saved = await getProductForAdmin(slug).catch(() => null);
+  return { values: saved ? valuesOf(saved) : values, saved: true };
 }
 
 const MOVES: Record<string, MoveImageOp> = { yukari: "up", asagi: "down", ana: "main" };
