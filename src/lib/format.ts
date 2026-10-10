@@ -13,3 +13,7 @@ export const formatDateTime = (date: Date) =>
 
 export const stockText = (stock: number) =>
   stock > 0 ? `Stokta ${stock} adet` : "Tükendi";
+
+// İndirim yüzdesi: eski fiyata göre, aşağı yuvarlanır (indirim olduğundan fazla gösterilmesin); en az %1.
+export const discountPercent = (price: number, oldPrice: number) =>
+  Math.max(1, Math.floor(((oldPrice - price) / oldPrice) * 100));

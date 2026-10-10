@@ -11,7 +11,8 @@ export type Product = {
   craft: string; // işçilik bilgisi
   story: string; // zanaat / koleksiyon hikâyesi
   images: string[]; // media/ klasöründeki dosya adları (ilki ana görsel)
-  price: number; // TL
+  price: number; // TL (satış fiyatı: sepette ve ödemede kullanılan)
+  oldPrice: number | null; // indirim öncesi fiyat (üstü çizili gösterilir); yalnız satış fiyatından yüksekse, yoksa null
   stock: number;
   barcode: string; // ürün başına tek barkod (bkz. barcode.ts); eski kayıtlarda henüz yoksa ""
   category: string; // kategorinin adresi (bkz. catalog.ts); yoksa ""
@@ -20,7 +21,12 @@ export type Product = {
 };
 
 // Veritabanındaki belge. Eski kayıtlarda published alanı yoktur; yoksa yayında sayılır.
-export type ProductDoc = Omit<Product, "published" | "barcode" | "category"> & { published?: boolean; barcode?: string; category?: string };
+export type ProductDoc = Omit<Product, "published" | "barcode" | "category" | "oldPrice"> & {
+  published?: boolean;
+  barcode?: string;
+  category?: string;
+  oldPrice?: number | null;
+};
 
 // Belgeden yalnız bilinen alanlar alınır (tarihler gibi iç alanlar sayfalara ve tarayıcıya gitmez).
 export const toProduct = (doc: ProductDoc): Product => ({
@@ -33,6 +39,7 @@ export const toProduct = (doc: ProductDoc): Product => ({
   story: doc.story ?? "",
   images: doc.images ?? [],
   price: doc.price,
+  oldPrice: typeof doc.oldPrice === "number" && doc.oldPrice > doc.price ? doc.oldPrice : null,
   stock: doc.stock,
   barcode: doc.barcode ?? "",
   category: doc.category ?? "",

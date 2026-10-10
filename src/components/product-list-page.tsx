@@ -33,7 +33,7 @@ export function ProductListPage({ title, intro, products, failed, empty }: Props
           <p className="mt-6 text-sm text-muted">{products.length} ürün</p>
           <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product, index) => (
-              <li key={product.slug}>
+              <li key={product.slug} className="reveal">
                 <ProductCard product={product} eager={index < 4} />
               </li>
             ))}

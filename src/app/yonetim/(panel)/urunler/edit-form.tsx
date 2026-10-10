@@ -161,6 +161,16 @@ export function ProductForm({ action, initial, materials, categories, submitLabe
         />
         <Field
           prefix="urun"
+          name="oldPrice"
+          maxLength={12}
+          label="Eski fiyat (TL)"
+          inputMode="numeric"
+          value={values.oldPrice}
+          error={errors.oldPrice}
+          hint="İndirim yoksa boş bırakın. Doluysa sitede üstü çizili görünür ve indirim yüzdesi yazar. Yasa gereği eski fiyat, ürünün son 30 günde satıldığı en düşük fiyat olmalıdır."
+        />
+        <Field
+          prefix="urun"
           name="stock"
           maxLength={7}
           label="Stok (adet)"

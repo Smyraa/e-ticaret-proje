@@ -122,7 +122,7 @@ export default async function CollectionPage({
           ) : (
             <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {products.map((product, index) => (
-                <li key={product.slug}>
+                <li key={product.slug} className="reveal">
                   <ProductCard product={product} eager={index < FIRST_ROW} />
                 </li>
               ))}

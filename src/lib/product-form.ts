@@ -25,6 +25,7 @@ export type ProductFormValues = {
   craft: string;
   story: string;
   price: string;
+  oldPrice: string; // boş = indirim yok
   stock: string;
   barcode: string; // boşsa kayıtta sistem üretir
   category: string; // kategorinin adresi; boş = kategorisiz
@@ -41,6 +42,7 @@ export const EMPTY_VALUES: ProductFormValues = {
   craft: "",
   story: "",
   price: "",
+  oldPrice: "",
   stock: "",
   barcode: "",
   category: "",
@@ -58,6 +60,7 @@ export function valuesOf(product: Product): ProductFormValues {
     craft: product.craft,
     story: product.story,
     price: String(product.price),
+    oldPrice: product.oldPrice === null ? "" : String(product.oldPrice),
     stock: String(product.stock),
     barcode: product.barcode,
     category: product.category,
@@ -91,6 +94,7 @@ export type ProductData = {
   craft: string;
   story: string;
   price: number;
+  oldPrice: number | null; // indirim öncesi fiyat; null = indirim yok
   stock: number;
   barcode: string; // boşsa kayıtta sistem üretir
   category: string; // var olduğu sunucu eyleminde denetlenir
@@ -115,6 +119,7 @@ export function readProductForm(formData: FormData): {
     craft: oneLine(formData.get("craft")),
     story: multiLine(formData.get("story")),
     price: oneLine(formData.get("price")),
+    oldPrice: oneLine(formData.get("oldPrice")),
     stock: oneLine(formData.get("stock")),
     barcode: normalizeBarcode(oneLine(formData.get("barcode"))),
     category: oneLine(formData.get("category")).slice(0, 80),
@@ -142,6 +147,15 @@ export function readProductForm(formData: FormData): {
     errors.price = `Fiyat en çok ${LIMITS.priceMax.toLocaleString("tr-TR")} TL olabilir.`;
   }
 
+  // Eski fiyat isteğe bağlıdır; doluysa satış fiyatından yüksek olmalı (yoksa indirim olmaz).
+  const oldPrice = values.oldPrice ? parseLira(values.oldPrice) : null;
+  if (values.oldPrice) {
+    if (oldPrice === null) errors.oldPrice = "Eski fiyatı tam lira olarak, yalnız rakamla yazın (örn. 4200).";
+    else if (oldPrice > LIMITS.priceMax) {
+      errors.oldPrice = `Eski fiyat en çok ${LIMITS.priceMax.toLocaleString("tr-TR")} TL olabilir.`;
+    } else if (price !== null && oldPrice <= price) errors.oldPrice = "Eski fiyat, satış fiyatından yüksek olmalı (yoksa boş bırakın).";
+  }
+
   const stock = parseStock(values.stock);
   if (!values.stock) errors.stock = "Stok adedini yazın (yoksa 0).";
   else if (stock === null) errors.stock = "Stok adedini yalnız rakamla yazın (örn. 3).";
@@ -165,6 +179,7 @@ export function readProductForm(formData: FormData): {
       craft: values.craft,
       story: values.story,
       price,
+      oldPrice,
       stock,
       barcode: values.barcode,
       category: values.category,

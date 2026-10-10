@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductActions } from "@/components/product-actions";
 import { ProductGallery } from "@/components/product-gallery";
+import { PriceTag } from "@/components/price-tag";
 import { ProductJsonLd } from "@/components/product-json-ld";
+import { RecentlyViewed } from "@/components/recently-viewed";
 import { Stars } from "@/components/stars";
 import { WhatsAppButton } from "@/components/whatsapp-button";
-import { formatPrice, stockText } from "@/lib/format";
+import { stockText } from "@/lib/format";
 import { pageMetadata } from "@/lib/metadata";
 import { getProductBySlug, type Product } from "@/lib/products";
 import { approvedReviews, type ProductReviews } from "@/lib/reviews";
@@ -85,7 +87,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
             {product.material}
           </p>
           <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
-          <p className="mt-4 font-display text-3xl">{formatPrice(product.price)}</p>
+          <PriceTag price={product.price} oldPrice={product.oldPrice} size="lg" className="mt-4" />
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
           {reviews.count > 0 && reviews.average !== null && (
             <a href="#degerlendirmeler" className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-muted transition hover:text-primary">
@@ -148,6 +150,8 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
           </>
         )}
       </section>
+
+      <RecentlyViewed currentSlug={product.slug} />
     </div>
   );
 }

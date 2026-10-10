@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ArrowBubble, GoldOrnament } from "@/components/gold-ornament";
 import { ProductCard } from "@/components/product-card";
 import { ProductRail } from "@/components/product-rail";
+import { TrustStrip } from "@/components/trust-strip";
 import { listCategories, SHOWCASES, showcaseProducts, type Category } from "@/lib/catalog";
 import { mediaUrl } from "@/lib/media";
 import { getProducts, type Product } from "@/lib/products";
@@ -115,8 +116,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </div>
       </section>
 
+      <TrustStrip />
+
       {categories.length > 0 && (
-        <section aria-labelledby="kategoriler" className="pt-10">
+        <section aria-labelledby="kategoriler" className="reveal pt-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className={`p-5 sm:p-8 ${glass}`}>
               <SectionTitle id="kategoriler">Kategoriler</SectionTitle>
@@ -166,7 +169,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </ProductRail>
       )}
 
-      <section id="koleksiyon" aria-labelledby="koleksiyon-baslik" className="pt-10">
+      <section id="koleksiyon" aria-labelledby="koleksiyon-baslik" className="reveal pt-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className={`p-5 sm:p-8 ${glass}`}>
             <div className="flex flex-wrap items-end justify-between gap-4">

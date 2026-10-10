@@ -47,7 +47,7 @@ export function ProductRail({ id, title, href, accent, children }: Props) {
     "absolute top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-gold-light/70 bg-espresso/75 text-gold-light shadow-lg shadow-black/40 backdrop-blur-sm transition duration-300 hover:border-gold-light hover:bg-gold-light hover:text-espresso disabled:pointer-events-none disabled:opacity-0 sm:inline-flex";
 
   return (
-    <section aria-labelledby={id} className="pt-10">
+    <section aria-labelledby={id} className="reveal pt-10">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="overflow-hidden rounded-2xl bg-espresso/40 p-5 text-paper shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)] sm:p-8">
           <div className="flex flex-wrap items-end justify-between gap-4">

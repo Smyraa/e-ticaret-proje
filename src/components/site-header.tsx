@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { cartCount, useCart } from "@/lib/cart";
 import { useFavorites } from "@/lib/favorites";
 import { BagIcon } from "./bag-icon";
@@ -23,10 +23,19 @@ const linkClass =
 const dotClass =
   "absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gold-light ring-2 ring-espresso";
 
+// Sayfa biraz aşağı kaydırıldı mı? Üst menü yapışkandır; kayınca incelir (daha az yer kaplar).
+function subscribeScroll(onChange: () => void) {
+  window.addEventListener("scroll", onChange, { passive: true });
+  return () => window.removeEventListener("scroll", onChange);
+}
+const useScrolled = () =>
+  useSyncExternalStore(subscribeScroll, () => window.scrollY > 40, () => false);
+
 // signedIn: müşteri giriş yapmış mı (sunucu söyler). Hesap simgesi girişliyse "Hesabım"a, değilse giriş sayfasına götürür.
 export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   // Mobil menünün açık/kapalı durumu tarayıcıda tutulur.
   const [open, setOpen] = useState(false);
+  const scrolled = useScrolled();
   const pathname = usePathname();
   const favoriteCount = useFavorites().length;
   const cart = useCart();
@@ -51,8 +60,16 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <header className="border-b border-gold-light/40 bg-espresso/45 text-paper backdrop-blur-md [&_:focus-visible]:outline-gold-light">
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 py-6">
+    <header
+      className={`sticky top-0 z-40 border-b border-gold-light/40 text-paper backdrop-blur-md transition-colors duration-300 [&_:focus-visible]:outline-gold-light ${
+        scrolled ? "bg-espresso/90 shadow-lg shadow-black/30" : "bg-espresso/45"
+      }`}
+    >
+      <div
+        className={`mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 transition-[padding] duration-300 ${
+          scrolled ? "py-2" : "py-6"
+        }`}
+      >
         <div>
           <nav className="hidden items-center gap-8 lg:flex" aria-label="Ana menü">
             {links.map((link) => {
@@ -101,7 +118,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
         </div>
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
-          <p className="font-display text-3xl tracking-[0.16em] sm:tracking-[0.22em]">TAURA</p>
+          <p className={`font-display tracking-[0.16em] transition-[font-size] duration-300 sm:tracking-[0.22em] ${scrolled ? "text-2xl" : "text-3xl"}`}>TAURA</p>
           <p className="-mt-1 text-[11px] tracking-[0.3em] text-gold-light uppercase sm:tracking-[0.38em]">
             Tesbihçilik
           </p>

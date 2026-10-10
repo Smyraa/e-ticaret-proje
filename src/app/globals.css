@@ -29,7 +29,35 @@
   --font-body: var(--font-manrope), system-ui, sans-serif;
 }
 
+/* Kayarak belirme: öğe ekrana girerken hafifçe yukarı kayıp belirir. Yalnız CSS (kaydırmaya bağlı animasyon): JavaScript
+   gerekmez, desteklemeyen tarayıcıda ve "hareketi azalt" tercihinde öğe hiç gizlenmeden normal görünür. Yatay kaydırılan
+   listelerin içinde KULLANILMAZ (oradaki zaman çizelgesi dikey değil). */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    translate: 0 28px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
 @layer base {
+  /* Üst menü yapışkan: sayfa içi bağlantılar (#…) başlığın altında kalmasın. */
+  html {
+    scroll-padding-top: 6rem;
+  }
+
   /* Klavyeyle gezinirken odaktaki öğe belirgin görünsün. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-primary;
