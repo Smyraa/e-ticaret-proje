@@ -17,11 +17,11 @@ const links = [
 ];
 
 const linkClass =
-  "text-xs tracking-widest uppercase transition hover:text-primary";
+  "text-xs tracking-widest uppercase transition hover:text-gold-light";
 
 // Favoriler ya da sepet doluyken simgenin sağ üstünde görünen nokta (sayı yok).
 const dotClass =
-  "absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-paper";
+  "absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gold-light ring-2 ring-espresso";
 
 // signedIn: müşteri giriş yapmış mı (sunucu söyler). Hesap simgesi girişliyse "Hesabım"a, değilse giriş sayfasına götürür.
 export function SiteHeader({ signedIn }: { signedIn: boolean }) {
@@ -42,8 +42,8 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
       aria-label={signedIn ? "Hesabım" : "Giriş yap"}
       aria-current={pathname === accountHref ? "page" : undefined}
       onClick={() => setOpen(false)}
-      className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
-        onAccount ? "text-primary" : "text-ink"
+      className={`relative flex h-11 w-11 items-center justify-center transition hover:text-gold-light ${
+        onAccount ? "text-gold-light" : "text-paper"
       }`}
     >
       <UserIcon filled={signedIn} />
@@ -51,7 +51,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <header className="border-b border-gold/60">
+    <header className="border-b border-gold-light/40 bg-espresso/45 text-paper backdrop-blur-md [&_:focus-visible]:outline-gold-light">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 py-6">
         <div>
           <nav className="hidden items-center gap-8 lg:flex" aria-label="Ana menü">
@@ -62,7 +62,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`${linkClass} ${active ? "text-ink" : "text-muted"}`}
+                  className={`${linkClass} ${active ? "text-gold-light" : "text-paper/80"}`}
                 >
                   {link.label}
                 </Link>
@@ -102,7 +102,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
           <p className="font-display text-3xl tracking-[0.16em] sm:tracking-[0.22em]">TAURA</p>
-          <p className="-mt-1 text-[11px] tracking-[0.3em] text-gold-deep uppercase sm:tracking-[0.38em]">
+          <p className="-mt-1 text-[11px] tracking-[0.3em] text-gold-light uppercase sm:tracking-[0.38em]">
             Tesbihçilik
           </p>
         </Link>
@@ -117,8 +117,8 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
             }
             aria-current={pathname === "/favoriler" ? "page" : undefined}
             onClick={() => setOpen(false)}
-            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
-              pathname === "/favoriler" ? "text-primary" : "text-ink"
+            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-gold-light ${
+              pathname === "/favoriler" ? "text-gold-light" : "text-paper"
             }`}
           >
             <HeartIcon filled={pathname === "/favoriler"} />
@@ -130,8 +130,8 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
             aria-label={cartQuantity > 0 ? `Sepetim, ${cartQuantity} ürün` : "Sepetim"}
             aria-current={pathname === "/sepet" ? "page" : undefined}
             onClick={() => setOpen(false)}
-            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-primary ${
-              pathname === "/sepet" ? "text-primary" : "text-ink"
+            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-gold-light ${
+              pathname === "/sepet" ? "text-gold-light" : "text-paper"
             }`}
           >
             <BagIcon />
@@ -143,12 +143,12 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
       {open && (
         <nav
           id="mobil-menu"
-          className="border-t border-line lg:hidden"
+          className="border-t border-gold-light/30 lg:hidden"
           aria-label="Mobil menü"
         >
           <ul>
             {links.map((link) => (
-              <li key={link.href} className="border-b border-line last:border-b-0">
+              <li key={link.href} className="border-b border-gold-light/20 last:border-b-0">
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}

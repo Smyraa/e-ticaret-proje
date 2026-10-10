@@ -31,15 +31,15 @@ const groups = [
 export async function SiteFooter() {
   // Telefon ve e-posta yönetim panelindeki Site ayarlarından gelir; boş olanlar gösterilmez.
   const { phone, email } = await getSiteSettings();
-  const contactClass = "inline-flex min-h-11 items-center text-sm transition hover:text-primary";
+  const contactClass = "inline-flex min-h-11 items-center text-sm transition hover:text-gold-light";
 
   return (
-    <footer className="border-t border-gold/60">
+    <footer className="border-t border-gold-light/40 bg-espresso/55 text-paper backdrop-blur-md [&_:focus-visible]:outline-gold-light">
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div className="col-span-2 sm:col-span-1">
             <p className="font-display text-2xl tracking-[0.16em]">TAURA</p>
-            <p className="text-[11px] tracking-[0.3em] text-muted uppercase">Tesbihçilik</p>
+            <p className="text-[11px] tracking-[0.3em] text-gold-light uppercase">Tesbihçilik</p>
             {(phone || email) && (
               <ul className="mt-3">
                 {phone && (
@@ -62,13 +62,13 @@ export async function SiteFooter() {
 
           {groups.map((group) => (
             <nav key={group.title} aria-label={group.title}>
-              <h2 className="text-[11px] tracking-widest text-muted uppercase">{group.title}</h2>
+              <h2 className="text-[11px] tracking-widest text-gold-light uppercase">{group.title}</h2>
               <ul className="mt-2">
                 {group.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="inline-flex min-h-11 min-w-11 items-center text-sm transition hover:text-primary"
+                      className="inline-flex min-h-11 min-w-11 items-center text-sm transition hover:text-gold-light"
                     >
                       {link.label}
                     </Link>
@@ -79,7 +79,7 @@ export async function SiteFooter() {
           ))}
         </div>
 
-        <p className="mt-10 border-t border-line pt-6 text-xs text-muted">
+        <p className="mt-10 border-t border-gold-light/25 pt-6 text-xs text-paper/70">
           TAURA Tesbihçilik · Demo sürümü. Bu sayfadaki tüm ürün ve fiyatlar örnek içeriktir.
         </p>
       </div>

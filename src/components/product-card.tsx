@@ -17,7 +17,7 @@ export function ProductCard({ product, eager }: Props) {
     <div className="relative h-full transition duration-300 motion-safe:hover:-translate-y-1">
       <Link
         href={`/urun/${product.slug}`}
-        className="flex h-full flex-col rounded-lg bg-paper p-4 shadow-sm transition [text-shadow:none] hover:shadow-md"
+        className="flex h-full flex-col rounded-lg bg-paper p-4 text-ink shadow-sm transition [text-shadow:none] hover:shadow-md"
       >
         <ProductImage
           product={product}

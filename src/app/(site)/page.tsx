@@ -65,11 +65,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   ]);
 
   return (
-    // Ana sayfanın zemini: halı deseni (sabit; sayfa kayarken bölümler üzerinden geçer). clip-path, sabit zeminin üst menü ve
-    // alt bilginin üstüne taşmasını önler (yalnız bu kapsayıcının içinde görünür).
-    <div className="relative bg-espresso pb-12 text-paper [clip-path:inset(0)]">
-      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-[url(/images/hali-arka-plan.webp)] bg-cover bg-center" />
-      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-gradient-to-b from-espresso/50 via-espresso/25 to-espresso/60" />
+    // Halı zemini ortak çerçevede (CarpetBackground); ana sayfa bölümleri onun üzerinde saydam panellerdir.
+    <div className="pb-12 text-paper [&_:focus-visible]:outline-gold-light">
 
       {deleted && (
         <p role="status" className="mx-auto max-w-6xl px-4 pt-6 text-sm sm:px-6">
@@ -77,7 +74,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </p>
       )}
 
-      <section className="border-b border-gold-light/40">
+      <section>
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 md:py-20">
           <div className={`space-y-6 p-6 sm:p-8 ${glass}`}>
             <p className="text-xs font-semibold tracking-[0.3em] text-gold-light uppercase">El işçiliği tesbihler</p>
