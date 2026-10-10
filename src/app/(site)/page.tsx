@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { KilimPattern } from "@/components/kilim-pattern";
+import type { ReactNode } from "react";
+import { ArrowBubble, GoldOrnament } from "@/components/gold-ornament";
 import { ProductCard } from "@/components/product-card";
 import { ProductRail } from "@/components/product-rail";
 import { listCategories, SHOWCASES, showcaseProducts, type Category } from "@/lib/catalog";
@@ -13,6 +14,22 @@ export const dynamic = "force-dynamic";
 
 // Ana sayfada gösterilen ürün sayısı; tamamı koleksiyon sayfasında.
 const FEATURED_COUNT = 4;
+
+// Halı zemini üzerindeki saydam (koyu cam) panel. Yazı açık renktir; koyu zemin + bulanıklık, arkadaki açık halı motiflerinin
+// yazıyı zayıflatmasını önler. ProductRail de aynı paneli kullanır.
+const glass =
+  "rounded-2xl bg-espresso/40 shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)]";
+
+function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <div>
+      <h2 id={id} className="font-display text-3xl text-paper">
+        {children}
+      </h2>
+      <GoldOrnament className="mt-2" />
+    </div>
+  );
+}
 
 // Kategoriler ve vitrinler okunamazsa bölümleri görünmez; sayfa yine açılır.
 async function loadCatalog(): Promise<{ categories: Category[]; campaigns: Product[]; bestSellers: Product[] }> {
@@ -48,32 +65,38 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   ]);
 
   return (
-    <>
+    // Ana sayfanın zemini: halı deseni (sabit; sayfa kayarken bölümler üzerinden geçer). clip-path, sabit zeminin üst menü ve
+    // alt bilginin üstüne taşmasını önler (yalnız bu kapsayıcının içinde görünür).
+    <div className="relative bg-espresso pb-12 text-paper [clip-path:inset(0)]">
+      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-[url(/images/hali-arka-plan.webp)] bg-cover bg-center" />
+      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-gradient-to-b from-espresso/50 via-espresso/25 to-espresso/60" />
+
       {deleted && (
-        <p role="status" className="mx-auto mt-6 max-w-6xl px-6 text-sm">
-          <span className="block rounded-md bg-soft p-4">Hesabınız ve kayıtlı bilgileriniz silindi.</span>
+        <p role="status" className="mx-auto max-w-6xl px-4 pt-6 text-sm sm:px-6">
+          <span className="block rounded-md bg-paper p-4 text-ink">Hesabınız ve kayıtlı bilgileriniz silindi.</span>
         </p>
       )}
-      {/* Tanıtım alanı: sitenin desen kullanılan TEK yeri (silik kilim dokusu); metin düz zeminli bir panelde. */}
-      <section className="relative overflow-hidden border-b border-gold/40 bg-soft">
-        <KilimPattern className="opacity-[0.07]" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 md:grid-cols-2 md:py-20">
-          <div className="space-y-6 rounded-xl bg-paper/95 p-6 shadow-sm sm:p-8">
-            <p className="text-xs font-semibold tracking-[0.3em] text-gold-deep uppercase">El işçiliği tesbihler</p>
+
+      <section className="border-b border-gold-light/40">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 md:py-20">
+          <div className={`space-y-6 p-6 sm:p-8 ${glass}`}>
+            <p className="text-xs font-semibold tracking-[0.3em] text-gold-light uppercase">El işçiliği tesbihler</p>
             <h1 className="font-display text-4xl leading-tight sm:text-5xl">
               Detayında zanaat,
               <br />
-              <span className="text-bordo italic">duruşunda zarafet.</span>
+              <span className="text-gold-light italic">duruşunda zarafet.</span>
             </h1>
-            <p className="max-w-md text-muted">Tesbih koleksiyonumuzu keşfedin.</p>
+            <GoldOrnament />
+            <p className="max-w-md text-paper/85">Tesbih koleksiyonumuzu keşfedin.</p>
             <Link
               href="/koleksiyon"
-              className="inline-flex min-h-11 items-center bg-bordo px-8 text-xs font-semibold tracking-widest text-paper uppercase transition hover:bg-espresso"
+              className="group inline-flex min-h-11 items-center gap-3 border border-gold-light bg-bordo py-1.5 pr-2 pl-8 text-xs font-semibold tracking-widest text-paper uppercase transition duration-300 hover:bg-gold-light hover:text-espresso"
             >
               Koleksiyonu gör
+              <ArrowBubble />
             </Link>
           </div>
-          <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-gradient-to-br from-sand to-soft shadow-sm ring-1 ring-gold/40">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-gradient-to-br from-sand to-soft shadow-lg shadow-black/40 ring-2 ring-gold-light/70">
             {settings.heroImage ? (
               // Süs amaçlı çizim: ekran okuyucuya okunmaz (boş alt metin).
               <Image
@@ -85,35 +108,39 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 className="object-cover"
               />
             ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-sm text-ink">
+              <span className="absolute inset-0 flex items-center justify-center text-sm text-ink [text-shadow:none]">
                 Fotoğraf yakında
               </span>
             )}
+            {/* İç gold çerçeve */}
+            <span aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-lg border border-gold-light/70" />
           </div>
         </div>
       </section>
 
       {categories.length > 0 && (
-        <section aria-labelledby="kategoriler" className="border-b border-line bg-paper">
-          <div className="mx-auto max-w-6xl px-6 py-8">
-            <h2 id="kategoriler" className="text-xs font-semibold tracking-[0.3em] text-muted uppercase">
-              Kategoriler
-            </h2>
-            <ul className="mt-4 flex flex-wrap gap-3">
-              {categories.map((category) => (
-                <li key={category.slug}>
-                  <Link
-                    href={`/kategori/${category.slug}`}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-bordo/40 bg-soft px-5 text-sm font-semibold text-bordo transition hover:border-bordo hover:bg-bordo hover:text-paper"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" className="text-gold">
-                      <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
-                    </svg>
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+        <section aria-labelledby="kategoriler" className="pt-10">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className={`p-5 sm:p-8 ${glass}`}>
+              <SectionTitle id="kategoriler">Kategoriler</SectionTitle>
+              {/* Üzerine gelince kutu hafifçe yükselir, kenarı gold parlar, ok sağa kayar (hareket azaltma tercihinde kıpırdamaz). */}
+              <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {categories.map((category) => (
+                  <li key={category.slug}>
+                    <Link
+                      href={`/kategori/${category.slug}`}
+                      className="group flex min-h-16 items-center gap-3 rounded-xl border border-gold-light/35 bg-paper/5 px-4 py-3 transition duration-300 hover:border-gold-light hover:bg-paper/10 hover:shadow-[0_10px_30px_-10px_rgba(220,189,106,0.55)] motion-safe:hover:-translate-y-1"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true" className="shrink-0 text-gold-light">
+                        <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
+                      </svg>
+                      <span className="flex-1 font-display text-xl">{category.name}</span>
+                      <ArrowBubble />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
       )}
@@ -142,37 +169,40 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </ProductRail>
       )}
 
-      <section id="koleksiyon" className="bg-soft py-16">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="font-display text-3xl">Koleksiyon</h2>
-            <Link
-              href="/koleksiyon"
-              className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
-            >
-              Tümünü gör →
-            </Link>
-          </div>
+      <section id="koleksiyon" aria-labelledby="koleksiyon-baslik" className="pt-10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className={`p-5 sm:p-8 ${glass}`}>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <SectionTitle id="koleksiyon-baslik">Koleksiyon</SectionTitle>
+              <Link
+                href="/koleksiyon"
+                className="group inline-flex min-h-11 items-center gap-3 text-xs font-semibold tracking-widest uppercase transition hover:text-gold-light"
+              >
+                Tümünü gör
+                <ArrowBubble />
+              </Link>
+            </div>
 
-          {failed ? (
-            <p className="mt-8 rounded-md bg-paper p-4 text-sm text-muted">
-              Ürünler şu an yüklenemedi. Yerel MongoDB çalışıyor mu? (127.0.0.1:27017)
-            </p>
-          ) : products.length === 0 ? (
-            <p className="mt-8 rounded-md bg-paper p-4 text-sm text-muted">
-              Henüz ürün yok. Örnek ürünleri eklemek için <code>npm run seed</code> çalıştırın.
-            </p>
-          ) : (
-            <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {products.slice(0, FEATURED_COUNT).map((product) => (
-                <li key={product.slug}>
-                  <ProductCard product={product} />
-                </li>
-              ))}
-            </ul>
-          )}
+            {failed ? (
+              <p className="mt-8 rounded-md bg-paper p-4 text-sm text-muted [text-shadow:none]">
+                Ürünler şu an yüklenemedi. Yerel MongoDB çalışıyor mu? (127.0.0.1:27017)
+              </p>
+            ) : products.length === 0 ? (
+              <p className="mt-8 rounded-md bg-paper p-4 text-sm text-muted [text-shadow:none]">
+                Henüz ürün yok. Örnek ürünleri eklemek için <code>npm run seed</code> çalıştırın.
+              </p>
+            ) : (
+              <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {products.slice(0, FEATURED_COUNT).map((product) => (
+                  <li key={product.slug}>
+                    <ProductCard product={product} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

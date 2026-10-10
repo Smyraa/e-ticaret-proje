@@ -34,7 +34,7 @@ export async function SiteFooter() {
   const contactClass = "inline-flex min-h-11 items-center text-sm transition hover:text-primary";
 
   return (
-    <footer className="border-t border-line">
+    <footer className="border-t border-gold/60">
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div className="col-span-2 sm:col-span-1">

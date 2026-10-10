@@ -17,6 +17,8 @@
   /* Gold: ince çizgi, ikon, süs (açık zeminde metin için kullanılmaz; gerekirse gold-deep). */
   --color-gold: #a8842f;
   --color-gold-deep: #8a6a26;
+  /* Açık gold: ana sayfadaki koyu halı zemini üzerindeki saydam (koyu cam) panellerde yazı ve süs için. */
+  --color-gold-light: #dcbd6a;
   /* Form kutularının kenarlığı: zemine karşı en az 3:1 kontrast (line rengi yalnızca süs çizgileri için) */
   --color-field: #8f8170;
   /* Hata iletileri (paper üzerinde 6.4:1). Bordodan ayırt edilsin diye daha parlak, turuncuya yakın kırmızı;

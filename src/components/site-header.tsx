@@ -51,7 +51,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <header className="border-b border-line">
+    <header className="border-b border-gold/60">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-6 py-6">
         <div>
           <nav className="hidden items-center gap-8 lg:flex" aria-label="Ana menü">
@@ -102,7 +102,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
           <p className="font-display text-3xl tracking-[0.16em] sm:tracking-[0.22em]">TAURA</p>
-          <p className="-mt-1 text-[11px] tracking-[0.3em] text-muted uppercase sm:tracking-[0.38em]">
+          <p className="-mt-1 text-[11px] tracking-[0.3em] text-gold-deep uppercase sm:tracking-[0.38em]">
             Tesbihçilik
           </p>
         </Link>
