@@ -149,7 +149,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <ProductRail id="vitrin-kampanyalar" title={SHOWCASES.kampanyalar.title} href={SHOWCASES.kampanyalar.path} accent>
           {campaigns.map((product) => (
             <li key={product.slug} className="w-[72%] shrink-0 snap-start sm:w-[45%] lg:w-[23%]">
-              <ProductCard product={product} />
+              <ProductCard product={product} tone="dark" />
             </li>
           ))}
         </ProductRail>
@@ -163,7 +163,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         >
           {bestSellers.map((product) => (
             <li key={product.slug} className="w-[72%] shrink-0 snap-start sm:w-[45%] lg:w-[23%]">
-              <ProductCard product={product} />
+              <ProductCard product={product} tone="dark" />
             </li>
           ))}
         </ProductRail>
@@ -195,7 +195,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {products.slice(0, FEATURED_COUNT).map((product) => (
                   <li key={product.slug}>
-                    <ProductCard product={product} />
+                    <ProductCard product={product} tone="dark" />
                   </li>
                 ))}
               </ul>
