@@ -117,6 +117,8 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
   const [open, setOpen] = useState(false);
   // Telefonda arama satırı (büyüteç simgesiyle açılır).
   const [searchOpen, setSearchOpen] = useState(false);
+  // Mobil menüde Koleksiyon altındaki kategoriler: kapalı başlar, ok düğmesiyle açılır (kullanıcı isteği).
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const scrolled = useScrolled();
   const pathname = usePathname();
   const favoriteCount = useFavorites().length;
@@ -283,17 +285,33 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
           <ul>
             {links.map((link) => (
               <li key={link.href} className="border-b border-gold-light/20 last:border-b-0">
-                <Link
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  aria-current={pathname === link.href ? "page" : undefined}
-                  className="flex items-center gap-3 px-6 py-4 text-xs font-semibold tracking-widest uppercase transition hover:text-gold-light"
-                >
-                  <Diamond />
-                  {link.label}
-                </Link>
-                {link.href === "/koleksiyon" && categories.length > 0 && (
-                  <ul className="pb-2">
+                <div className="flex items-center">
+                  <Link
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={pathname === link.href ? "page" : undefined}
+                    className="flex flex-1 items-center gap-3 px-6 py-4 text-xs font-semibold tracking-widest uppercase transition hover:text-gold-light"
+                  >
+                    <Diamond />
+                    {link.label}
+                  </Link>
+                  {link.href === "/koleksiyon" && categories.length > 0 && (
+                    <button
+                      type="button"
+                      aria-expanded={categoriesOpen}
+                      aria-controls="mobil-kategoriler"
+                      aria-label={categoriesOpen ? "Kategorileri gizle" : "Kategorileri göster"}
+                      onClick={() => setCategoriesOpen((value) => !value)}
+                      className="mr-3 flex h-11 w-11 items-center justify-center rounded-full transition hover:text-gold-light"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className={`transition duration-300 ${categoriesOpen ? "rotate-180" : ""}`}>
+                        <path d="M5 9l7 7 7-7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {link.href === "/koleksiyon" && categories.length > 0 && categoriesOpen && (
+                  <ul id="mobil-kategoriler" className="pb-2">
                     {categories.map((category) => (
                       <li key={category.slug}>
                         <Link
