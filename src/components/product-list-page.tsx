@@ -16,7 +16,7 @@ type Props = {
 // Kategori ve vitrin sayfalarının ortak düzeni: başlık, açıklama ve ürün ızgarası (sade, açık zemin; desen yok).
 export function ProductListPage({ title, intro, products, failed, empty, filters, clearHref }: Props) {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <Link
         href="/koleksiyon"
         className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
@@ -51,7 +51,7 @@ export function ProductListPage({ title, intro, products, failed, empty, filters
               </>
             )}
           </p>
-          <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
             {products.map((product, index) => (
               <li key={product.slug} className="reveal">
                 <ProductCard product={product} eager={index < 4} />

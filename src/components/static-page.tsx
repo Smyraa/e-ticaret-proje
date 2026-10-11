@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 // Metin alanındaki ara başlık (h2) ve paragraf içindeki bağlantı biçimleri burada verilir; sayfalar yalın etiket yazar.
 export function StaticPage({ title, notice = true, children }: { title: string; notice?: boolean; children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="font-display text-4xl">{title}</h1>
       {notice && (
         <p className="mt-4 rounded-md bg-soft p-4 text-sm text-muted">

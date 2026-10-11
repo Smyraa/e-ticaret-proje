@@ -38,7 +38,7 @@ export function FavoritesList({ products }: { products: Product[] }) {
   return (
     <>
       <p className="mt-6 text-sm text-muted">{items.length} ürün</p>
-      <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
         {items.map((product, index) => (
           <li key={product.slug} className="reveal">
             <ProductCard product={product} eager={index < 4} />

@@ -17,7 +17,7 @@ export default async function ProfilePage() {
   if (!customer) redirect("/giris?donus=/hesabim/profil");
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-10">
+    <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
       <Link
         href="/hesabim"
         className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"

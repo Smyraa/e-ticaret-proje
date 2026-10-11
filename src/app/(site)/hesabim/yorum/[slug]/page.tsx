@@ -32,7 +32,7 @@ export default async function ReviewPage({ params }: PageProps<"/hesabim/yorum/[
 
   if (!allowed) {
     return (
-      <div className="mx-auto max-w-xl px-6 py-10">
+      <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
         {back}
         <h1 className="mt-4 font-display text-4xl">Yorum yaz</h1>
         <p className="mt-6 rounded-md bg-soft p-4 text-sm">
@@ -44,7 +44,7 @@ export default async function ReviewPage({ params }: PageProps<"/hesabim/yorum/[
 
   const locked = existing && existing.status !== "pending";
   return (
-    <div className="mx-auto max-w-xl px-6 py-10">
+    <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
       {back}
       <h1 className="mt-4 font-display text-4xl">{existing ? "Yorumunuzu düzenleyin" : "Yorum yaz"}</h1>
       <p className="mt-3 text-sm text-muted">

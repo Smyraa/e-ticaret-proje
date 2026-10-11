@@ -16,7 +16,7 @@ export const metadata = pageMetadata(
 export default async function OrderLookupPage() {
   const customer = await getCustomer().catch(() => null);
   return (
-    <div className="mx-auto max-w-xl px-6 py-10">
+    <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="font-display text-4xl">Sipariş sorgula</h1>
       <p className="mt-4 text-sm text-muted">
         Siparişinizin durumuna bakmak için sipariş numaranızı ve sipariş verirken yazdığınız e-posta adresini girin.

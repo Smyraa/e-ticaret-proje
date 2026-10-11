@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
   ].filter(([, value]) => value);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <ProductJsonLd product={product} />
       <Link
         href="/koleksiyon"
@@ -79,14 +79,14 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
         ← Koleksiyona dön
       </Link>
 
-      <div className="mt-8 grid gap-10 md:grid-cols-2">
+      <div className="mt-4 grid gap-6 sm:mt-8 md:grid-cols-2 md:gap-10">
         <ProductGallery product={product} />
 
         <div>
           <p className="text-[11px] tracking-widest text-muted uppercase">
             {product.material}
           </p>
-          <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
+          <h1 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{product.name}</h1>
           <PriceTag price={product.price} oldPrice={product.oldPrice} size="lg" className="mt-4" />
           <p className="mt-1 text-sm text-muted">{stockText(product.stock)}</p>
           {reviews.count > 0 && reviews.average !== null && (
@@ -98,7 +98,7 @@ export default async function ProductPage({ params }: PageProps<"/urun/[slug]">)
             </a>
           )}
 
-          <ProductActions slug={product.slug} name={product.name} stock={product.stock} />
+          <ProductActions slug={product.slug} name={product.name} stock={product.stock} price={product.price} oldPrice={product.oldPrice} />
           <WhatsAppButton slug={product.slug} name={product.name} whatsapp={whatsapp} />
 
           {product.story && (

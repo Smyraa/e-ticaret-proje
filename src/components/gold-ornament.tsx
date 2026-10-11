@@ -1,21 +1,22 @@
 // İnce gold süs çizgisi: iki yanda çizgi, ortada baklava. Başlıkların altında ve panellerde ayraç olarak kullanılır.
+// Çizgiler esnektir (en çok 18rem): dar telefonda kısalır, paneli taşırmaz.
 export function GoldOrnament({ className = "" }: { className?: string }) {
   return (
-    <span aria-hidden="true" className={`flex items-center gap-2 text-gold-light ${className}`}>
-      <span className="h-px w-10 bg-gradient-to-r from-transparent to-current" />
+    <span aria-hidden="true" className={`flex w-full max-w-72 items-center gap-2 text-gold-light ${className}`}>
+      <span className="h-px min-w-3 flex-[2] bg-gradient-to-r from-transparent to-current" />
       <svg width="8" height="8" viewBox="0 0 10 10">
         <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
       </svg>
-      <span className="h-px w-16 bg-current" />
+      <span className="h-px min-w-4 flex-[3] bg-current" />
       <svg width="12" height="12" viewBox="0 0 10 10">
         <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
         <path d="M5 3 L7 5 L5 7 L3 5 Z" fill="currentColor" />
       </svg>
-      <span className="h-px w-16 bg-current" />
+      <span className="h-px min-w-4 flex-[3] bg-current" />
       <svg width="8" height="8" viewBox="0 0 10 10">
         <path d="M5 0 L10 5 L5 10 L0 5 Z" fill="currentColor" />
       </svg>
-      <span className="h-px w-10 bg-gradient-to-l from-transparent to-current" />
+      <span className="h-px min-w-3 flex-[2] bg-gradient-to-l from-transparent to-current" />
     </span>
   );
 }

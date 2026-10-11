@@ -13,17 +13,17 @@ export function PriceTag({ price, oldPrice, size = "md", tone = "light", classNa
   const dark = tone === "dark";
   return (
     <p className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${className}`}>
-      <span className={`font-display ${size === "lg" ? "text-3xl" : "text-2xl"} ${oldPrice ? (dark ? "text-gold-light" : "text-bordo") : ""}`}>
+      <span className={`font-display ${size === "lg" ? "text-3xl" : "text-xl sm:text-2xl"} ${oldPrice ? (dark ? "text-gold-light" : "text-bordo") : ""}`}>
         {formatPrice(price)}
       </span>
       {oldPrice && (
         <>
-          <s className={`text-sm ${dark ? "text-paper/70" : "text-muted"}`}>
+          <s className={`text-xs sm:text-sm ${dark ? "text-paper/70" : "text-muted"}`}>
             <span className="sr-only">Eski fiyat: </span>
             {formatPrice(oldPrice)}
           </s>
           <span
-            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide ${
+            className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide sm:px-2 sm:text-[11px] ${
               dark ? "border-gold-light/70 bg-gold-light/10 text-gold-light" : "border-gold bg-gold/10 text-gold-deep"
             }`}
           >

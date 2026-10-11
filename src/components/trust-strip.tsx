@@ -48,22 +48,22 @@ const items: { href: string; title: string; text: string; icon: ReactNode }[] = 
 
 export function TrustStrip() {
   return (
-    <section aria-label="Neden TAURA" className="reveal pt-10">
-      <ul className="mx-auto grid max-w-6xl gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+    <section aria-label="Neden TAURA" className="reveal pt-6 sm:pt-10">
+      <ul className="mx-auto grid max-w-6xl grid-cols-2 gap-2 px-3 sm:gap-3 sm:px-6 lg:grid-cols-4">
         {items.map((item) => (
           <li key={item.title}>
             <Link
               href={item.href}
-              className="group flex h-full items-center gap-4 rounded-xl border border-gold-light/40 bg-espresso/45 p-4 backdrop-blur-[3px] transition duration-300 [text-shadow:0_1px_3px_rgb(0_0_0/0.85)] hover:border-gold-light hover:bg-espresso/60 motion-safe:hover:-translate-y-1"
+              className="group flex h-full flex-col items-start gap-2 rounded-xl border border-gold-light/40 bg-espresso/45 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4 backdrop-blur-[3px] transition duration-300 [text-shadow:0_1px_3px_rgb(0_0_0/0.85)] hover:border-gold-light hover:bg-espresso/60 motion-safe:hover:-translate-y-1"
             >
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gold-light/60 text-gold-light transition duration-300 group-hover:bg-gold-light/15">
+              <span className="inline-flex h-10 w-10 shrink-0 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-gold-light/60 text-gold-light transition duration-300 group-hover:bg-gold-light/15">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   {item.icon}
                 </svg>
               </span>
               <span>
-                <span className="block font-display text-lg leading-tight">{item.title}</span>
-                <span className="mt-0.5 block text-xs text-paper/80">{item.text}</span>
+                <span className="block font-display text-base leading-tight sm:text-lg">{item.title}</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-paper/80 sm:text-xs">{item.text}</span>
               </span>
             </Link>
           </li>

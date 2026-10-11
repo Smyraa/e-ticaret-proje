@@ -115,6 +115,8 @@ function CategoryMenu({ categories, active }: { categories: HeaderCategory[]; ac
 export function SiteHeader({ signedIn, categories }: { signedIn: boolean; categories: HeaderCategory[] }) {
   // Mobil menünün açık/kapalı durumu tarayıcıda tutulur.
   const [open, setOpen] = useState(false);
+  // Telefonda arama satırı (büyüteç simgesiyle açılır).
+  const [searchOpen, setSearchOpen] = useState(false);
   const scrolled = useScrolled();
   const pathname = usePathname();
   const favoriteCount = useFavorites().length;
@@ -124,8 +126,8 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
   const onAccount = ["/hesabim", "/giris", "/kayit"].includes(pathname);
   const onCategory = pathname.startsWith("/kategori/");
 
-  // Hesap simgesi: geniş ekranda (≥ 1024 px) kalp ve sepetin yanında; telefon ve tablette menü düğmesinin yanında (sağda üç simge sığmıyor,
-  // dokunma alanları 44 pikselin altına düşüyordu; iki yan eşit kalınca logo da ortada kalır).
+  // Hesap simgesi: geniş ekranda (≥ 1024 px) kalp ve sepetin yanında; telefon ve tablette menü düğmesinin yanında arama simgesi
+  // durur, hesap bağlantısı mobil menünün en üstündedir (iki yan eşit kalınca logo ortada kalır).
   const accountLink = (
     <Link
       href={accountHref}
@@ -148,7 +150,7 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
     >
       <div
         className={`mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-6 transition-[padding] duration-300 ${
-          scrolled ? "py-2" : "py-5"
+          scrolled ? "py-1.5 sm:py-2" : "py-3 sm:py-5"
         }`}
       >
         <div>
@@ -161,20 +163,38 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
               aria-expanded={open}
               aria-controls="mobil-menu"
               aria-label={open ? "Menüyü kapat" : "Menüyü aç"}
-              onClick={() => setOpen((value) => !value)}
+              onClick={() => {
+                setOpen((value) => !value);
+                setSearchOpen(false);
+              }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
                 {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
               </svg>
             </button>
-            {accountLink}
+            <button
+              type="button"
+              className={`p-2.5 transition hover:text-gold-light ${searchOpen ? "text-gold-light" : ""}`}
+              aria-expanded={searchOpen}
+              aria-controls="mobil-arama"
+              aria-label={searchOpen ? "Aramayı kapat" : "Ürün ara"}
+              onClick={() => {
+                setSearchOpen((value) => !value);
+                setOpen(false);
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="M20 20l-4.2-4.2" />
+              </svg>
+            </button>
           </div>
         </div>
 
         <Link href="/" className="text-center" onClick={() => setOpen(false)}>
           <p
             className={`font-display tracking-[0.16em] transition-[font-size] duration-300 sm:tracking-[0.22em] ${
-              scrolled ? "text-2xl" : "text-3xl sm:text-4xl"
+              scrolled ? "text-xl sm:text-2xl" : "text-2xl sm:text-4xl"
             }`}
           >
             TAURA
@@ -244,10 +264,23 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
         </ul>
       </nav>
 
+      {searchOpen && (
+        <div id="mobil-arama" className="border-t border-gold-light/20 px-4 py-3 lg:hidden">
+          <SearchBox autoFocus onSearch={() => setSearchOpen(false)} />
+        </div>
+      )}
+
       {open && (
         <nav id="mobil-menu" className="max-h-[75vh] overflow-y-auto border-t border-gold-light/30 lg:hidden" aria-label="Mobil menü">
-          <SearchBox onSearch={() => setOpen(false)} className="px-6 py-4" />
-          <ul className="border-t border-gold-light/20">
+          <Link
+            href={accountHref}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 border-b border-gold-light/20 px-6 py-4 text-xs font-semibold tracking-widest uppercase transition hover:text-gold-light"
+          >
+            <UserIcon filled={signedIn} />
+            {signedIn ? "Hesabım" : "Giriş yap / Üye ol"}
+          </Link>
+          <ul>
             {links.map((link) => (
               <li key={link.href} className="border-b border-gold-light/20 last:border-b-0">
                 <Link

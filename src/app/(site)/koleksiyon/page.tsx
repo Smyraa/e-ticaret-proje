@@ -32,7 +32,7 @@ export default async function CollectionPage({
   const materials = materialsOf(all);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="font-display text-4xl">Koleksiyon</h1>
 
       <ProductFilterForm action="/koleksiyon" values={values} materials={materials} />
@@ -61,7 +61,7 @@ export default async function CollectionPage({
               temizleyin.
             </p>
           ) : (
-            <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="mt-6 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
               {products.map((product, index) => (
                 <li key={product.slug} className="reveal">
                   <ProductCard product={product} eager={index < FIRST_ROW} />

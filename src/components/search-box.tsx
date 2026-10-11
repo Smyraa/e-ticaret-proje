@@ -13,7 +13,7 @@ type Suggestion = { slug: string; name: string; material: string; price: number;
 // (/arama/oneri; yazmayı bırakınca 200 ms sonra istenir, eski istek iptal edilir). Ok tuşlarıyla öneriler arasında
 // gezilir, Enter seçili ürünü açar; öneri seçilmemişse form koleksiyon sayfasına ?q= ile gider (JavaScript olmadan da
 // çalışan sıradan bir GET formu). Escape ya da kutudan çıkmak listeyi kapatır.
-export function SearchBox({ onSearch, className = "" }: { onSearch?: () => void; className?: string }) {
+export function SearchBox({ onSearch, autoFocus, className = "" }: { onSearch?: () => void; autoFocus?: boolean; className?: string }) {
   const id = useId();
   const listId = `${id}-oneriler`;
   const router = useRouter();
@@ -106,6 +106,7 @@ export function SearchBox({ onSearch, className = "" }: { onSearch?: () => void;
           type="search"
           maxLength={80}
           autoComplete="off"
+          autoFocus={autoFocus}
           placeholder="Tesbih, kehribar, kuka…"
           role="combobox"
           aria-expanded={showList}

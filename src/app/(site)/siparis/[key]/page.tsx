@@ -32,7 +32,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
   } catch (error) {
     console.error("Sipariş okunamadı", error);
     return (
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
         <h1 className="font-display text-4xl">Sipariş</h1>
         <p className="mt-6 rounded-md bg-soft p-4 text-sm text-muted">
           Sipariş bilgisi şu an yüklenemedi. Biraz sonra bu sayfayı yenileyin.
@@ -54,7 +54,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/si
   const announce = order.status !== "pending" || !paymentsActive(setup);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="font-display text-4xl">Sipariş</h1>
       <NewOrderNotice fresh={fresh} announce={announce} />
       <p className="mt-3 text-sm text-muted">

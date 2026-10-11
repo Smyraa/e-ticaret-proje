@@ -35,7 +35,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         Ana içeriğe geç
       </a>
 
-      <div className="bg-espresso/80 px-4 py-2 text-center text-xs tracking-widest text-paper uppercase">
+      <div className="bg-espresso/80 px-3 py-1.5 text-center text-[10px] tracking-wider text-paper uppercase sm:py-2 sm:text-xs sm:tracking-widest">
         Demo sürümü · Ürünler ve fiyatlar örnek içeriktir
       </div>
 

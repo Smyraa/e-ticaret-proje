@@ -18,9 +18,12 @@ export function WhatsAppFloat({ whatsapp }: { whatsapp: string }) {
       target="_blank"
       rel="noopener noreferrer"
       title={placeholder ? placeholderNumberNote : undefined}
-      className="group fixed right-4 bottom-4 z-30 flex h-14 items-center gap-0 rounded-full border border-gold-light/70 bg-espresso/90 px-4 text-gold-light shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-300 hover:gap-2 hover:bg-bordo hover:text-paper sm:right-6 sm:bottom-6 [&:focus-visible]:outline-gold-light"
+      className={`group fixed right-3 z-30 flex h-12 items-center gap-0 rounded-full border border-gold-light/70 bg-espresso/90 px-3 sm:h-14 sm:px-4 text-gold-light shadow-xl shadow-black/40 backdrop-blur-md transition-all duration-300 hover:gap-2 hover:bg-bordo hover:text-paper sm:right-6 [&:focus-visible]:outline-gold-light ${
+        // ürün sayfasında telefondaki sabit satın alma şeridinin üstünde durur
+        pathname.startsWith("/urun/") ? "bottom-24 lg:bottom-6" : "bottom-3 sm:bottom-6"
+      }`}
     >
-      <ChatIcon size={24} />
+      <ChatIcon size={22} />
       <span className="max-w-0 overflow-hidden text-xs font-semibold tracking-widest whitespace-nowrap uppercase transition-all duration-300 group-hover:max-w-40 group-focus-visible:max-w-40">
         WhatsApp&apos;tan sor
       </span>

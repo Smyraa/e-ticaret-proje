@@ -36,7 +36,7 @@ export async function SiteFooter() {
 
   return (
     <footer className="border-t border-gold-light/40 bg-espresso/55 text-paper backdrop-blur-md [&_:focus-visible]:outline-gold-light">
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div className="col-span-2 sm:col-span-1">
             <p className="font-display text-2xl tracking-[0.16em]">TAURA</p>
