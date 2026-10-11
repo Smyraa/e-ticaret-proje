@@ -7,12 +7,14 @@
   --color-paper: #fffcf8;
   --color-soft: #f3ece3;
   /* İç sayfaların panel zemini: göz yormayan sıcak krem (beyaz çok parlak kalıyordu; kullanıcı, 2026-10-11). %88 opak, hafif
-     saydam kullanılır (arkadan halı sezilsin). En kötü durumda (arkası siyah) muted yazı 4.76:1, ink 9.75:1. */
+     saydam kullanılır (arkadan halı sezilsin; kullanıcı daha saydam istedi: önce %97, sonra %88, şimdi %80). En kötü durumda
+     (arkası siyah) muted yazı 5.0:1, danger 4.44:1 (gerçek koyu halı zemininde 4.6), bordo 5.4:1. Gold-deep bu zeminde yazı için
+     kullanılmaz. */
   --color-cream: #f3ebdd;
   --color-sand: #e0d3c3;
   --color-line: #cdbeaa;
   --color-ink: #2d261f;
-  --color-muted: #5f554b; /* saydam krem panelde de 4.5:1 üstü kalsın diye koyulaştırıldı (eskisi #6f6459) */
+  --color-muted: #4f463e; /* saydam krem panelde de 4.5:1 üstü kalsın diye koyulaştırıldı (önce #6f6459, sonra #5f554b) */
   --color-espresso: #201a16;
   /* Marka vurgusu: bordo (şarap tonu). Bağlantı/düğme vurgusu, odak çerçevesi ve seçili durumlar bunu kullanır. */
   --color-bordo: #7a2232;
@@ -26,7 +28,7 @@
   --color-field: #8f8170;
   /* Hata iletileri (paper üzerinde 6.4:1). Bordodan ayırt edilsin diye daha parlak, turuncuya yakın kırmızı;
      hatalar her zaman yazıyla da söylenir (yalnız renkle değil). */
-  --color-danger: #b42318;
+  --color-danger: #9b1c13; /* saydam krem panelde okunsun diye koyulaştırıldı (eskisi #b42318); bordodan hâlâ ayırt edilir */
 
   --font-display: var(--font-eb-garamond), Georgia, serif;
   --font-body: var(--font-manrope), system-ui, sans-serif;

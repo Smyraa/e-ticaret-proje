@@ -11,7 +11,7 @@ export function MainSurface({ children }: { children: ReactNode }) {
   return (
     <div className="px-2 py-4 sm:px-6 sm:py-10">
       {/* overflow-clip: köşeler yuvarlak kalır ama yapışkan (sticky) öğeler çalışmaya devam eder */}
-      <div className="mx-auto max-w-6xl overflow-clip rounded-2xl bg-cream/88 text-ink backdrop-blur-md shadow-2xl shadow-black/50 ring-1 ring-gold/70">
+      <div className="mx-auto max-w-6xl overflow-clip rounded-2xl bg-cream/80 text-ink backdrop-blur-md shadow-2xl shadow-black/50 ring-1 ring-gold/70">
         {children}
       </div>
     </div>

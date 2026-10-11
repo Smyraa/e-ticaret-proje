@@ -24,7 +24,7 @@ export function PriceTag({ price, oldPrice, size = "md", tone = "light", classNa
           </s>
           <span
             className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide sm:px-2 sm:text-[11px] ${
-              dark ? "border-gold-light/70 bg-gold-light/10 text-gold-light" : "border-gold bg-gold/10 text-gold-deep"
+              dark ? "border-gold-light/70 bg-gold-light/10 text-gold-light" : "border-gold bg-gold/15 text-bordo"
             }`}
           >
             %{discountPercent(price, oldPrice)} indirim
