@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { listCategories } from "@/lib/catalog";
 import { getCustomer } from "@/lib/customer-auth";
 import { sweepExpiredReservations } from "@/lib/order-flow";
 import { AccountSync } from "./account-sync";
@@ -13,6 +14,8 @@ import { SiteHeader } from "./site-header";
 export async function SiteShell({ children }: { children: ReactNode }) {
   // Veritabanına ulaşılamazsa site misafir gibi açılır.
   const customer = await getCustomer().catch(() => null);
+  // Üst menüdeki kategori listesi; okunamazsa liste görünmez.
+  const categories = await listCategories().catch(() => []);
   // Ödeme sayfası terk edilmiş siparişlerin ayrılmış stoğu süre dolunca geri konur (en çok 30 sn'de bir çalışır).
   await sweepExpiredReservations();
 
@@ -33,7 +36,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         Demo sürümü · Ürünler ve fiyatlar örnek içeriktir
       </div>
 
-      <SiteHeader signedIn={customer !== null} />
+      <SiteHeader signedIn={customer !== null} categories={categories.map(({ slug, name }) => ({ slug, name }))} />
 
       <main id="icerik" tabIndex={-1} className="flex-1 focus:outline-none">
         <MainSurface>{children}</MainSurface>

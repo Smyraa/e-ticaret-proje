@@ -55,7 +55,7 @@
 @layer base {
   /* Üst menü yapışkan: sayfa içi bağlantılar (#…) başlığın altında kalmasın. */
   html {
-    scroll-padding-top: 6rem;
+    scroll-padding-top: 8rem;
   }
 
   /* Klavyeyle gezinirken odaktaki öğe belirgin görünsün. */
