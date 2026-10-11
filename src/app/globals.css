@@ -7,8 +7,8 @@
   --color-paper: #fffcf8;
   --color-soft: #f3ece3;
   /* İç sayfaların panel zemini: göz yormayan sıcak krem (beyaz çok parlak kalıyordu; kullanıcı, 2026-10-11). %88 opak, hafif
-     saydam kullanılır (arkadan halı sezilsin; kullanıcı daha saydam istedi: önce %97, sonra %88, şimdi %80). En kötü durumda
-     (arkası siyah) muted yazı 5.0:1, danger 4.44:1 (gerçek koyu halı zemininde 4.6), bordo 5.4:1. Gold-deep bu zeminde yazı için
+     saydam kullanılır (arkadan halı sezilsin; kullanıcı daha saydam istedi: önce %97, sonra %88, şimdi telefonda %80, geniş ekranda %75 ve daha az bulanık).
+     Geniş ekranda, en koyu halı noktası (#1a1010) arkadayken: muted 4.51:1, danger 4.63:1, bordo 4.89:1, ink 7.29:1. Gold-deep bu zeminde yazı için
      kullanılmaz. */
   --color-cream: #f3ebdd;
   --color-sand: #e0d3c3;
@@ -28,7 +28,8 @@
   --color-field: #8f8170;
   /* Hata iletileri (paper üzerinde 6.4:1). Bordodan ayırt edilsin diye daha parlak, turuncuya yakın kırmızı;
      hatalar her zaman yazıyla da söylenir (yalnız renkle değil). */
-  --color-danger: #9b1c13; /* saydam krem panelde okunsun diye koyulaştırıldı (eskisi #b42318); bordodan hâlâ ayırt edilir */
+  --color-danger: #8a1810; /* saydam krem panelde okunsun diye koyulaştırıldı (önce #b42318, sonra #9b1c13); bordodan (morumsu) tuğla
+     kırmızısı tonuyla ayrılır, hatalar her zaman yazıyla da söylenir */
 
   --font-display: var(--font-eb-garamond), Georgia, serif;
   --font-body: var(--font-manrope), system-ui, sans-serif;
