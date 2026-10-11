@@ -18,7 +18,8 @@ type Props = {
 
 // Ürün sayfasındaki düğmeler: "Sepete ekle" ve "Favorilere ekle".
 // Ürün sepetteyse altında küçük bir bilgi ve sepete bağlantı çıkar.
-// Telefonda (< 1024 px) asıl "Sepete ekle" düğmesi ekranda görünmüyorsa altta sabit bir şerit çıkar: ad, fiyat ve "Sepete ekle".
+// Telefonda (< 1024 px) asıl "Sepete ekle" düğmesi ekranda görünmüyorsa alt gezinme çubuğunun hemen üstünde sabit bir şerit
+// çıkar: ad, fiyat ve "Sepete ekle".
 export function ProductActions({ slug, name, stock, price, oldPrice }: Props) {
   const mainButton = useRef<HTMLButtonElement>(null);
   const [showBar, setShowBar] = useState(false);
@@ -77,7 +78,7 @@ export function ProductActions({ slug, name, stock, price, oldPrice }: Props) {
         createPortal(
           <div
             aria-hidden={!showBar}
-            className={`fixed inset-x-0 bottom-0 z-30 border-t border-gold-light/40 bg-espresso/95 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-paper shadow-[0_-8px_24px_rgb(0_0_0/0.35)] backdrop-blur-md transition duration-300 lg:hidden ${
+            className={`fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-gold-light/40 bg-espresso/95 px-4 py-2.5 text-paper shadow-[0_-8px_24px_rgb(0_0_0/0.35)] backdrop-blur-md transition duration-300 lg:hidden ${
               showBar ? "translate-y-0" : "pointer-events-none translate-y-full"
             }`}
           >

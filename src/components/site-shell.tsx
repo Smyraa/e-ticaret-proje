@@ -4,6 +4,7 @@ import { getCustomer } from "@/lib/customer-auth";
 import { sweepExpiredReservations } from "@/lib/order-flow";
 import { getSiteSettings } from "@/lib/settings";
 import { AccountSync } from "./account-sync";
+import { BottomNav } from "./bottom-nav";
 import { CarpetBackground } from "./carpet-background";
 import { MainSurface } from "./main-surface";
 import { SiteFooter } from "./site-footer";
@@ -47,6 +48,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
 
       <SiteFooter />
       <WhatsAppFloat whatsapp={whatsapp} />
+      <BottomNav signedIn={customer !== null} categories={categories.map(({ slug, name }) => ({ slug, name }))} />
     </>
   );
 }

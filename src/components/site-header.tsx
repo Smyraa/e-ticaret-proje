@@ -126,8 +126,8 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
   const onAccount = ["/hesabim", "/giris", "/kayit"].includes(pathname);
   const onCategory = pathname.startsWith("/kategori/");
 
-  // Hesap simgesi: geniş ekranda (≥ 1024 px) kalp ve sepetin yanında; telefon ve tablette menü düğmesinin yanında arama simgesi
-  // durur, hesap bağlantısı mobil menünün en üstündedir (iki yan eşit kalınca logo ortada kalır).
+  // Geniş ekranda (≥ 1024 px) sağda hesap, favoriler ve sepet. Telefon ve tablette solda menü, sağda arama simgesi durur;
+  // favoriler, sepet ve hesap alttaki gezinme çubuğundadır (bottom-nav.tsx; iki yan eşit kalınca logo ortada kalır).
   const accountLink = (
     <Link
       href={accountHref}
@@ -172,22 +172,6 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
                 {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
               </svg>
             </button>
-            <button
-              type="button"
-              className={`p-2.5 transition hover:text-gold-light ${searchOpen ? "text-gold-light" : ""}`}
-              aria-expanded={searchOpen}
-              aria-controls="mobil-arama"
-              aria-label={searchOpen ? "Aramayı kapat" : "Ürün ara"}
-              onClick={() => {
-                setSearchOpen((value) => !value);
-                setOpen(false);
-              }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="M20 20l-4.2-4.2" />
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -209,12 +193,28 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
         {/* Sağ taraf: hesap, favoriler ve sepet; favori ve sepet doluyken simgenin üstünde nokta görünür */}
         <div className="-mr-2.5 flex items-center justify-end">
           <div className="hidden lg:flex">{accountLink}</div>
+            <button
+              type="button"
+              className={`p-2.5 transition lg:hidden hover:text-gold-light ${searchOpen ? "text-gold-light" : ""}`}
+              aria-expanded={searchOpen}
+              aria-controls="mobil-arama"
+              aria-label={searchOpen ? "Aramayı kapat" : "Ürün ara"}
+              onClick={() => {
+                setSearchOpen((value) => !value);
+                setOpen(false);
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="M20 20l-4.2-4.2" />
+              </svg>
+            </button>
           <Link
             href="/favoriler"
             aria-label={favoriteCount > 0 ? `Favorilerim, ${favoriteCount} ürün` : "Favorilerim"}
             aria-current={pathname === "/favoriler" ? "page" : undefined}
             onClick={() => setOpen(false)}
-            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-gold-light ${
+            className={`relative hidden h-11 w-11 items-center justify-center transition hover:text-gold-light lg:flex ${
               pathname === "/favoriler" ? "text-gold-light" : "text-paper"
             }`}
           >
@@ -227,7 +227,7 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
             aria-label={cartQuantity > 0 ? `Sepetim, ${cartQuantity} ürün` : "Sepetim"}
             aria-current={pathname === "/sepet" ? "page" : undefined}
             onClick={() => setOpen(false)}
-            className={`relative flex h-11 w-11 items-center justify-center transition hover:text-gold-light ${
+            className={`relative hidden h-11 w-11 items-center justify-center transition hover:text-gold-light lg:flex ${
               pathname === "/sepet" ? "text-gold-light" : "text-paper"
             }`}
           >
