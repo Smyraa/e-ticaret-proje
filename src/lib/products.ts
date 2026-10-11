@@ -80,21 +80,60 @@ export type ProductFilter = {
   q?: string; // arama metni (ad ve malzeme içinde aranır)
   material?: string; // tam eşleşen malzeme
   sort?: string; // "fiyat-artan" | "fiyat-azalan" | boş (varsayılan sıra)
+  min?: number | null; // en düşük fiyat (TL, dahil)
+  max?: number | null; // en yüksek fiyat (TL, dahil)
+  sale?: boolean; // yalnız indirimdekiler (eski fiyatı olanlar)
 };
 
 // Ürün sayısı az olduğundan arama/filtre/sıralama uygulamada yapılır; ürünler çok artarsa veritabanı sorgusuna taşınır.
 export function filterProducts(
   products: Product[],
-  { q, material, sort }: ProductFilter,
+  { q, material, sort, min, max, sale }: ProductFilter,
 ): Product[] {
   const query = fold((q ?? "").trim());
   const result = products.filter((product) => {
     if (material && product.material !== material) return false;
+    if (min != null && product.price < min) return false;
+    if (max != null && product.price > max) return false;
+    if (sale && product.oldPrice === null) return false;
     return !query || fold(`${product.name} ${product.material}`).includes(query);
   });
   if (sort === "fiyat-artan") result.sort((a, b) => a.price - b.price);
   if (sort === "fiyat-azalan") result.sort((a, b) => b.price - a.price);
   return result;
+}
+
+// Adres çubuğundaki filtre değerleri (?q=&malzeme=&sirala=&en-az=&en-cok=&indirim=1). Sayfalar ve filtre formu bunu kullanır.
+// Fiyatlar yalnız rakam (en çok 8 hane) kabul edilir; okunamayan değer yok sayılır (boş görünür).
+export type FilterValues = { q: string; material: string; sort: string; min: string; max: string; sale: boolean };
+type Params = Record<string, string | string[] | undefined>;
+const firstParam = (value: string | string[] | undefined) => ((Array.isArray(value) ? value[0] : value) ?? "").slice(0, 100);
+const priceParam = (value: string) => {
+  const digits = value.replace(/[\s.]/g, "");
+  return /^\d{1,8}$/.test(digits) ? digits : "";
+};
+
+export function readFilterParams(params: Params): { values: FilterValues; filter: ProductFilter; active: boolean } {
+  const values: FilterValues = {
+    q: firstParam(params.q),
+    material: firstParam(params.malzeme),
+    sort: ["fiyat-artan", "fiyat-azalan"].includes(firstParam(params.sirala)) ? firstParam(params.sirala) : "",
+    min: priceParam(firstParam(params["en-az"])),
+    max: priceParam(firstParam(params["en-cok"])),
+    sale: firstParam(params.indirim) === "1",
+  };
+  return {
+    values,
+    filter: {
+      q: values.q,
+      material: values.material,
+      sort: values.sort,
+      min: values.min ? Number(values.min) : null,
+      max: values.max ? Number(values.max) : null,
+      sale: values.sale,
+    },
+    active: Boolean(values.q.trim() || values.material || values.sort || values.min || values.max || values.sale),
+  };
 }
 
 // Filtre seçeneği olarak gösterilecek benzersiz malzemeler (Türkçe sıralı).

@@ -3,6 +3,7 @@ import "server-only";
 import { ObjectId } from "mongodb";
 import { getDb } from "./mongodb";
 import type { Order } from "./order-model";
+import { getProductsBySlugs } from "./products";
 import { allowRequest } from "./rate-limit";
 
 // Ürün yorumları (koleksiyon "reviews"). Kullanıcı kararları (2026-10-07): yalnız giriş yapmış ve o ürünü içeren TESLİM
@@ -192,6 +193,16 @@ export async function approvedReviews(slug: string): Promise<ProductReviews> {
       .toArray(),
   ]);
   return { reviews: docs.map(toReview), count: stats[0]?.count ?? 0, average: stats[0]?.average ?? null };
+}
+
+// Ana sayfadaki "Müşterilerimiz ne diyor" bölümü: en yeni onaylı yorumlar (puanına bakılmadan, seçme yok), yalnız hâlâ
+// yayında olan ürünlerin yorumları (taslak/silinmiş ürünün bağlantısı boşa çıkmasın).
+export async function latestApprovedReviews(limit = 6): Promise<Review[]> {
+  await ensureIndexes();
+  const docs = await (await reviewsOf()).find({ status: "approved" }).sort({ createdAt: -1 }).limit(limit * 4).toArray();
+  if (docs.length === 0) return [];
+  const live = new Set((await getProductsBySlugs([...new Set(docs.map((doc) => doc.slug))])).map((product) => product.slug));
+  return docs.filter((doc) => live.has(doc.slug)).slice(0, limit).map(toReview);
 }
 
 // ---------- Yönetim ----------

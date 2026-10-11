@@ -4,10 +4,12 @@ import type { ReactNode } from "react";
 import { ArrowBubble, GoldOrnament } from "@/components/gold-ornament";
 import { ProductCard } from "@/components/product-card";
 import { ProductRail } from "@/components/product-rail";
+import { Stars } from "@/components/stars";
 import { TrustStrip } from "@/components/trust-strip";
 import { listCategories, SHOWCASES, showcaseProducts, type Category } from "@/lib/catalog";
 import { mediaUrl } from "@/lib/media";
 import { getProducts, type Product } from "@/lib/products";
+import { latestApprovedReviews, type Review } from "@/lib/reviews";
 import { getSiteSettings } from "@/lib/settings";
 
 // Ürünler her istekte MongoDB'den okunur.
@@ -47,6 +49,16 @@ async function loadCatalog(): Promise<{ categories: Category[]; campaigns: Produ
   }
 }
 
+// Yorumlar okunamazsa bölüm görünmez.
+async function loadReviews(): Promise<Review[]> {
+  try {
+    return await latestApprovedReviews(6);
+  } catch (error) {
+    console.error("Yorumlar okunamadı", error);
+    return [];
+  }
+}
+
 async function loadProducts(): Promise<{ products: Product[]; failed: boolean }> {
   try {
     return { products: await getProducts(), failed: false };
@@ -59,10 +71,11 @@ async function loadProducts(): Promise<{ products: Product[]; failed: boolean }>
 export default async function Home({ searchParams }: PageProps<"/">) {
   const deleted = (await searchParams).hesap === "silindi"; // müşteri hesabını sildi
   // Ayarlar okunamazsa getSiteSettings varsayılanları döner; sayfa yine açılır, görsel yerine yer tutucu görünür.
-  const [{ products, failed }, settings, { categories, campaigns, bestSellers }] = await Promise.all([
+  const [{ products, failed }, settings, { categories, campaigns, bestSellers }, reviews] = await Promise.all([
     loadProducts(),
     getSiteSettings(),
     loadCatalog(),
+    loadReviews(),
   ]);
 
   return (
@@ -167,6 +180,32 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </li>
           ))}
         </ProductRail>
+      )}
+
+      {reviews.length > 0 && (
+        <section aria-labelledby="yorumlar" className="reveal pt-10">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className={`p-5 sm:p-8 ${glass}`}>
+              <SectionTitle id="yorumlar">Müşterilerimiz ne diyor</SectionTitle>
+              <ul className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {reviews.map((review) => (
+                  <li key={review.id} className="flex flex-col rounded-xl border border-gold-light/30 bg-paper/10 p-5">
+                    <Stars rating={review.rating} />
+                    <blockquote className="mt-3 line-clamp-5 flex-1 font-display text-lg leading-snug break-words">
+                      “{review.text}”
+                    </blockquote>
+                    <p className="mt-4 text-xs text-paper/80">
+                      <span className="font-semibold text-paper">{review.authorName}</span> ·{" "}
+                      <Link href={`/urun/${review.slug}#degerlendirmeler`} className="underline decoration-gold-light/60 underline-offset-4 transition hover:text-gold-light">
+                        {review.productName}
+                      </Link>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
       )}
 
       <section id="koleksiyon" aria-labelledby="koleksiyon-baslik" className="reveal pt-10">

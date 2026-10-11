@@ -15,6 +15,7 @@ const groups = [
     title: "Yardım",
     links: [
       { href: "/sss", label: "Sıkça sorulan sorular" },
+      { href: "/rehber", label: "Tesbih rehberi" },
       { href: "/kargo-ve-iade", label: "Kargo ve iade" },
       { href: "/siparis", label: "Sipariş sorgula" },
     ],

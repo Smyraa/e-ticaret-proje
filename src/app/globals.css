@@ -6,6 +6,9 @@
 @theme inline {
   --color-paper: #fffcf8;
   --color-soft: #f3ece3;
+  /* İç sayfaların panel zemini: göz yormayan sıcak krem (beyaz çok parlak kalıyordu; kullanıcı, 2026-10-11). %97 opak kullanılır.
+     muted yazı bu zeminde ~4.6:1. */
+  --color-cream: #f3ebdd;
   --color-sand: #e0d3c3;
   --color-line: #cdbeaa;
   --color-ink: #2d261f;

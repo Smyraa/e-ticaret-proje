@@ -2,11 +2,13 @@ import type { ReactNode } from "react";
 import { listCategories } from "@/lib/catalog";
 import { getCustomer } from "@/lib/customer-auth";
 import { sweepExpiredReservations } from "@/lib/order-flow";
+import { getSiteSettings } from "@/lib/settings";
 import { AccountSync } from "./account-sync";
 import { CarpetBackground } from "./carpet-background";
 import { MainSurface } from "./main-surface";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
+import { WhatsAppFloat } from "./whatsapp-float";
 
 // Mağaza sayfalarının ortak çerçevesi: halı zemini, atlama bağlantısı, demo şeridi, üst menü, içerik ve alt bilgi.
 // Üst menü ve alt bilgi zeminin üzerinde saydamdır; içerik MainSurface ile okunaklı panelde durur.
@@ -16,6 +18,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
   const customer = await getCustomer().catch(() => null);
   // Üst menüdeki kategori listesi; okunamazsa liste görünmez.
   const categories = await listCategories().catch(() => []);
+  const { whatsapp } = await getSiteSettings(); // okunamazsa varsayılanlar döner
   // Ödeme sayfası terk edilmiş siparişlerin ayrılmış stoğu süre dolunca geri konur (en çok 30 sn'de bir çalışır).
   await sweepExpiredReservations();
 
@@ -43,6 +46,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
       </main>
 
       <SiteFooter />
+      <WhatsAppFloat whatsapp={whatsapp} />
     </>
   );
 }

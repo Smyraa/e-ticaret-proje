@@ -1,13 +1,13 @@
 "use client";
 
-import Form from "next/form";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId, useRef, useState, useSyncExternalStore, type FocusEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FocusEvent } from "react";
 import { cartCount, useCart } from "@/lib/cart";
 import { useFavorites } from "@/lib/favorites";
 import { BagIcon } from "./bag-icon";
 import { HeartIcon } from "./heart-icon";
+import { SearchBox } from "./search-box";
 import { UserIcon } from "./user-icon";
 
 export type HeaderCategory = { slug: string; name: string };
@@ -42,39 +42,6 @@ function subscribeScroll(onChange: () => void) {
   return () => window.removeEventListener("scroll", onChange);
 }
 const useScrolled = () => useSyncExternalStore(subscribeScroll, () => window.scrollY > 40, () => false);
-
-// Ürün arama kutusu: koleksiyon sayfasına ?q= ile gider (JavaScript olmadan da çalışan sıradan bir GET formu;
-// next/form sayfayı yenilemeden geçer). Koleksiyon sayfası ad ve malzeme içinde arar.
-function SearchBox({ onSearch, className = "" }: { onSearch?: () => void; className?: string }) {
-  const id = useId();
-  return (
-    <Form action="/koleksiyon" role="search" onSubmit={onSearch} className={`flex items-center ${className}`}>
-      <label htmlFor={id} className="sr-only">
-        Ürün ara
-      </label>
-      <div className="flex h-11 w-full items-center rounded-full border border-gold-light/45 bg-paper/10 pl-4 transition focus-within:border-gold-light focus-within:bg-paper/15">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className="shrink-0 text-gold-light">
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M20 20l-4.2-4.2" />
-        </svg>
-        <input
-          id={id}
-          name="q"
-          type="search"
-          maxLength={80}
-          placeholder="Tesbih, kehribar, kuka…"
-          className="min-w-0 flex-1 bg-transparent px-3 text-sm text-paper placeholder:text-paper/55 focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="h-full shrink-0 rounded-r-full border-l border-gold-light/45 px-4 text-[11px] font-semibold tracking-[0.22em] text-gold-light uppercase transition hover:bg-gold-light hover:text-espresso"
-        >
-          Ara
-        </button>
-      </div>
-    </Form>
-  );
-}
 
 // Kategoriler açılır listesi: fareyle üzerine gelince ya da tıklayınca açılır; Escape ya da dışarı tıklama kapatır.
 function CategoryMenu({ categories, active }: { categories: HeaderCategory[]; active: boolean }) {
