@@ -6,13 +6,13 @@
 @theme inline {
   --color-paper: #fffcf8;
   --color-soft: #f3ece3;
-  /* İç sayfaların panel zemini: göz yormayan sıcak krem (beyaz çok parlak kalıyordu; kullanıcı, 2026-10-11). %97 opak kullanılır.
-     muted yazı bu zeminde ~4.6:1. */
+  /* İç sayfaların panel zemini: göz yormayan sıcak krem (beyaz çok parlak kalıyordu; kullanıcı, 2026-10-11). %88 opak, hafif
+     saydam kullanılır (arkadan halı sezilsin). En kötü durumda (arkası siyah) muted yazı 4.76:1, ink 9.75:1. */
   --color-cream: #f3ebdd;
   --color-sand: #e0d3c3;
   --color-line: #cdbeaa;
   --color-ink: #2d261f;
-  --color-muted: #6f6459;
+  --color-muted: #5f554b; /* saydam krem panelde de 4.5:1 üstü kalsın diye koyulaştırıldı (eskisi #6f6459) */
   --color-espresso: #201a16;
   /* Marka vurgusu: bordo (şarap tonu). Bağlantı/düğme vurgusu, odak çerçevesi ve seçili durumlar bunu kullanır. */
   --color-bordo: #7a2232;

@@ -10,7 +10,7 @@ type Props = {
   product: Product;
   eager?: boolean; // ekranın üstündeki kartlar: görseli tembel yüklenmez
   // dark: ana sayfanın halı zemini üzerinde. Beyaz kart koyu zeminde keskin bir çerçeve gibi duruyordu (kullanıcı); orada
-  // kart saydam buğulu camdır, yazılar açık renk. light: krem panelli sayfalarda düz krem kart.
+  // kart saydam buğulu camdır, yazılar açık renk. light: krem panelli sayfalarda yarı saydam açık krem kart (bembeyaz sert duruyordu).
   tone?: "light" | "dark";
 };
 
@@ -24,7 +24,7 @@ export function ProductCard({ product, eager, tone = "light" }: Props) {
       className={`group relative flex h-full flex-col rounded-xl p-3 transition duration-300 motion-safe:hover:-translate-y-1 ${
         dark
           ? "bg-paper/10 text-paper ring-1 ring-gold-light/30 backdrop-blur-sm hover:bg-paper/15 hover:ring-gold-light/70"
-          : "bg-paper text-ink shadow-sm [text-shadow:none] hover:shadow-md"
+          : "bg-paper/55 text-ink shadow-sm ring-1 ring-gold/25 [text-shadow:none] hover:bg-paper/80 hover:shadow-md"
       }`}
     >
       <div className="relative mb-4">
