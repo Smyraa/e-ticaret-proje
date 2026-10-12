@@ -111,16 +111,16 @@ export async function saveAddressAction(state: AddressFormState, formData: FormD
   }
   if (result === "full") return { ...state, values, message: `En çok ${ADDRESSES_MAX} adres kaydedilebilir. Önce birini silin.` };
   if (result === "exists") return { ...state, values, message: "Bu adres zaten kayıtlı." };
-  revalidatePath("/hesabim");
+  revalidatePath("/hesabim", "layout");
   return { saved: state.saved + 1 };
 }
 
 export async function deleteAddressAction(formData: FormData): Promise<void> {
   const customer = await getCustomer();
-  if (!customer) redirect("/giris?donus=/hesabim");
+  if (!customer) redirect("/giris?donus=/hesabim/adresler");
   const id = String(formData.get("adres") ?? "");
   if (/^[0-9a-f]{16}$/.test(id)) await deleteAddress(customer.id, id);
-  revalidatePath("/hesabim");
+  revalidatePath("/hesabim", "layout");
 }
 
 // ---------- Profil ve güvenlik ----------
@@ -205,14 +205,14 @@ export async function saveReviewAction(slug: string, _state: ReviewFormState, fo
     console.error("Yorum kaydedilemedi", error);
     return { error: FAILED, rating, text };
   }
-  revalidatePath("/hesabim");
-  redirect("/hesabim?yorum=kaydedildi#yorumlar-baslik");
+  revalidatePath("/hesabim", "layout");
+  redirect("/hesabim/degerlendirmeler?yorum=kaydedildi");
 }
 
 export async function deleteReviewAction(formData: FormData): Promise<void> {
   const customer = await getCustomer();
-  if (!customer) redirect("/giris?donus=/hesabim");
+  if (!customer) redirect("/giris?donus=/hesabim/degerlendirmeler");
   await deleteMyReview(customer.id, String(formData.get("yorum") ?? ""));
   revalidatePath("/", "layout"); // onaylı yorum ürün sayfasından da kalkar
-  redirect("/hesabim?yorum=silindi#yorumlar-baslik");
+  redirect("/hesabim/degerlendirmeler?yorum=silindi");
 }

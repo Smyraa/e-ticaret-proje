@@ -80,6 +80,8 @@ export async function getOrderByNumber(number: string): Promise<Order | null> {
 
 export type CustomerOrderSummary = Pick<Order, "number" | "trackKey" | "status" | "total" | "createdAt"> & {
   itemCount: number;
+  items: { slug: string; name: string; image: string | null; qty: number }[]; // ilk 4 satır (sipariş geçmişindeki küçük görseller)
+  lineCount: number; // toplam satır sayısı ("+2 ürün daha" için)
 };
 
 // Müşterinin hesabındayken verdiği siparişler, yeniden eskiye (hesap sayfası için; en çok 50).
@@ -89,12 +91,19 @@ export async function listOrdersForCustomer(customerId: string): Promise<Custome
   const docs = await orders
     .find(
       { customerId },
-      { projection: { _id: 0, number: 1, trackKey: 1, status: 1, total: 1, createdAt: 1, "items.qty": 1 } },
+      {
+        projection: { _id: 0, number: 1, trackKey: 1, status: 1, total: 1, createdAt: 1, "items.slug": 1, "items.name": 1, "items.image": 1, "items.qty": 1 },
+      },
     )
     .sort({ createdAt: -1 })
     .limit(50)
     .toArray();
-  return docs.map(({ items, ...rest }) => ({ ...rest, itemCount: items.reduce((sum, item) => sum + item.qty, 0) }));
+  return docs.map(({ items, ...rest }) => ({
+    ...rest,
+    itemCount: items.reduce((sum, item) => sum + item.qty, 0),
+    items: items.slice(0, 4).map(({ slug, name, image, qty }) => ({ slug, name, image: image ?? null, qty })),
+    lineCount: items.length,
+  }));
 }
 
 // Az önce açılmış ama ödemesi hiç başlatılamamış siparişi siler (ödeme başlarken stok yetmedi). Yalnız "ödeme bekleniyor"

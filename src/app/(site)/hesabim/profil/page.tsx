@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteAccountForm, NameForm, PasswordForm } from "@/components/profile-forms";
 import { getCustomer } from "@/lib/customer-auth";
@@ -17,14 +16,8 @@ export default async function ProfilePage() {
   if (!customer) redirect("/giris?donus=/hesabim/profil");
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
-      <Link
-        href="/hesabim"
-        className="inline-flex min-h-11 items-center text-xs tracking-widest text-muted uppercase transition hover:text-primary"
-      >
-        ← Hesabıma dön
-      </Link>
-      <h1 className="mt-4 font-display text-4xl">Profil ve güvenlik</h1>
+    <div className="max-w-xl">
+      <h1 className="font-display text-3xl sm:text-4xl">Profil ve güvenlik</h1>
       <p className="mt-3 text-sm text-muted">
         E-posta: <span className="text-ink">{customer.email}</span> (değiştirilemez)
       </p>
