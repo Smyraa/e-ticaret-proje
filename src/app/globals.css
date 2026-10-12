@@ -11,10 +11,6 @@
      Geniş ekranda, en koyu halı noktası (#1a1010) arkadayken: muted 4.51:1, danger 4.63:1, bordo 4.89:1, ink 7.29:1. Gold-deep bu zeminde yazı için
      kullanılmaz. */
   --color-cream: #f3ebdd;
-  /* Mağaza zemini: açık taba (deri/kahve tonu; kullanıcı, 2026-10-12). Halı deseni bunun üstünde koyu taba tonunda seçilir. */
-  --color-taba: #b5814f;
-  --color-taba-light: #cd9d6c;
-  --color-taba-dark: #7d4f2c;
   --color-sand: #e0d3c3;
   --color-line: #cdbeaa;
   --color-ink: #2d261f;

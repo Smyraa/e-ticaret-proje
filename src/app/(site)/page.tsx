@@ -21,7 +21,7 @@ const FEATURED_COUNT = 4;
 // Halı zemini üzerindeki saydam (koyu cam) panel. Yazı açık renktir; koyu zemin + bulanıklık, arkadaki açık halı motiflerinin
 // yazıyı zayıflatmasını önler. ProductRail de aynı paneli kullanır.
 const glass =
-  "rounded-2xl bg-espresso/60 shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)]";
+  "rounded-2xl bg-espresso/50 shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)]";
 
 function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
   return (
