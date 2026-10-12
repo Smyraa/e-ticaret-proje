@@ -147,7 +147,7 @@ export function SiteHeader({ signedIn, categories }: { signedIn: boolean; catego
   return (
     <header
       className={`sticky top-0 z-40 border-b border-gold-light/40 text-paper backdrop-blur-md transition-colors duration-300 [&_:focus-visible]:outline-gold-light ${
-        scrolled ? "bg-espresso/90 shadow-lg shadow-black/30" : "bg-espresso/55"
+        scrolled ? "bg-espresso/90 shadow-lg shadow-black/30" : "bg-espresso/70"
       }`}
     >
       <div

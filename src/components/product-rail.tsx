@@ -49,7 +49,7 @@ export function ProductRail({ id, title, href, accent, children }: Props) {
   return (
     <section aria-labelledby={id} className="reveal pt-6 sm:pt-10">
       <div className="mx-auto max-w-6xl px-3 sm:px-6">
-        <div className="overflow-hidden rounded-2xl bg-espresso/40 p-4 text-paper shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)] sm:p-8">
+        <div className="overflow-hidden rounded-2xl bg-espresso/60 p-4 text-paper shadow-lg shadow-black/30 ring-1 ring-gold-light/50 backdrop-blur-[3px] [text-shadow:0_1px_3px_rgb(0_0_0/0.85)] sm:p-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 id={id} className="font-display text-2xl sm:text-3xl">
