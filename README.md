@@ -1,6 +1,73 @@
 # TAURA Tesbihçilik
 
-TAURA Tesbihçilik için mağaza uygulaması. Next.js, MongoDB ve Tailwind CSS ile geliştiriliyor. Şu an demo aşamasında: ürünler, fiyatlar ve görseller örnek içeriktir.
+El işçiliği tesbih satan hayali bir mağaza için baştan sona geliştirilmiş bir e-ticaret **demo projesi**. Vitrin sayfalarından ödemeye, müşteri hesabından yönetim paneline kadar gerçek bir mağazanın ihtiyaç duyduğu akışların hepsi çalışır durumda; tasarım Türk halısı, bordo ve gold tonlarından ilham alır.
+
+> **Demo:** Proje canlıya çıkmak için değil, gösterim amacıyla hazırlandı. Ürünler, fiyatlar ve görseller örnek içeriktir; kartla ödeme yalnızca iyzico'nun deneme (sandbox) ortamıyla çalışır, gerçek para çekilmez.
+
+**Teknolojiler:** Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · MongoDB · Tailwind CSS 4 · sharp · iyzico
+
+## Ekran görüntüleri
+
+![Ana sayfa](docs/ekran/ana-sayfa.jpg)
+
+| Koleksiyon ve arama | Ürün sayfası |
+| --- | --- |
+| ![Koleksiyon](docs/ekran/koleksiyon.jpg) | ![Ürün sayfası](docs/ekran/urun.jpg) |
+
+| Telefonda ana sayfa | Telefonda koleksiyon | Telefonda ürün |
+| --- | --- | --- |
+| ![Telefonda ana sayfa](docs/ekran/mobil-ana-sayfa.jpg) | ![Telefonda koleksiyon](docs/ekran/mobil-koleksiyon.jpg) | ![Telefonda ürün](docs/ekran/mobil-urun.jpg) |
+
+## Özellikler
+
+### Mağaza
+
+- Halı desenli zemin üzerinde saydam paneller, gold süslemeler ve yapışkan, kaydırınca incelen üst menü
+- Kategoriler, kampanyalar ve en çok satanlar vitrinleri (yatay kaydırmalı ürün şeritleri)
+- Yazarken açılan **canlı arama önerileri** (görsel, ad, malzeme, fiyat; klavyeyle gezilebilir)
+- Koleksiyon ve kategori sayfalarında **filtreler**: malzeme, fiyat aralığı, yalnız indirimdekiler, fiyata göre sıralama
+- İndirimli fiyat gösterimi (üstü çizili eski fiyat ve indirim yüzdesi)
+- Karttan tek tıkla sepete ekleme, favoriler, "son baktıklarınız"
+- Ürün sayfasında fareyle **yakınlaştırma**, telefonda parmakla **kaydırılan fotoğraf galerisi**
+- Telefonda **alt gezinme çubuğu**, iki sütunlu ürün ızgarası ve aşağı kayınca beliren "Sepete ekle" şeridi
+- Onaylı müşteri yorumları, yıldız puanları ve ana sayfada "Müşterilerimiz ne diyor" bölümü
+- Tesbih rehberi, SSS, kargo ve iade, gizlilik gibi bilgi sayfaları, WhatsApp'tan soru sorma düğmesi
+
+### Müşteri hesabı
+
+- İsteğe bağlı üyelik: misafir olarak da sipariş verilebilir
+- Giriş yapınca sepet ve favoriler hesapla eşitlenir
+- Hesap alanı: **sipariş geçmişi** (durum etiketleri ve ürün görselleriyle), değerlendirmeler, kayıtlı adresler, favoriler, profil ve parola, hesabı silme
+- Teslim edilen siparişlerdeki ürünlere yorum yazma (yönetici onayından sonra yayınlanır)
+- Üye olmadan sipariş numarası ve e-postayla sipariş sorgulama
+
+### Sipariş ve ödeme
+
+- Ödeme formunda il ve ilçe listeden seçilir, telefon ve posta kodu maskeli girilir; adres kaydedilip sonra seçilebilir
+- Kartla ödeme iyzico'nun barındırdığı ödeme sayfasında yapılır, kart bilgisi siteye hiç uğramaz; ödeme sonucu iyzico'dan sunucu tarafında doğrulanır
+- Ödeme başlarken **stok 20 dakika ayrılır**: son ürün iki kişiye birden satılmaz, ödeme yapılmazsa stok geri döner
+- **İndirim kuponları**: yüzde ya da sabit tutar, son kullanma tarihi, kullanım sınırı, en az sepet tutarı, müşteri başına tek kullanım
+- Sipariş e-postaları (müşteriye "alındı" ve "kargoya verildi", yöneticiye "yeni sipariş"). Demoda e-postalar gönderilmez, yönetim panelinde okunabilir şekilde kaydedilir.
+
+### Yönetim paneli (`/yonetim`)
+
+- **Genel bakış:** bekleyen siparişler, yapılacaklar (onay bekleyen yorum, düşük stok), ilgilenilmesi gereken ödemeler
+- **Ürünler:** taslak/yayında, kategori, eski fiyat, çoklu fotoğraf yükleme ve sıralama, otomatik EAN-13 barkod
+- **Siparişler:** durum akışı (ödendi → hazırlanıyor → kargoda → teslim), kargo bilgisi, iptal ve iade, yönetici notu, müşteriye WhatsApp bağlantısı
+- **Stok takibi:** düşük stok uyarıları ve stok hareketleri
+- **Kampanyalar:** kupon oluşturma ve yönetme
+- **Yorumlar:** onaylama ve reddetme
+- **Site görünümü:** kategoriler ve vitrinler
+- **Ayarlar:** iletişim bilgileri, kargo ücreti, ana sayfa görseli, yönetici parolası
+
+### Güvenlik ve erişilebilirlik
+
+- Her istekte yenilenen nonce'lu içerik güvenlik politikası (CSP) ve güvenlik başlıkları
+- Parolalar scrypt ile saklanır; oturum anahtarlarının veritabanında yalnızca özeti tutulur; giriş, sipariş, sorgu ve yorum gibi işlemlerde hız sınırı vardır
+- Fiyat, stok ve indirimler her zaman sunucuda veritabanından yeniden hesaplanır, tarayıcıdan gelen tutara güvenilmez
+- Yüklenen görsellerin türü içeriğinden doğrulanır, konum ve tarih gibi gizli bilgileri silinir
+- Klavyeyle gezinme, görünür odak çerçeveleri, ölçülmüş renk kontrastları, ekran okuyucu etiketleri ve "hareketi azalt" tercihine uyum
+- Demo sürümü arama motorlarına kapalıdır (`noindex`)
 
 ## Çalıştırma
 
@@ -8,61 +75,34 @@ Gerekenler: Node.js 24 ve yerelde çalışan bir MongoDB.
 
 ```bash
 npm install
-npm run seed   # örnek ürünleri ve ana sayfa görselinin adını MongoDB'ye, örnek görselleri media/ klasörüne yazar
-npm run dev    # http://localhost:3000
+npm run seed          # örnek ürünleri ve örnek görselleri hazırlar
+npm run dev           # http://localhost:3000
+npm run admin:create  # yönetim paneli için yönetici hesabı açar (parolayı ekranda göstermeden sorar)
 ```
 
-Ayarlar (veritabanı adresi, sitenin adresi, ödeme anahtarları gibi) ortam değişkenleridir ve proje klasöründeki `.env` dosyasına yazılır. Bu dosya git'e girmez ve repoda örneği yoktur: her bilgisayarda (ve canlı sunucuda) kendiniz açarsınız; değişken adları bu belgede geçer. Sunucunun kendi ortam ayarlarında tanımlı olan değer, dosyadakinden önce gelir. Veritabanı adresi varsayılan olarak `mongodb://127.0.0.1:27017/taura`; değiştirmek için `MONGODB_URI` kullanılır.
+Ayarlar ortam değişkenleriyle verilir ve proje klasöründeki `.env` dosyasına yazılır (bu dosya git'e girmez). Hepsi isteğe bağlıdır:
 
-WhatsApp numarası, iletişim bilgileri ve kargo ücreti ortam değişkeniyle değil, yönetim panelindeki Site ayarları sayfasından girilir (aşağıya bakın). WhatsApp numarası girilmezse geçersiz bir yer tutucu numara kullanılır ve WhatsApp düğmelerinin altında demo uyarısı çıkar.
+| Değişken | Ne işe yarar |
+| --- | --- |
+| `MONGODB_URI` | Veritabanı adresi (varsayılan `mongodb://127.0.0.1:27017/taura`) |
+| `MEDIA_DIR` | Yüklenen görsellerin klasörü (varsayılan `media/`) |
+| `SITE_URL` | Sitenin tam adresi (e-postalardaki ve ödeme dönüşündeki bağlantılar için) |
+| `SITE_INDEXING` | `on` verilirse site arama motorlarına açılır |
+| `PAYMENT_PROVIDER` | Boş: kartla ödeme kapalı · `fake`: yerel deneme ödeme sayfası · `iyzico`: iyzico |
+| `IYZICO_API_KEY`, `IYZICO_SECRET_KEY` | iyzico anahtarları (`npm run payment:iyzico` ekranda göstermeden sorar ve yazar) |
+| `IYZICO_BASE_URL` | Boş bırakılır; anahtar `sandbox-` ile başlıyorsa deneme ortamı kullanılır |
+| `MAIL_TRANSPORT` | E-posta taşıyıcısı; varsayılan `log` (gönderilmez, kaydedilir) |
 
-Demo sürümü arama motorlarına kapalıdır (`noindex`, `/robots.txt` her şeyi engeller). Canlıya çıkarken `SITE_INDEXING=on` ve sitenin tam adresi için `SITE_URL` (örn. `https://ornek.com`) verilir; sonra uygulama yeniden derlenir.
+Diğer komutlar: `npm run admin:reset` (yönetici parolasını sıfırlar), `npm run admin:list`, `npm run payment:durum` (ödeme ayarının durumunu anahtarları göstermeden yazar), `npm run payment:kapat`.
 
-## Yönetim paneli
+## Proje yapısı
 
-Adres: `/yonetim`. Girmek için önce bir yönetici hesabı açılır. Komut e-postayı sorar, parolayı ise yazarken göstermeden ister; parola hiçbir yere yazılmaz, veritabanında yalnızca özeti durur:
-
-```bash
-npm run admin:create
 ```
-
-Parolayı değiştirmek için panelde Ayarlar'ın altındaki "Hesap ve parola" sekmesi (`/yonetim/hesap`) kullanılır: mevcut parola sorulur, parola değişince diğer cihazlardaki ve tarayıcılardaki tüm oturumlar kapanır. Unutulan parolayı sıfırlamak için `npm run admin:reset`, hesapları listelemek için `npm run admin:list` kullanılır. Parola en az 12 karakter olmalı. Aynı e-posta ve aynı adresten 15 dakikada en çok 5 giriş denemesi yapılabilir (başarılı giriş o adresin sayacını sıfırlar), fazlası için beklenir; adrese bakmadan aynı e-posta için sınır 20'dir. Deneme hakkı parola denenmeden önce tek adımda ayrılır, bu yüzden aynı anda gelen onlarca deneme de sınıra takılır. Oturum 7 gün sürer.
-
-Ürünler `/yonetim/urunler` sayfasında yönetilir: listeden ürün düzenlenir, "Yeni ürün" ile eklenir. Yeni ürün önce taslak olarak kaydedilir; "Yayında" kutusu işaretlenince sitede görünür, işaret kaldırılınca yeniden gizlenir. Ürünün adresi (`/urun/<ad>`) ilk kayıtta addan üretilir ve sonradan değişmez. Fiyat tam lira, stok tam sayıdır. `npm run seed` yalnızca örnek ürünleri (örnek işaretli olanları) yeniden yazar. Bir ürünü kalıcı olarak silmek için düzenleme sayfasının altındaki "Ürünü sil" kullanılır (görselleri de silinir, geri alınamaz; bir siparişte kullanılan görsel dosyaları diskten silinmez); geçici olarak gizlemek için "Yayında" kutusunu kaldırmak yeterlidir. Canlıya çıkmadan önce Ürünler sayfasındaki "Örnek ürünleri sil" düğmesi tüm örnek ürünleri ve görsellerini tek seferde siler (gerçek ürünlere dokunmaz); `npm run seed` yeniden çalıştırılırsa gerçek bir ürünle çakışan örnek adresi varsa hiçbir şey yazmadan durur.
-
-Site ayarları `/yonetim/ayarlar` sayfasındadır: WhatsApp numarası, telefon, e-posta, adres, çalışma saatleri, yeni sipariş bildirimi e-postası (sitede görünmez, aşağıdaki E-posta bildirimleri bölümüne bakın), kargo ücreti (tam lira, 0 = ücretsiz) ve ana sayfa görseli. Telefonlar "0555 111 22 33" gibi yazılır, kaydedilirken ülke koduyla tek biçime çevrilir. Boş bırakılan iletişim bilgisi sitede gösterilmez; ayarlar kaydedilince iletişim sayfası, alt bilgi, ürün sayfasındaki WhatsApp düğmesi, sepet/ödeme özeti ve SSS ile Kargo ve iade sayfaları hemen yeni değerleri kullanır. Ana sayfa görseli ürün görselleriyle aynı işlemden geçer (tür doğrulama, gizli bilgi silme, küçültme).
-
-## Medya
-
-Görseller `media/` klasöründe tutulur (git'e girmez) ve `/media/...` adresinden sunulur; veritabanında yalnızca dosya adı saklanır. Dosya adlarına içerik izi (hash) eklenir, böylece 1 yıl önbelleğe alınabilirler. Sayfalarda görseller `next/image` ile ekrana uygun boyutta ve WebP olarak gösterilir.
-
-Ürün görselleri yönetim panelinden yüklenir (ürünü düzenle → Görseller): JPG, PNG veya WebP, dosya başına en çok 10 MB, üründe en çok 8 görsel; ilk görsel ana görseldir, sıralanabilir ve silinebilir. Yüklenen dosyanın türü içeriğinden doğrulanır, fotoğraftaki konum ve tarih gibi gizli bilgiler silinir, en uzun kenar 2400 piksele indirilir ve dosya `media/` klasörüne içerik izli bir adla yazılır. Klasörü `MEDIA_DIR` ortam değişkeniyle başka bir yere alabilirsiniz (canlıda uygulama klasörünün dışında, kalıcı bir yer önerilir; yeni sürüm kurulunca yüklemeler kaybolmasın). Uygulama Nginx'in arkasında çalışacaksa yüklemeler için `client_max_body_size 12m;` gerekir ve Nginx `Host` başlığını uygulamaya iletmelidir.
-
-## Siparişler
-
-Üyelik yoktur: müşteri misafir olarak sipariş verir, sepet ve favoriler müşterinin tarayıcısında durur. Ödeme sayfasındaki "Siparişi tamamla" siparişi kaydeder. Ürünler, fiyatlar ve kargo ücreti sunucuda veritabanından yeniden okunur (tarayıcıdan gelen tutara güvenilmez); ürünün adı, fiyatı ve görseli siparişe anlık kopya olarak yazılır, ürün sonradan değişse ya da silinse de sipariş bozulmaz. Sipariş "ödeme bekleniyor" durumunda açılır; stok ödeme alınınca düşer (kartla ödeme için aşağıdaki "Kartla ödeme" bölümüne bakın). Sipariş numarası rastgele ve okunaklıdır (`TA-7KQ2-X9DM`). Müşteri `/siparis/<gizli anahtar>` sayfasına yönlenir: anahtar tahmin edilemez uzunlukta rastgele bir metindir, sayfa telefon ve e-postayı kısmen gizler, arama motorlarına kapalıdır ve adresi kaydedilerek sonradan açılabilir. Aynı bağlantı adresinden 30 dakikada en çok 5 sipariş açılabilir.
-
-Siparişler yönetim panelinde `/yonetim/siparisler` sayfasında yönetilir: yeniden eskiye liste, durum süzgeci (Ödeme bekleyen, Hazırlanacak, Kargoda, Teslim edilen, İptal) ve sayfalama. Sipariş ayrıntısında müşterinin bilgileri (telefon, "WhatsApp'tan yaz" bağlantısı, e-posta, adres), ürünler, durum geçmişi, yalnız yönetimin gördüğü not ve müşteriye gönderilebilecek sipariş sayfası bağlantısı (kopyalama düğmesiyle) bulunur. Durum yolu: ödeme bekleniyor → ödendi → hazırlanıyor → kargoya verildi (firma ve takip numarasıyla) → teslim edildi. Kargoya verilmeden önce iptal edilebilir; yanlış tıklamayı düzeltmek için bir önceki adıma dönülebilir. **Stok sipariş "ödendi" yapılınca düşer** ve yalnızca yeterliyse düşer (yetmiyorsa işlem yapılmaz, hiçbir ürünün stoğu değişmez); iptalde ya da ödeme işareti geri alınınca iade edilir. Bir işlem yarıda kalırsa sipariş sayfasında uyarı ve onarım düğmesi çıkar. Yalnız örnek ürünlerle verilen siparişler "Test" olarak işaretlenir ve listeden tek seferde silinebilir (düşülen stok iade edilir). Ödenmemiş siparişler elle iptal edilene kadar listede kalır.
-
-Müşteri sipariş sayfasının adresini kaybederse `/siparis` sayfasında sipariş numarasını ve sipariş verirken yazdığı e-posta adresini girerek sayfasını yeniden açar (numara küçük harfle, boşluklu ya da `TA` olmadan da yazılabilir). Numara yoksa da e-posta yanlışsa da aynı ileti çıkar; siparişin var olup olmadığı anlaşılmaz. Sorgu sınırı 15 dakikada aynı bağlantı adresinden en çok 10, aynı sipariş numarası için en çok 8'dir (adresi değiştirerek e-postayı tahmin etmeyi engeller); sınıra takılan sorgu doğru bilgilerle bile reddedilir.
-
-## E-posta bildirimleri
-
-Sipariş verilince müşteriye "Siparişiniz alındı" (numara, ürünler, adres ve sipariş sayfasının adresiyle), size "Yeni sipariş" e-postası gider; sipariş kargoya verildi olarak işaretlenince müşteriye "Siparişiniz kargoya verildi" (firma ve takip numarasıyla) gider. E-postalar düz metindir ve yanıt gittikten sonra hazırlanır: e-posta sorunu siparişi bozmaz, müşteriyi de bekletmez. "Yeni sipariş" e-postası Site ayarları → Sipariş bildirimleri'ndeki adrese gider (boşsa iletişim e-postasına; ikisi de boşsa gönderilmez ve nedeni sipariş sayfasında görünür); bu adres sitede hiçbir yerde gösterilmez. Müşteri e-postalarına yanıt iletişim e-postasına, "Yeni sipariş" e-postasına yanıt müşteriye gider. Bir alıcıya saatte en çok 6 müşteri e-postası gönderilir (başkasının adresiyle art arda sipariş verip ona e-posta yağdırmayı zorlaştırır).
-
-Gönderim `src/lib/mail.ts` içindeki bir "taşıyıcı" üzerinden yapılır ve `MAIL_TRANSPORT` ortam değişkeniyle seçilir. Şimdilik yalnız `log` (varsayılan) vardır: e-posta **gönderilmez**, yalnızca kaydedilir. Her e-posta (kaydedilen, gönderilen ya da gönderilemeyen) yönetimde sipariş sayfasının "E-postalar" bölümünde görünür; kaydedilenlerin içeriği oradan okunabilir. Kayıtlar 60 gün sonra kendiliğinden silinir, test siparişleri silinirken onların kayıtları da silinir. Gerçek bir e-posta hizmeti seçilince buraya yeni bir taşıyıcı eklenir ve `MAIL_TRANSPORT` onun adına çevrilir; tanınmayan bir değer verilirse e-postalar gönderilemez, bu da Ayarlar sayfasında ve sipariş sayfasında uyarı olarak görünür.
-
-## Kartla ödeme
-
-Ödeme `PAYMENT_PROVIDER` ortam değişkeniyle seçilir. Boşsa (varsayılan) kartla ödeme kapalıdır: sipariş ödeme alınmadan kaydedilir ve ödemeyi yönetimde "Ödendi olarak işaretle" ile siz işlersiniz. `fake`, ödeme akışını hesapsız denemek için yalnız bu bilgisayarda çalışan bir deneme ödeme sayfasıdır (gerçek kart ve gerçek para yoktur); yalnız `SITE_URL` yerel bir adres olduğunda (ya da geliştirme sunucusunda) açılır, gerçek bir adreste yanlışlıkla açık kalırsa ayar hatalı sayılır, kapatılır ve yönetimde uyarı çıkar. Gerçek kuruluş iyzico'dur (`PAYMENT_PROVIDER=iyzico`): müşteri iyzico'nun barındırdığı ödeme sayfasına yönlendirilir. Kuruluşun anahtarları veritabanına ya da yönetim paneline yazılmaz, yalnız sunucudaki ortam değişkenlerinde durur: geliştirmede `.env` dosyasına (git'e girmez), canlıda sunucunun ortam ayarlarına. Deneme anahtarlarını yazmanın güvenli yolu `npm run payment:iyzico`: anahtarları yazarken göstermeden sorar ve `.env` dosyasına yazar (dosyayı elle de doldurabilirsiniz; sohbete ya da başka yere yazmak gerekmez; geliştirme sunucusu yeniden başlatılır). Kapatmak için `npm run payment:kapat`, durumu görmek için `npm run payment:durum` (anahtarların kendisini göstermez); canlı anahtar bu komutla yazılamaz. `IYZICO_API_KEY` ve `IYZICO_SECRET_KEY` iyzico panelinde Ayarlar → Merchant Settings → API Keys altındadır. Deneme (sandbox) hesabı `https://sandbox-merchant.iyzipay.com/auth/register` adresinden açılır, anahtarları `sandbox-` ile başlar ve gerçek para çekmez (test kartları iyzico belgelerinde: `docs.iyzico.com/en/add-ons/test-cards`). `IYZICO_BASE_URL` boş bırakılır: anahtar `sandbox-` ile başlıyorsa sandbox, değilse canlı adres kullanılır; sandbox anahtarı canlı adresle (ya da tersi) kullanılamaz ve ayar hatalıysa kartla ödeme kapanır, yönetimde uyarı çıkar. iyzico ödemeden sonra müşteriyi `SITE_URL` + `/odeme/geri-donus` adresine döndürür ve bu adreste geçerli bir SSL sertifikası ister; bu yüzden canlıda `SITE_URL` `https://` ile başlamalıdır (canlı anahtarla değilse ayar hatalı sayılır). iyzico alıcı kimlik numarasını zorunlu alan olarak ister, site bunu toplamaz: şimdilik sabit bir değer gönderilir (canlıya geçerken iyzico'ya sorulacak).
-
-Kartla ödeme açıkken "Siparişi onayla ve öde" siparişi kaydeder ve müşteriyi kuruluşun ödeme sayfasına gönderir; kart bilgisi bu sitede hiç girilmez ve saklanmaz. Ödemeden sonra kuruluş müşteriyi `/odeme/geri-donus` adresine döndürür. Bu adres herkese açıktır ve gelen hiçbir şeye güvenilmez: yalnız gelen anahtarın bizim açtığımız bir ödemeye ait olup olmadığına bakılır, ödemenin gerçekten alınıp alınmadığı ve tutarı kuruluştan **sunucudan sorulur**. Aynı ödeme birden çok kez bildirilse de (yenileme, çift tıklama, eşzamanlı istek) yalnız bir kez işlenir. Ödeme alınınca sipariş "ödendi" olur, stok düşer ve e-postalar (müşteriye "alındı", size "yeni sipariş") o zaman gider; ödenmemiş denemeler için e-posta gitmez. Müşteri ödemeyi yapıp siteye dönemezse sipariş sayfasındaki "Ödememi kontrol et" (yönetimde "Bekleyen ödemeyi kontrol et") sonucu kuruluştan sorar. Ödeme oturumu 30 dakika açık kalır; süresi dolmadan yeniden "Kartla öde" denirse aynı oturum kullanılır.
-
-Para alınmış ama sipariş buna göre ilerleyemezse (stok yetmedi, tutar uyuşmuyor, sipariş bu arada iptal edilmiş, aynı siparişe ikinci ödeme geldi) ödeme kaydı işaretlenir, size e-posta gider ve yönetim ana sayfasında "İlgilenmeniz gereken ödemeler" altında listelenir. Stok yetmediğinde sipariş yine de "ödendi" kalır (para alınmıştır): stoğu güncelleyip "Stoğu şimdi düş" diyebilir ya da siparişi iptal edebilirsiniz. Kartla ödenmiş bir siparişi iptal edince ödeme müşteriye iade edilir; iade yapılamazsa iptal bozulmaz, sipariş sayfasından "Ödemeyi iade et" ile yeniden denenir. Her ödeme denemesi yönetimde sipariş sayfasının "Kartla ödemeler" bölümünde görünür. Kargoya verilmiş siparişin iadesi bu ekrandan yapılmaz (kuruluşun panelinden yapılır).
-
-## Güvenlik
-
-- **Başlıklar:** her yanıtla güvenlik başlıkları gider (`next.config.ts`): sayfanın başka bir sitenin içine gömülmesi, dosya türünün tahmin edilmesi ve gereksiz yönlendiren bilgisi engellenir; yayında HTTPS zorunluluğu (HSTS) da eklenir. `X-Powered-By` gönderilmez.
-- **İçerik güvenlik politikası (CSP):** `src/proxy.ts` her sayfa isteği için yeni bir tek kullanımlık anahtar (nonce) üretir; tarayıcı yalnızca bu anahtarı taşıyan, yani sitenin kendi komut dosyalarını çalıştırır, sayfaya sızdırılmış bir `<script>` çalışmaz. Bu yüzden sayfalar her istekte çizilir (kök düzende `dynamic = "force-dynamic"`). İki görsel yükleme adresi proxy'nin dışındadır (Next.js proxy'li yollarda istek gövdesini 10 MB'ta keser). Kartla ödeme, kuruluşun kendi sayfasına yönlendirmeyle yapıldığından bu politikaya ek izin gerekmez; kuruluşun bir komut dosyası sayfaya gömülürse politika ve `x-nonce` başlığı birlikte düşünülmelidir.
-- **Giriş:** yönetim sayfalarının, eylemlerinin ve yükleme adreslerinin her biri kendi giriş kontrolünü yapar. Oturum anahtarı veritabanında yalnızca özet olarak durur. Giriş denemesi sınırı bağlantı adresini `X-Forwarded-For` başlığının **son** değerinden alır; bu, Nginx'in kendi gördüğü adrestir (baştaki değerleri istemci yazabilir). Nginx'te `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` (ekler) ya da `proxy_set_header X-Forwarded-For $remote_addr;` (üzerine yazar) kullanılır.
-- **Kontroller:** canlıya çıkmadan önce `npm audit --omit=dev` çalıştırılır (yayına giden paketlerde bilinen açık olmamalı).
+src/app/(site)/      mağaza sayfaları (ana sayfa, koleksiyon, ürün, sepet, ödeme, hesap, sipariş, bilgi sayfaları)
+src/app/yonetim/     yönetim paneli
+src/components/      ortak arayüz bileşenleri
+src/lib/             iş kuralları: ürünler, siparişler, ödeme, stok, kupon, yorum, kimlik doğrulama
+scripts/             örnek veri, yönetici hesabı ve ödeme ayarı komutları
+public/images/       arka plan görseli
+media/               yüklenen ürün görselleri (git'e girmez)
+```
